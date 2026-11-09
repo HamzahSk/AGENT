@@ -1,0 +1,14 @@
+# Keep project configuration trackable; exclude credentials and runtime state.
+**/auth.json
+**/.credentials.json
+**/.env
+**/.env.*
+!**/.env.example
+**/*.pem
+**/*.key
+**/codex-auth-bundle.json
+.codex-ci/
+__pycache__/
+*.pyc
+.venv/
+node_modules/

@@ -1,0 +1,231 @@
+name: Remote Codex
+
+on:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: Task for Codex
+        required: true
+        type: string
+      base_url:
+        description: API base URL (e.g. https://api.example.com/v1; empty uses CODEX_BASE_URL or OpenAI)
+        default: ''
+        type: string
+      api_key_secret:
+        description: GitHub Secret NAME containing the API key (empty uses CODEX_API_KEY_SECRET or OPENAI_API_KEY)
+        default: ''
+        type: string
+      model:
+        description: Model ID (empty uses CODEX_MODEL or Codex configuration)
+        default: ''
+        type: string
+      publish_changes:
+        description: Commit changes on a new branch and open a pull request
+        default: false
+        type: boolean
+  workflow_call:
+    inputs:
+      prompt:
+        required: true
+        type: string
+      base_url:
+        default: ''
+        type: string
+      api_key_secret:
+        default: ''
+        type: string
+      model:
+        default: ''
+        type: string
+      publish_changes:
+        default: false
+        type: boolean
+    secrets:
+      OPENAI_API_KEY:
+        # Environment secrets can supply this without a caller-level secret.
+        required: false
+      CODEX_API_KEY:
+        required: false
+      CODEX_AUTH_BUNDLE:
+        required: false
+      CODEX_INTEGRATION_ENV_JSON:
+        required: false
+      AUTH_ADMIN_TOKEN:
+        required: false
+
+permissions:
+  contents: read
+
+# One credential stream per repository, including reusable-workflow calls.
+# Environment secrets are read when a job starts, after this concurrency gate.
+concurrency:
+  group: codex-ci-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  auth_key:
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-24.04
+    environment: codex-ci
+    timeout-minutes: 5
+    outputs:
+      key: ${{ steps.key.outputs.key }}
+      key_id: ${{ steps.key.outputs.key_id }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Get public encryption key for credential write-back
+        id: key
+        if: vars.CODEX_PERSIST_AUTH == 'true'
+        env:
+          AUTH_ADMIN_TOKEN: ${{ secrets.AUTH_ADMIN_TOKEN }}
+          REPOSITORY_ID: ${{ github.event.repository.id }}
+        run: python3 scripts/codex_ci/github_state.py key
+
+  run:
+    needs: auth_key
+    runs-on: ubuntu-24.04
+    environment: codex-ci
+    timeout-minutes: 65
+    outputs:
+      has_changes: ${{ steps.codex.outputs.has_changes }}
+      auth_restored: ${{ steps.codex.outputs.auth_restored }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Resolve API base URL, key secret name, and model
+        id: provider
+        env:
+          INPUT_BASE_URL: ${{ inputs.base_url }}
+          DEFAULT_BASE_URL: ${{ vars.CODEX_BASE_URL }}
+          INPUT_API_KEY_SECRET: ${{ inputs.api_key_secret }}
+          DEFAULT_API_KEY_SECRET: ${{ vars.CODEX_API_KEY_SECRET }}
+          INPUT_MODEL: ${{ inputs.model }}
+          DEFAULT_MODEL: ${{ vars.CODEX_MODEL }}
+        run: python3 scripts/codex_ci/provider.py
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: ${{ vars.CODEX_NODE_VERSION || '24' }}
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: ${{ vars.CODEX_PYTHON_VERSION || '3.12' }}
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        if: hashFiles('go.mod') != ''
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Prepare tools and project dependencies before restoring secrets
+        run: bash scripts/codex_ci/prepare.sh
+      - name: Check selected API key is configured
+        env:
+          PROVIDER_API_KEY: ${{ secrets[steps.provider.outputs.api_key_secret] }}
+        run: |
+          if [[ -z "$PROVIDER_API_KEY" ]]; then
+            echo '::error::The selected API key secret is missing or empty. Add it to the codex-ci environment.'
+            exit 1
+          fi
+      # Setup-only invocation: this pinned action installs Codex and the official
+      # Responses proxy, then drops sudo. No prompt means it does not run an agent.
+      # Keep the proxy's config separate from the preserved user/project config.
+      - name: Install Codex and start isolated API-key proxy
+        uses: openai/codex-action@bdf19a4a223ec2549a3e2274a0cf61556bc07675 # v1
+        with:
+          openai-api-key: ${{ secrets[steps.provider.outputs.api_key_secret] }}
+          responses-api-endpoint: ${{ steps.provider.outputs.responses_endpoint }}
+          codex-version: '0.166.0'
+          codex-home: ${{ runner.temp }}/codex-ci/proxy
+          safety-strategy: drop-sudo
+      - name: Restore integrations and execute Codex privately
+        id: codex
+        env:
+          TASK_PROMPT: ${{ inputs.prompt }}
+          TASK_MODEL: ${{ steps.provider.outputs.model }}
+          CODEX_AUTH_BUNDLE: ${{ secrets.CODEX_AUTH_BUNDLE }}
+          CODEX_INTEGRATION_ENV_JSON: ${{ secrets.CODEX_INTEGRATION_ENV_JSON }}
+          AUTH_PUBLIC_KEY: ${{ needs.auth_key.outputs.key }}
+          AUTH_KEY_ID: ${{ needs.auth_key.outputs.key_id }}
+          REPOSITORY_PRIVATE: ${{ github.event.repository.private }}
+        run: '"$RUNNER_TEMP/codex-ci-tools/bin/python" "$RUNNER_TEMP/codex-ci/control/runtime.py" run'
+      - name: Upload encrypted refreshed authentication
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: codex-auth-sealed-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/codex-ci/sealed/auth-update.json
+          if-no-files-found: ignore
+          retention-days: 1
+      - name: Upload checked results and generated files as a binary patch
+        if: success()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: codex-result-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/codex-ci/artifacts/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Remove private authentication and logs
+        if: always()
+        run: |
+          if [[ -f "$RUNNER_TEMP/codex-ci/control/runtime.py" ]]; then
+            python3 "$RUNNER_TEMP/codex-ci/control/runtime.py" cleanup
+          fi
+
+  persist_auth:
+    needs: [auth_key, run]
+    if: always() && needs.auth_key.outputs.key != '' && needs.run.result != 'skipped'
+    runs-on: ubuntu-24.04
+    environment: codex-ci
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          pattern: codex-auth-sealed-${{ github.run_id }}-${{ github.run_attempt }}
+          merge-multiple: true
+          path: ${{ runner.temp }}/sealed
+      - name: Write encrypted value to the GitHub environment secret
+        env:
+          AUTH_ADMIN_TOKEN: ${{ secrets.AUTH_ADMIN_TOKEN }}
+          REPOSITORY_ID: ${{ github.event.repository.id }}
+          AUTH_KEY_ID: ${{ needs.auth_key.outputs.key_id }}
+          AUTH_RESTORED: ${{ needs.run.outputs.auth_restored }}
+        run: |
+          if [[ -f "$RUNNER_TEMP/sealed/auth-update.json" ]]; then
+            python3 scripts/codex_ci/github_state.py write "$RUNNER_TEMP/sealed/auth-update.json"
+          elif [[ "$AUTH_RESTORED" == 'true' ]]; then
+            echo '::error::Refreshed authentication artifact is missing. Reseed credentials before retrying.'
+            exit 1
+          else
+            echo 'No authentication was restored or refreshed.'
+          fi
+
+  publish:
+    needs: [run, persist_auth]
+    if: >-
+      always() && inputs.publish_changes && needs.run.result == 'success' &&
+      needs.run.outputs.has_changes == 'true' &&
+      (needs.persist_auth.result == 'success' || needs.persist_auth.result == 'skipped')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: codex-result-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/codex-results
+      - name: Commit on a new branch and open a pull request
+        env:
+          PUBLISH_TOKEN: ${{ github.token }}
+          ARTIFACT_DIR: ${{ runner.temp }}/codex-results
+          BASE_SHA: ${{ github.sha }}
+          BASE_BRANCH: ${{ github.event.repository.default_branch }}
+        run: python3 scripts/codex_ci/publish.py

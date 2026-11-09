@@ -2,3 +2,9 @@
 cli_auth_credentials_store = "file"
 mcp_oauth_credentials_store = "file"
 # Add portable MCP and marketplace definitions here. See docs/codex-remote.md.
+
+[mcp_servers.canva]
+url = "https://mcp.canva.com/mcp"
+required = true
+startup_timeout_sec = 60
+     

@@ -1,10 +1,12 @@
-# CI-only user configuration. Project .codex/config.toml is still loaded.
+# CI-only user configuration
 cli_auth_credentials_store = "file"
 mcp_oauth_credentials_store = "file"
-# Add portable MCP and marketplace definitions here. See docs/codex-remote.md.
 
 [mcp_servers.canva]
 url = "https://mcp.canva.com/mcp"
 required = true
 startup_timeout_sec = 60
-     
+
+# Allow design creation without interactive approval
+[mcp_servers.canva.tools.create_design]
+approval_mode = "approve"

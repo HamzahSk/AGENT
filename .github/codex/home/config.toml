@@ -8,5 +8,5 @@ required = true
 startup_timeout_sec = 60
 
 # Allow design creation without interactive approval
-[mcp_servers.canva.tools.create_design]
+[mcp_servers.canva.tools."create-design"]
 approval_mode = "approve"

@@ -1,3 +1,7 @@
 gh workflow run codex-remote.yml \
   --repo HamzahSk/AGENT \
   -f prompt="$(cat prompt.md)"
+  
+gh workflow run codex-remote.yml \
+  --repo HamzahSk/AGENT \
+  -f prompt='lakukan task dari prompt.md'

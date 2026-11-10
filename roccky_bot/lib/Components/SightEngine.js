@@ -1,0 +1,58 @@
+
+import { openAsBlob } from 'fs'
+import { basename } from 'path'
+
+import { request } from '../Request.js'
+
+const IMAGE_ENDPOINT = 'https://api.sightengine.com/1.0/check.json'
+const VIDEO_ENDPOINT = 'https://api.sightengine.com/1.0/video/check-sync.json'
+
+export default {
+   detectImage: async (filePath) => {
+      const form = new FormData()
+      form.append('media', await openAsBlob(filePath), basename(filePath))
+      form.append('models', 'nudity-2.1,gore-2.0,violence')
+      form.append('api_user', apiUser)
+      form.append('api_secret', apiSecret)
+
+      const data = await request(IMAGE_ENDPOINT, {
+         method: 'POST',
+         body: form
+      })
+      if (data.status !== 'success') return false
+
+      return data.nudity?.sexual_activity >= maxNSFWScore ||
+         data.nudity?.erotica >= maxNSFWScore ||
+         data.nudity?.suggestive >= maxNSFWScore ||
+         data.nudity?.very_suggestive >= maxNSFWScore ||
+         data.gore?.prob >= maxNSFWScore ||
+         data.violence?.prob >= maxNSFWScore
+   },
+
+   detectVideo: async (filePath) => {
+      const form = new FormData()
+      form.append('media', await openAsBlob(filePath), basename(filePath))
+      form.append('models', 'nudity-2.1,gore-2.0,violence')
+      form.append('api_user', apiUser)
+      form.append('api_secret', apiSecret)
+
+      const data = await request(VIDEO_ENDPOINT, {
+         method: 'POST',
+         body: form
+      })
+      if (data.status !== 'success') return false
+
+      let score = 0
+      for (const info of data.data.frames) {
+         if (score >= maxNSFWScore) break
+         score += info.nudity?.sexual_activity || 0
+         score += info.nudity?.erotica || 0
+         score += info.nudity?.suggestive || 0
+         score += info.nudity?.very_suggestive || 0
+         score += info.gore?.prob || 0
+         score += info.violence?.prob || 0
+      }
+
+      return score >= maxNSFWScore
+   }
+}

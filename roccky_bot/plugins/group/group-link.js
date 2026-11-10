@@ -10,7 +10,7 @@ export default {
       const print = frame('GROUP LINK', [
          'https://chat.whatsapp.com/' + code
       ], '🏷️')
-      m.reply(print)
+      await m.reply(print)
    },
    group: true,
    botAdmin: true

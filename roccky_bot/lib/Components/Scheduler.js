@@ -1,51 +1,40 @@
-
 import { MINUTE, NOTIFY_THRESHOLD } from '../Constants.js'
+import { reportError } from '../Runtime.js'
 
-export default ({ db, expire, notify }) =>
-   setInterval(() => {
-      const timestampMs = Date.now()
-
-      for (const user of db.users.values()) {
-         const expiry = user.premiumExpiry
-         if (!expiry) continue
-
-         const remaining = expiry - timestampMs
-         if (
-            remaining > 0 &&
-            remaining <= NOTIFY_THRESHOLD &&
-            !user._notifiedPremium
-         ) {
-            user._notifiedPremium = true
-            notify('user', user, remaining)
+export default ({ db, expire, notify, intervalMs = MINUTE }) => {
+   let active = null, stopped = false
+   const tick = () => {
+      if (active) return active
+      if (stopped) return Promise.resolve()
+      active = (async () => {
+         const now = Date.now()
+         for (const [type, records, field, notified] of [
+            ['user', db.users, 'premiumExpiry', '_notifiedPremium'],
+            ['group', db.groups, 'rentExpiry', '_notifiedRent']
+         ]) for (const record of records.values()) {
+            if (stopped) return
+            const expiry = record[field]
+            if (!(expiry > 0)) continue
+            const remaining = expiry - now
+            try {
+               if (remaining > 0 && remaining <= NOTIFY_THRESHOLD && !record[notified]) {
+                  await notify(type, record, remaining)
+                  record[notified] = true
+                  db.requestWrite()
+               }
+               if (remaining <= 0) {
+                  record[field] = 0
+                  record[notified] = false
+                  if (type === 'user') { record.limit = global.defaultLimit ?? 25; record.energy = 100 }
+                  db.requestWrite()
+                  await expire(type, record, remaining)
+               }
+            } catch (error) { reportError('Expiry notification', error) }
          }
-
-         if (remaining <= 0 && expiry > 0) {
-            user.limit = defaultLimit
-            user.energy = 100
-            user.premiumExpiry = 0
-            user._notifiedPremium = false
-            expire('user', user, remaining)
-         }
-      }
-
-      for (const group of db.groups.values()) {
-         const expiry = group.rentExpiry
-         if (!expiry) continue
-
-         const remaining = expiry - timestampMs
-         if (
-            remaining > 0 &&
-            remaining <= NOTIFY_THRESHOLD &&
-            !group._notifiedRent
-         ) {
-            group._notifiedRent = true
-            notify('group', group, remaining)
-         }
-
-         if (remaining <= 0 && expiry > 0) {
-            group.rentExpiry = 0
-            group._notifiedRent = false
-            expire('group', group, remaining)
-         }
-      }
-   }, MINUTE)
+      })().finally(() => { active = null })
+      return active
+   }
+   const timer = setInterval(() => { void tick().catch(error => reportError('Scheduler', error)) }, intervalMs)
+   timer.unref?.()
+   return { tick, stop() { stopped = true; clearInterval(timer); return active || Promise.resolve() } }
+}

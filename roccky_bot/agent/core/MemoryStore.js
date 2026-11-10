@@ -33,7 +33,7 @@ export class MemoryStore {
          state = JSON.parse(await readFile(this.pathFor(ownerId), 'utf8'))
       }
       catch (error) {
-         if (error.code !== 'ENOENT' && !(error instanceof SyntaxError)) throw error
+         if (error.code !== 'ENOENT') throw error
          state = initialState(ownerId)
       }
       state = { ...initialState(ownerId), ...state, ownerId }

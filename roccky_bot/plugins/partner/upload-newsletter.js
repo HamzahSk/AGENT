@@ -26,7 +26,7 @@ export default {
       if (command === 'playch') {
          if (!text)
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} you say run`)
-         m.react('🕒')
+         await m.react('🕒')
          const data = await ytsearch(text)
          if (!data.all?.length)
             return m.reply('❌ Failed to get data.')
@@ -42,7 +42,7 @@ export default {
             `*Duration*: ${firstVideo.timestamp || '0:00'}`,
             `*Uploaded*: ${firstVideo.ago || 'Long time ago'}`
          ], '🎵')
-         sock.sendText(setting.newsletterId, printCaption, null, {
+         await sock.sendText(setting.newsletterId, printCaption, null, {
             externalAdReply: {
                title: firstVideo.title,
                body: firstVideo.description,
@@ -56,12 +56,12 @@ export default {
          const context = await sock.sendMedia(setting.newsletterId, audioData.result.url, '', null, {
             ptt: true
          })
-         sock.sendText(m.chat, '✅ Successfully sent music to newsletter.', context)
+         await sock.sendText(m.chat, '✅ Successfully sent music to newsletter.', context)
       }
       else if (command === 'playvidch' || command === 'ptvch') {
          if (!text)
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} mayonaka`)
-         m.react('🕒')
+         await m.react('🕒')
          const data = await ytsearch(text)
          if (!data.all?.length)
             return m.reply('❌ Failed to get data.')
@@ -76,7 +76,7 @@ export default {
          const context = await sock.sendMedia(setting.newsletterId, videoData.result.url, firstVideo.title, null, {
             ptv: command === 'ptvch'
          })
-         sock.sendText(m.chat, '✅ Successfully sent video to newsletter.', context)
+         await sock.sendText(m.chat, '✅ Successfully sent video to newsletter.', context)
       }
       else if (command === 'upch') {
          const q = m.quoted ? m.quoted : m
@@ -84,7 +84,7 @@ export default {
          const mimetype = (q.msg || q).mimetype
          if (!body && !mimetype)
             return m.reply('💭 Provide text or media you would like to send to the newsletter.')
-         m.react('🕒')
+         await m.react('🕒')
          let context
          if (mimetype)
             context = await sock.sendMedia(setting.newsletterId, await q.download(), body, null, {
@@ -94,7 +94,7 @@ export default {
             })
          else if (body)
             context = await sock.sendText(setting.newsletterId, body)
-         sock.sendText(m.chat, '✅ Successfully sent message to newsletter.', context)
+         await sock.sendText(m.chat, '✅ Successfully sent message to newsletter.', context)
       }
    },
    partner: true

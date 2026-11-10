@@ -19,7 +19,7 @@ export default {
          )
       ) {
          const participant = group.participants[m.sender]
-         handleWarning(m, {
+         await handleWarning(m, {
             sock,
             participant,
             note: `3 warnings and you’ll be removed. Please don’t tag all group participants again.`,

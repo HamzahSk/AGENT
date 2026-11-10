@@ -13,7 +13,7 @@ export default {
       const mimetype = (q.msg || q).mimetype
       if (!body && !mimetype)
          return m.reply('💭 Provide text or media you would like to send to the status.')
-      m.react('🕒')
+      await m.react('🕒')
       const content = {}
       const options = {}
       if (mimetype) {
@@ -30,7 +30,7 @@ export default {
       }
       const ids = Array.from(store.groupMetadata.keys())
       const context = await sock.sendMessage(ids, content, options)
-      sock.sendText(m.chat, `✅ Successfully sent status to ${ids.length} groups.`, context)
+      await sock.sendText(m.chat, `✅ Successfully sent status to ${ids.length} groups.`, context)
    },
    owner: true
 }

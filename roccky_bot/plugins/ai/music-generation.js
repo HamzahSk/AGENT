@@ -16,7 +16,7 @@ export default {
          const [lyrics = '', title = '', tags = 'Acoustic', instrumental = 'no'] = text.split('|')
          if (!text || !title || !lyrics)
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} [Verse]\nI watch you from a quiet place\nEvery smile I try to trace\n\n[Chorus]\nBrother, you’re my only light\nToo close, but never in sight | Close to You | Acoustic`)
-         m.react('🕒')
+         await m.react('🕒')
          const data = await zenzxz('ai/songgenlyrics', undefined, {
             method: 'POST',
             headers: {
@@ -47,7 +47,7 @@ export default {
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

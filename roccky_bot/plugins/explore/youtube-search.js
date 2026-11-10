@@ -25,7 +25,7 @@ export default {
             const result = userPreviousResult[Number(text) - 1]
             if (!result)
                return m.reply(`❌ Invalid input.`)
-            m.react('🕒')
+            await m.react('🕒')
             if (result.seconds > 1440)
                return m.reply('❌ Video is too long. Maximum duration is 24 minutes.')
             const shouldAsAudio = command === 'ytsa'
@@ -37,7 +37,7 @@ export default {
             })
             if (!data.status)
                return m.reply('❌ Failed to get data.')
-            sock.sendMedia(m.chat, data.result.url, result.title, m, {
+            await sock.sendMedia(m.chat, data.result.url, result.title, m, {
                audio: shouldAsAudio,
                ptt: shouldAsAudio && isJidNewsletter(m.chat)
             })
@@ -45,7 +45,7 @@ export default {
          else {
             if (!text)
                return m.reply(`👉🏻 *Example*: ${isPrefix + command} abnormal heat`)
-            m.react('🕒')
+            await m.react('🕒')
             const data = await ytsearch(text)
             if (!data.all?.length)
                return m.reply('❌ Failed to get data.')
@@ -66,13 +66,13 @@ export default {
             ], '📄')
             const printList = frame('YOUTUBE SEARCH', flattedResult, '🎥')
             ExploreSession.set(keyCache, data.all)
-            m.reply(printHowTo + '\n\n' +
+            await m.reply(printHowTo + '\n\n' +
                printList)
          }
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

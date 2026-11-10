@@ -49,7 +49,7 @@ export default {
          `*Mute*: ${group.mute ? '✅' : '❌'}`,
          `*Expired*: ${group.rentExpiry > 0 ? toTime(group.rentExpiry) : 'Unset'}`
       ], '💬')
-      m.reply(printGroupInfo + '\n\n' +
+      await m.reply(printGroupInfo + '\n\n' +
          printModeration + '\n\n' +
          printStatus, {
          externalAdReply: {

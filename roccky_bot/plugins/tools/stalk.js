@@ -13,7 +13,7 @@ export default {
          if (command === 'dcstalk') {
             if (!args[0])
                return m.reply(`👉🏻 *Example*: ${isPrefix + command} 1355400581027729428`)
-            m.react('🕒')
+            await m.react('🕒')
             const data = await zenzxz('stalker/discord', {
                id: args[0]
             })
@@ -25,7 +25,7 @@ export default {
                `*Banner Color*: ${data.result.banner_color}`,
                `*Created At*: ${data.result.created}`
             ], '🗒️')
-            m.reply(printInfo, {
+            await m.reply(printInfo, {
                externalAdReply: {
                   title: data.result.display_name,
                   body: data.result.global_name,
@@ -37,7 +37,7 @@ export default {
          else if (command === 'ffstalk') {
             if (!args[0])
                return m.reply(`👉🏻 *Example*: ${isPrefix + command} 16207002`)
-            m.react('🕒')
+            await m.react('🕒')
             const data = await zenzxz('stalker/ffstalk', {
                id: args[0]
             })
@@ -60,13 +60,13 @@ export default {
                `*Member*: ${data.result.clanbasicinfo.membernum}`,
                `*Honor Point*: ${data.result.clanbasicinfo.honorpoint}`
             ], '👥')
-            m.reply(printInfo + '\n\n' +
+            await m.reply(printInfo + '\n\n' +
                printClan)
          }
          else if (command === 'igstalk') {
             if (!args[0])
                return m.reply(`👉🏻 *Example*: ${isPrefix + command} instagram`)
-            m.react('🕒')
+            await m.react('🕒')
             const data = await zenzxz('stalker/instagram', {
                username: args[0]
             })
@@ -85,7 +85,7 @@ export default {
             const printBio = frame('BIO', [
                `${data.result.bio}`
             ], '💭')
-            m.reply(printInfo + '\n\n' +
+            await m.reply(printInfo + '\n\n' +
                printStatistic + '\n\n' +
                printBio, {
                externalAdReply: {
@@ -99,7 +99,7 @@ export default {
          else if (command === 'robloxstalk') {
             if (!args[0])
                return m.reply(`👉🏻 *Example*: ${isPrefix + command} builderman`)
-            m.react('🕒')
+            await m.react('🕒')
             const data = await zenzxz('stalker/roblox', {
                user: args[0]
             })
@@ -117,13 +117,13 @@ export default {
                `*Followers*: ${formatNumber(data.result.social.followers?.count || 0)}`,
                `*Following*: ${formatNumber(data.result.social.following?.count || 0)}`
             ], '💬')
-            m.reply(printInfo + '\n\n' +
+            await m.reply(printInfo + '\n\n' +
                printSocial)
          }
          else if (command === 'ttstalk') {
             if (!args[0])
                return m.reply(`👉🏻 *Example*: ${isPrefix + command} khaby.lame`)
-            m.react('🕒')
+            await m.react('🕒')
             const data = await zenzxz('stalker/tiktok', {
                username: args[0]
             })
@@ -144,7 +144,7 @@ export default {
             const printBio = frame('BIO', [
                ...data.result.bio.split('\\n')
             ], '💭')
-            m.reply(printInfo + '\n\n' +
+            await m.reply(printInfo + '\n\n' +
                printStatistic + '\n\n' +
                printBio, {
                externalAdReply: {
@@ -158,7 +158,7 @@ export default {
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    premium: true,

@@ -9,7 +9,7 @@ export default {
       command
    }) {
       try {
-         m.react('🕒')
+         await m.react('🕒')
          const path = command === 'kicked' ?
             'kick' :
             command
@@ -23,7 +23,7 @@ export default {
             sticker: true
          })
          if (userId && message)
-            sock.sendText(
+            await sock.sendText(
                m.chat,
                `✨ @${m.sender.split('@')[0]} ${message} ${
                   userId === m.sender
@@ -36,7 +36,7 @@ export default {
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: true

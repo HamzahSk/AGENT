@@ -20,7 +20,7 @@ export const handleWarning = async (m, {
          }
       })
       await m.reply(print)
-      sock.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
+      await sock.groupParticipantsUpdate(m.chat, [m.sender], 'remove')
    }
    else {
       const print = frame('WARNING', [
@@ -35,7 +35,7 @@ export const handleWarning = async (m, {
             participant: m.sender
          }
       })
-      m.reply(print)
+      await m.reply(print)
    }
 }
 
@@ -54,7 +54,7 @@ export default {
          isURL(body)
       ) {
          const participant = group.participants[m.sender]
-         handleWarning(m, {
+         await handleWarning(m, {
             sock,
             participant,
             note: `5 warnings and you’ll be removed. No more sending any type of link.`
@@ -67,7 +67,7 @@ export default {
          isWhatsAppURL(body)
       ) {
          const participant = group.participants[m.sender]
-         handleWarning(m, {
+         await handleWarning(m, {
             sock,
             participant,
             note: `5 warnings and you’ll be removed. No sending group or channel links.`

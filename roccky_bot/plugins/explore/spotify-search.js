@@ -23,7 +23,7 @@ export default {
             const result = userPreviousResult[Number(text) - 1]
             if (!result)
                return m.reply(`❌ Invalid input.`)
-            m.react('🕒')
+            await m.react('🕒')
             const trackUrl = 'https://open.spotify.com/track/' + result.id
             const data = await zenzxz('download/spotify', {
                url: trackUrl
@@ -35,7 +35,7 @@ export default {
                `*Artist*: ${data.result.artist}`,
                `*Duration*: ${toTime(data.result.duration_ms)}`
             ], '🎵')
-            m.reply(printMessage, {
+            await m.reply(printMessage, {
                externalAdReply: {
                   title: data.result.title,
                   body: '✍🏻 Artist: ' + data.result.artist,
@@ -45,7 +45,7 @@ export default {
                   largeThumbnail: true
                }
             })
-            sock.sendMedia(m.chat, data.result.download_url, '', m, {
+            await sock.sendMedia(m.chat, data.result.download_url, '', m, {
                audio: true,
                ptt: isJidNewsletter(m.chat)
             })
@@ -53,7 +53,7 @@ export default {
          else {
             if (!text)
                return m.reply(`👉🏻 *Example*: ${isPrefix + command} heat abnormal`)
-            m.react('🕒')
+            await m.react('🕒')
             const data = await zenzxz('search/spotify', {
                q: text
             })
@@ -74,13 +74,13 @@ export default {
             ], '📄')
             const printList = frame('SPOTIFY SEARCH', flattedResult, '🎶')
             ExploreSession.set(keyCache, data.result.results)
-            m.reply(printHowTo + '\n\n' +
+            await m.reply(printHowTo + '\n\n' +
                printList)
          }
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

@@ -15,7 +15,7 @@ export default {
       try {
          if (!text)
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} abnormal heat`)
-         m.react('🕒')
+         await m.react('🕒')
          const data = await zenzxz('search/spotify', {
             q: text
          })
@@ -33,7 +33,7 @@ export default {
             `*Artist*: ${audioData.result.artist}`,
             `*Duration*: ${toTime(audioData.result.duration_ms)}`
          ], '🎵')
-         m.reply(printMessage, {
+         await m.reply(printMessage, {
             externalAdReply: {
                title: audioData.result.title,
                body: '✍🏻 Artist: ' + audioData.result.artist,
@@ -43,14 +43,14 @@ export default {
                largeThumbnail: true
             }
          })
-         sock.sendMedia(m.chat, audioData.result.download_url, '', m, {
+         await sock.sendMedia(m.chat, audioData.result.download_url, '', m, {
             audio: true,
             ptt: isJidNewsletter(m.chat)
          })
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

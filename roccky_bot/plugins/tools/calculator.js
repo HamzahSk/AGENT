@@ -50,11 +50,11 @@ export default {
             return m.reply('❌ Invalid expression or undefined result.')
          let readable = trimmed
          for (const [key, value] of Object.entries(REVERSE_MAP)) readable = readable.replace(new RegExp(key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), value)
-         m.reply(`🧮 *${readable}* = ${result}`)
+         await m.reply(`🧮 *${readable}* = ${result}`)
       }
       catch (error) {
          console.error(error)
-         m.reply(`👉🏻 *Example*: ${isPrefix + command} 2 * 5`)
+         await m.reply(`👉🏻 *Example*: ${isPrefix + command} 2 * 5`)
       }
    }
 }

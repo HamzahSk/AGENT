@@ -1,187 +1,99 @@
-import { watch } from 'fs'
-import { readdir, stat } from 'fs/promises'
-import { basename, join } from 'path'
-import { Func } from '#func'
+import { createRequire } from 'node:module'
+import { watch } from 'node:fs'
+import { readdir, stat } from 'node:fs/promises'
+import { resolve, join } from 'node:path'
+import { pathToFileURL } from 'node:url'
+import { reportError } from './Runtime.js'
 
 export const FileCache = new Map()
-export const ModuleCache = new Map() // Sekarang menyimpan: filePath -> [module1, module2, ...]
+export const ModuleCache = new Map()
 export const CommandIndex = new Map()
 export const EventIndex = new Set()
-const Processing = new Set()
+export let registryRevision = 0
+const watchers = new Map(), changes = new Map()
+const require = createRequire(import.meta.url)
+const array = value => value == null ? [] : Array.isArray(value) ? value : [value]
+const commands = module => [...array(module.command), ...array(module.hidden)].filter(value => typeof value === 'string').map(value => value.replace(/\s+/g, '').toLowerCase())
 
-const normalizeCommand = (string) =>
-   string
-      .replace(/\s+/g, '')
-      .toLowerCase()
-
-export const indexModule = (module) => {
-   if (module.command) {
-      for (const key of ['command', 'hidden'])
-         for (const value of Func.toArray(module[key])) {
-            if (typeof value !== 'string') continue
-            CommandIndex.set(normalizeCommand(value), module)
-         }
-   }
-   else if (!EventIndex.has(module))
-      EventIndex.add(module)
-}
-
-// DIUBAH: Mendukung penghapusan banyak modul dalam satu file
-export const unindexModule = (filePath) => {
-   const cachedModules = ModuleCache.get(filePath)
-   if (!cachedModules) return
-
-   // Karena tipenya array, kita looping setiap sub-modul di dalamnya
-   for (const cachedModule of cachedModules) {
-      if (cachedModule.command) {
-         for (const key of ['command', 'hidden'])
-            for (const value of Func.toArray(cachedModule[key]))
-               CommandIndex.delete(normalizeCommand(value))
-      }
-      else if (EventIndex.has(cachedModule))
-         EventIndex.delete(cachedModule)
-   }
-
-   ModuleCache.delete(filePath)
-}
-
-// DIUBAH: Mendukung pembacaan modul tunggal maupun array
-const loadModule = async (filePath) => {
-   try {
-      const url = new URL(`file://${join(process.cwd(), filePath)}?update=${Date.now()}`)
-      const mod = await import(url.href)
-      const rawModule = mod.default ?? mod
-
-      // Mengubah ke bentuk array jika modul yang di-export berbentuk single object
-      const modules = Array.isArray(rawModule) ? rawModule : [rawModule]
-      const validModules = []
-
-      for (const module of modules) {
-         if (module?.run) {
-            indexModule(module)
-            validModules.push(module)
-         }
-      }
-
-      // Simpan semua modul valid dari file ini ke dalam cache
-      if (validModules.length > 0) {
-         ModuleCache.set(filePath, validModules)
-      }
-
-      return mod
-   }
-   catch (error) {
-      console.error('❌ Failed to load', ':', filePath)
-      console.error(error)
-   }
-}
-
-// Beban maksimum module yang di-import secara bersamaan saat startup
-const LOAD_CONCURRENCY = 8
-
-const pool = async (items, worker) => {
-   let index = 0
-   const runner = async () => {
-      while (index < items.length) {
-         const current = items[index++]
-         await worker(current)
-      }
-   }
-   const workers = Math.min(LOAD_CONCURRENCY, items.length)
-   if (workers <= 1) {
-      for (const item of items) await worker(item)
-      return
-   }
-   await Promise.all(Array.from({ length: workers }, runner))
-}
-
-export const scanDirectory = async (directory) => {
-   const entries = await readdir(directory, { withFileTypes: true })
-
-   const fileTasks = []
-   const dirTasks = []
-
-   for (const entry of entries) {
-      const fullPath = join(directory, entry.name)
-
-      if (entry.isDirectory()) {
-         dirTasks.push(fullPath)
+export const indexModule = module => {
+   if (module.command) for (const command of commands(module)) {
+      if (CommandIndex.has(command) && CommandIndex.get(command) !== module) {
+         console.warn(`[Plugins] Duplicate command skipped: ${command}`)
          continue
       }
-      else if (entry.isFile() || fullPath.endsWith('.js')) {
-         const stats = await stat(fullPath)
-
-         FileCache.set(fullPath, {
-            mtimeMs: stats.mtimeMs,
-            size: stats.size
-         })
-
-         fileTasks.push(fullPath)
-      }
+      CommandIndex.set(command, module)
    }
-
-   // Load module & subdirektori secara paralel (pembatas konkurensi)
-   // untuk memangkas waktu startup secara signifikan.
-   await pool(fileTasks, loadModule)
-   await pool(dirTasks, scanDirectory)
-
-   await watchDirectory(directory)
+   else EventIndex.add(module)
+   registryRevision++
 }
-
-const watchDirectory = async (directory) => {
-   watch(directory, (event, fileName) => {
-      if (!fileName) return
-
-      handleChange(join(directory, fileName))
-   })
-
-   const entries = await readdir(directory, { withFileTypes: true })
-
-   for (const entry of entries)
-      if (entry.isDirectory())
-         watchDirectory(join(directory, entry.name))
+export const unindexModule = file => {
+   for (const module of array(ModuleCache.get(file))) {
+      for (const command of commands(module)) if (CommandIndex.get(command) === module) CommandIndex.delete(command)
+      EventIndex.delete(module)
+   }
+   ModuleCache.delete(file)
+   registryRevision++
 }
-
-const handleChange = async (filePath) => {
-   if (!filePath.endsWith('.js')) return
-   if (Processing.has(filePath)) return
-
-   Processing.add(filePath)
-
+export const loadModule = async (file, reload = false) => {
    try {
-      await Func.delay(500)
-
-      const stats = await stat(filePath)
-
-      if (!stats.isFile()) return
-
-      const cachedFile = FileCache.get(filePath)
-
-      const changed =
-         !cachedFile ||
-         cachedFile.mtimeMs !== stats.mtimeMs ||
-         cachedFile.size !== stats.size
-
-      if (!changed) return
-
-      unindexModule(filePath)
-      FileCache.set(filePath, {
-         mtimeMs: stats.mtimeMs,
-         size: stats.size
+      const url = pathToFileURL(resolve(file))
+      if (reload) {
+         if (typeof Bun !== 'undefined') delete require.cache[resolve(file)]
+         url.searchParams.set('update', String(++registryRevision))
+      }
+      const mod = await import(url.href)
+      const modules = array(mod.default ?? mod).filter(value => typeof value?.run === 'function')
+      if (!modules.length) throw new TypeError('Plugin must export a run function')
+      // Keep the previous working plugin if import/validation failed.
+      unindexModule(file)
+      ModuleCache.set(file, modules)
+      modules.forEach(indexModule)
+      const info = await stat(file)
+      FileCache.set(file, { mtimeMs: info.mtimeMs, size: info.size })
+      return true
+   } catch (error) { reportError(`Plugin load ${file}`, error); return false }
+}
+export const scanDirectory = async (directory, { hotReload = global.hotReload === true } = {}) => {
+   directory = resolve(directory)
+   const entries = (await readdir(directory, { withFileTypes: true })).sort((a, b) => a.name.localeCompare(b.name))
+   for (const entry of entries) {
+      const file = join(directory, entry.name)
+      if (entry.isDirectory()) await scanDirectory(file, { hotReload })
+      else if (entry.isFile() && file.endsWith('.js') && !FileCache.has(file)) await loadModule(file)
+   }
+   if (hotReload && !watchers.has(directory)) {
+      const watcher = watch(directory, (_event, name) => {
+         if (!name?.endsWith('.js')) return
+         const file = join(directory, name)
+         clearTimeout(changes.get(file))
+         changes.set(file, setTimeout(() => {
+            changes.delete(file)
+            void handleChange(file).catch(error => reportError('Plugin watcher', error))
+         }, 500))
       })
-
-      await loadModule(filePath)
-
-      console.log(cachedFile ? '🔔 Updated' : '➕ Added', ':', filePath)
+      watcher.on('error', error => reportError('Plugin watcher', error))
+      watchers.set(directory, watcher)
    }
-   catch {
-      FileCache.delete(filePath)
-      unindexModule(filePath)
-      console.log('🗑️ Deleted', ':', filePath)
+}
+const handleChange = async file => {
+   try {
+      const info = await stat(file)
+      if (info.isFile()) await loadModule(file, true)
+   } catch (error) {
+      if (error.code !== 'ENOENT') throw error
+      FileCache.delete(file)
+      unindexModule(file)
    }
-   finally {
-      await Func.delay(300)
+}
+export const closeWatchers = () => {
+   for (const watcher of watchers.values()) watcher.close()
+   for (const timer of changes.values()) clearTimeout(timer)
+   watchers.clear(); changes.clear()
+}
 
-      Processing.delete(filePath)
+export const pluginLifecycle = async (event, sock) => {
+   const modules = new Set([...ModuleCache.values()].flatMap(array))
+   for (const module of modules) if (typeof module[event] === 'function') {
+      try { await module[event](sock) } catch (error) { reportError(`Plugin ${event}`, error) }
    }
 }

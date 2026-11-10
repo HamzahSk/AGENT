@@ -965,6 +965,8 @@ const commandHandler = {
 // This handler exposes no learning action and stores no learner data.
 const socketBinder = {
    owner: true,
+   onConnect(sock) { runtime.sock = sock },
+   onDisconnect(sock) { if (runtime.sock === sock) runtime.sock = null },
    async run(_m, context) {
       runtime.sock = context.sock
    }

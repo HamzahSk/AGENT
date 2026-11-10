@@ -17,7 +17,7 @@ export default {
          const [name = m.pushName, followers = `${randomInteger(100, 10000)}`, desc = 'Weekly fresh updates', date = '27/05/26'] = text.split('|')
          if (!text)
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} Starseed | 1000 | Weekly fresh updates | 27/05/26`)
-         m.react('🕒')
+         await m.react('🕒')
          let profilePicture
          if (mimetype)
             profilePicture = await q.download()
@@ -35,11 +35,11 @@ export default {
          })
          if (!Buffer.isBuffer(data))
             return m.reply('❌ Failed to get data.')
-         sock.sendMedia(m.chat, data, '', m)
+         await sock.sendMedia(m.chat, data, '', m)
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

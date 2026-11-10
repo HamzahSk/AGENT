@@ -17,7 +17,7 @@ export default {
          const [name = m.pushName, username = m.pushName, following = `${randomInteger(1, 1000)}`, followers = `${randomInteger(1, 1000)}`, likes = `${randomInteger(1, 100000)}`] = text.split('|')
          if (!text)
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} Lia Wynn | @itsliaaa | 10 | 100 | 1000 | 100000`)
-         m.react('🕒')
+         await m.react('🕒')
          let profilePicture
          if (mimetype)
             profilePicture = await q.download()
@@ -36,11 +36,11 @@ export default {
          })
          if (!Buffer.isBuffer(data))
             return m.reply('❌ Failed to get data.')
-         sock.sendMedia(m.chat, data, '', m)
+         await sock.sendMedia(m.chat, data, '', m)
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

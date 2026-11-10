@@ -40,11 +40,11 @@ export default {
             return m.reply('❌ Request not found.')
          const action = command === 'accjoin' ? 'approve' : 'reject'
          await sock.groupRequestParticipantsUpdate(m.chat, [target.jid], action)
-         m.reply(`✅ Successfully ${action}d @${target.jid.split('@')[0]}.`)
+         await m.reply(`✅ Successfully ${action}d @${target.jid.split('@')[0]}.`)
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    group: true,

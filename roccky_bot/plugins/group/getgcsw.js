@@ -12,8 +12,8 @@ export default {
       const mimetype = (q.msg || q).mimetype
       if (!mimetype)
          return m.reply('💭 Reply media message in group status.')
-      m.react('🕒')
-      sock.sendMedia(m.chat, await q.download(), q.text || '', m, {
+      await m.react('🕒')
+      await sock.sendMedia(m.chat, await q.download(), q.text || '', m, {
          audio: isMimeAudio(mimetype),
          ptt: q.ptt
       })

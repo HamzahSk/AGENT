@@ -13,7 +13,7 @@ export default {
       try {
          if (!text)
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} cat eat banana`)
-         m.react('🕒')
+         await m.react('🕒')
          const path = command === 'animagine' ?
             'animagine/xl-3.1' :
             command === 'cartoony' ?
@@ -31,11 +31,11 @@ export default {
             data.result,
             720, null
          )
-         sock.sendMedia(m.chat, buffer, '', m)
+         await sock.sendMedia(m.chat, buffer, '', m)
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

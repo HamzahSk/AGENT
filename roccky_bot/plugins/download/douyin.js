@@ -16,7 +16,7 @@ export default {
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} https://v.douyin.com/if894Bb/`)
          if (!args[0].includes('douyin.com'))
             return m.reply('❌ Invalid URL.')
-         m.react('🕒')
+         await m.react('🕒')
          const data = await nexray('downloader/douyin', {
             url: args[0]
          })
@@ -35,14 +35,14 @@ export default {
             }, {
                quoted: m
             })
-         sock.sendMedia(m.chat, videoContent.url, data.result.title, m, {
+         await sock.sendMedia(m.chat, videoContent.url, data.result.title, m, {
             audio: command === 'doump3',
             ptt: command === 'douvn' || isJidNewsletter(m.chat)
          })
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

@@ -1,6 +1,8 @@
 import DefineQuiz from '../lib/Components/QuizFactory.js'
 
-DefineQuiz('brainout.json', {
+const modules = []
+
+modules.push(...await DefineQuiz('brainout.json', {
    command: 'brainout',
    clueCommand: 'cluebrain',
    passCommand: 'skipbrain',
@@ -8,9 +10,9 @@ DefineQuiz('brainout.json', {
    emoji: '🧠',
    questionField: 'pertanyaan',
    answerField: 'jawaban'
-})
+}))
 
-DefineQuiz('caklontong.json', {
+modules.push(...await DefineQuiz('caklontong.json', {
    command: 'caklontong',
    clueCommand: 'cluecak',
    passCommand: 'skipcak',
@@ -18,9 +20,9 @@ DefineQuiz('caklontong.json', {
    emoji: '💭',
    questionField: 'pertanyaan',
    answerField: 'jawaban'
-})
+}))
 
-DefineQuiz('heroff.json', {
+modules.push(...await DefineQuiz('heroff.json', {
    command: 'heroff',
    hidden: 'tebakff',
    clueCommand: 'clueff',
@@ -30,9 +32,9 @@ DefineQuiz('heroff.json', {
    mediaSource: 'img',
    questionField: 'Which hero is this?',
    answerField: 'jawaban'
-})
+}))
 
-DefineQuiz('heroml.json', {
+modules.push(...await DefineQuiz('heroml.json', {
    command: 'heroml',
    hidden: 'tebakml',
    clueCommand: 'clueml',
@@ -42,9 +44,9 @@ DefineQuiz('heroml.json', {
    mediaSource: 'image',
    questionField: 'Which hero is this?',
    answerField: 'name'
-})
+}))
 
-DefineQuiz('jkt48.json', {
+modules.push(...await DefineQuiz('jkt48.json', {
    command: 'jkt48',
    clueCommand: 'cluejkt',
    passCommand: 'skipjkt',
@@ -53,9 +55,9 @@ DefineQuiz('jkt48.json', {
    mediaSource: 'img',
    questionField: 'Who\'s she?',
    answerField: 'jawaban'
-})
+}))
 
-DefineQuiz('koreandrama.json', {
+modules.push(...await DefineQuiz('koreandrama.json', {
    command: 'drakor',
    clueCommand: 'cluedrakor',
    passCommand: 'skipdrakor',
@@ -64,9 +66,9 @@ DefineQuiz('koreandrama.json', {
    mediaSource: 'img',
    questionField: 'deskripsi',
    answerField: 'jawaban'
-})
+}))
 
-DefineQuiz('riddle.json', {
+modules.push(...await DefineQuiz('riddle.json', {
    command: 'riddle',
    hidden: 'tekateki',
    clueCommand: 'clueriddle',
@@ -75,9 +77,9 @@ DefineQuiz('riddle.json', {
    emoji: '🔎',
    questionField: 'pertanyaan',
    answerField: 'jawaban'
-})
+}))
 
-DefineQuiz('whatanimal.json', {
+modules.push(...await DefineQuiz('whatanimal.json', {
    command: 'whatanimal',
    hidden: 'tebakhewan',
    clueCommand: 'clueanimal',
@@ -86,9 +88,9 @@ DefineQuiz('whatanimal.json', {
    emoji: '🐱',
    questionField: 'soal',
    answerField: 'jawaban'
-})
+}))
 
-DefineQuiz('whatchemistry.json', {
+modules.push(...await DefineQuiz('whatchemistry.json', {
    command: 'whatchemistry',
    hidden: 'tebakkimia',
    clueCommand: 'cluechemistry',
@@ -97,9 +99,9 @@ DefineQuiz('whatchemistry.json', {
    emoji: '🧪',
    questionField: 'lambang',
    answerField: 'unsur'
-})
+}))
 
-DefineQuiz('whatcountry.json', {
+modules.push(...await DefineQuiz('whatcountry.json', {
    command: 'whatcountry',
    hidden: 'tebaknegara',
    clueCommand: 'cluecountry',
@@ -108,9 +110,9 @@ DefineQuiz('whatcountry.json', {
    emoji: '🗺️',
    questionField: 'soal',
    answerField: 'jawaban'
-})
+}))
 
-DefineQuiz('whatfilm.json', {
+modules.push(...await DefineQuiz('whatfilm.json', {
    command: 'whatfilm',
    hidden: 'tebakfilm',
    clueCommand: 'cluefilm',
@@ -119,9 +121,9 @@ DefineQuiz('whatfilm.json', {
    emoji: '🎥',
    questionField: 'soal',
    answerField: 'jawaban'
-})
+}))
 
-DefineQuiz('whatflag.json', {
+modules.push(...await DefineQuiz('whatflag.json', {
    command: 'whatflag',
    hidden: 'tebakbendera',
    clueCommand: 'clueflag',
@@ -131,9 +133,9 @@ DefineQuiz('whatflag.json', {
    mediaSource: 'img',
    questionField: 'Which flag is this?',
    answerField: 'name'
-})
+}))
 
-DefineQuiz('whatfood.json', {
+modules.push(...await DefineQuiz('whatfood.json', {
    command: 'whatfood',
    hidden: 'tebakmakanan',
    clueCommand: 'cluefood',
@@ -143,9 +145,9 @@ DefineQuiz('whatfood.json', {
    mediaSource: 'img',
    questionField: 'deskripsi',
    answerField: 'jawaban'
-})
+}))
 
-DefineQuiz('whatlyric.json', {
+modules.push(...await DefineQuiz('whatlyric.json', {
    command: 'whatlyric',
    hidden: 'tebaklirik',
    clueCommand: 'cluelyric',
@@ -154,9 +156,9 @@ DefineQuiz('whatlyric.json', {
    emoji: '🎼',
    questionField: 'soal',
    answerField: 'jawaban'
-})
+}))
 
-DefineQuiz('whatpicture.json', {
+modules.push(...await DefineQuiz('whatpicture.json', {
    command: 'whatpicture',
    hidden: 'tebakgambar',
    clueCommand: 'cluepicture',
@@ -166,9 +168,9 @@ DefineQuiz('whatpicture.json', {
    mediaSource: 'img',
    questionField: 'deskripsi',
    answerField: 'jawaban'
-})
+}))
 
-DefineQuiz('whatprofession.json', {
+modules.push(...await DefineQuiz('whatprofession.json', {
    command: 'whatprofession',
    hidden: 'tebakprofesi',
    clueCommand: 'clueprofession',
@@ -177,9 +179,9 @@ DefineQuiz('whatprofession.json', {
    emoji: '👩🏻‍🚒',
    questionField: 'soal',
    answerField: 'jawaban'
-})
+}))
 
-DefineQuiz('whatword.json', {
+modules.push(...await DefineQuiz('whatword.json', {
    command: 'whatword',
    hidden: 'tebakkata',
    clueCommand: 'clueword',
@@ -188,9 +190,9 @@ DefineQuiz('whatword.json', {
    emoji: '💬',
    questionField: 'acak',
    answerField: 'jawaban'
-})
+}))
 
-DefineQuiz('whoami.json', {
+modules.push(...await DefineQuiz('whoami.json', {
    command: 'whoami',
    hidden: 'siapaaku',
    clueCommand: 'cluewho',
@@ -199,4 +201,6 @@ DefineQuiz('whoami.json', {
    emoji: '❔',
    questionField: 'pertanyaan',
    answerField: 'jawaban'
-})
+}))
+
+export default modules

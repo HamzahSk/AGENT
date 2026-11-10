@@ -137,3 +137,12 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Private runtime snapshots and authentication state
+auth/
+session/
+sessions/
+*.pending
+*.temp
+database.json
+store.json

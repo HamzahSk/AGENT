@@ -11,6 +11,7 @@ export default {
    category: 'group',
    async run(m, {
       sock,
+      command,
       isPrefix,
       args
    }) {
@@ -20,13 +21,13 @@ export default {
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} 7d\n*Option*: off | 1d | 7d | 90d`)
          const seconds = EPHEMERAL_MAP[option]
          await sock.groupToggleEphemeral(m.chat, seconds)
-         m.reply(seconds === 0 ?
+         await m.reply(seconds === 0 ?
             '✅ Successfully turned off disappearing messages.' :
             `✅ Successfully set disappearing messages to *${option}*.`)
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    group: true,

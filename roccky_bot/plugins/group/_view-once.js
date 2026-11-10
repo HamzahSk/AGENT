@@ -22,7 +22,7 @@ export default {
             forward: m,
             force: true
          })
-         sock.sendText(m.chat, `👁️ View once message from @${m.sender.split('@')[0]}.`, context)
+         await sock.sendText(m.chat, `👁️ View once message from @${m.sender.split('@')[0]}.`, context)
       }
    },
    group: true

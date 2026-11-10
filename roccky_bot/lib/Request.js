@@ -1,43 +1,9 @@
-import { Func } from '#func'
-
+import { fetchBuffer } from './Http.js'
 export const request = async (url, options = {}) => {
-   const controller = new AbortController()
-   const timeoutId = setTimeout(() =>
-      controller.abort(), requestTimeout)
-
-   try {
-      options.signal = controller.signal
-
-      const response = await fetch(url, options)
-
-      if (!response.ok) {
-         await response.body?.cancel()
-         throw new Error(response.statusText)
-      }
-
-      const contentType = response.headers.get('content-type')
-
-      if (
-         Func.isMimeAudio(contentType) ||
-         Func.isMimeImage(contentType) ||
-         Func.isMimeVideo(contentType) ||
-         contentType?.includes('octet')
-      )
-         return Buffer.from(await response.arrayBuffer())
-
-      if (contentType?.startsWith('text'))
-         return await response.text()
-
-      return await response.json()
-   }
-   catch (error) {
-      if (controller.signal.aborted)
-         throw new Error(`Request timeout after ${requestTimeout}ms`)
-      throw error
-   }
-   finally {
-      clearTimeout(timeoutId)
-   }
+   const { buffer, contentType } = await fetchBuffer(url, options)
+   if (/^(audio|image|video)\//i.test(contentType) || /octet|application\/(pdf|zip)/i.test(contentType)) return buffer
+   if (contentType.startsWith('text')) return buffer.toString('utf8')
+   return JSON.parse(buffer.toString('utf8'))
 }
 
 export const deline = async (path = '', params = {}, options) =>

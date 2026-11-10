@@ -18,10 +18,10 @@ const notifySender = async (m, {
       `💬 Someone from ${groupMetadata.subject}'s group, tagged or mentioned you.`,
       `👤 *Sender*: @${m.sender.split('@')[0]}`
    ], '👋🏻')
-   sock.sendText(m.chat, printNotifySender, m)
+   await sock.sendText(m.chat, printNotifySender, m)
    if (!setting.afkNotifier) return
    await delay(3000)
-   sock.sendText(userData.jid, printNotifyAFK, m)
+   await sock.sendText(userData.jid, printNotifyAFK, m)
 }
 
 export default {

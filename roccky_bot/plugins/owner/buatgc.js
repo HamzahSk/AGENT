@@ -4,6 +4,7 @@ export default {
    category: 'owner',
    async run(m, {
       sock,
+      command,
       isPrefix,
       text
    }) {
@@ -16,14 +17,14 @@ export default {
          const participants = rest.map(number =>
             number.replace(/\D/g, '') + '@s.whatsapp.net'
          )
-         m.react('🕒')
+         await m.react('🕒')
          const group = await sock.groupCreate(title, participants)
          await m.reply(`✅ Successfully created group *${title}*.`)
-         sock.sendText(group.id, `👋 Halo! Grup ini dibuat oleh *${botName}*.`)
+         await sock.sendText(group.id, `👋 Halo! Grup ini dibuat oleh *${botName}*.`)
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    owner: true

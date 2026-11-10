@@ -12,7 +12,7 @@ export default {
       try {
          if (!text)
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} hello`)
-         m.react('🕒')
+         await m.react('🕒')
          const path =
             command === 'ai' ?
                'chatgpt' :
@@ -29,11 +29,11 @@ export default {
          const data = await nexray('ai/' + path, params)
          if (!data.status)
             return m.reply('❌ Failed to get data.')
-         m.reply(data.result)
+         await m.reply(data.result)
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

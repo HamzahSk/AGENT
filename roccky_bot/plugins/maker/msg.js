@@ -13,7 +13,7 @@ export default {
          const [message, title = 'Warning', icon = 'error'] = text.split('|')
          if (!text)
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} hello | Notify`)
-         m.react('🕒')
+         await m.react('🕒')
          const data = await nexray('maker/msg', {
             message,
             title,
@@ -21,11 +21,11 @@ export default {
          })
          if (!Buffer.isBuffer(data))
             return m.reply('❌ Failed to get data.')
-         sock.sendMedia(m.chat, data, '', m)
+         await sock.sendMedia(m.chat, data, '', m)
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

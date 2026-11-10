@@ -20,7 +20,7 @@ export default {
 
          if (!query) return m.reply(`❌ Masukkan judul lagu yang ingin dicari.`)
 
-         m.react('🕒')
+         await m.react('🕒')
 
          // SEARCH API PERTAMA (Tanpa Filter Link)
          let searchUrl = `https://youtube-search-rocky.vercel.app/api/search?q=${encodeURIComponent(query)}&limit=20`
@@ -125,7 +125,7 @@ export default {
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

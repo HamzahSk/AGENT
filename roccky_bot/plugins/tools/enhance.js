@@ -20,7 +20,7 @@ export default {
             return m.reply('💭 Provide an image or video to enhance it.')
          if (isVideo && !isPremium)
             return m.reply('⚠️ This command only for premium.')
-         m.react('🕒')
+         await m.react('🕒')
          const upload = await uguu(
             await q.download()
          )
@@ -33,11 +33,11 @@ export default {
          const data = await endpoint(path, {
             url: upload
          })
-         sock.sendMedia(m.chat, data.result?.download_url || data, '', m)
+         await sock.sendMedia(m.chat, data.result?.download_url || data, '', m)
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

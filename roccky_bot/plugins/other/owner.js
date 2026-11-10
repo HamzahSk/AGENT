@@ -18,6 +18,6 @@ export default {
       }, {
          quoted: m
       })
-      sock.sendText(m.chat, '💭 Please contact the owner if you have any questions.', contact)
+      await sock.sendText(m.chat, '💭 Please contact the owner if you have any questions.', contact)
    }
 }

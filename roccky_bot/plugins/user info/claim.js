@@ -19,6 +19,6 @@ export default {
       const reward = randomInteger(1, remaining)
       user.limit += reward
       user.lastClaim = user.lastSeen
-      m.reply(`🎉 You've got +${reward} limit.`)
+      await m.reply(`🎉 You've got +${reward} limit.`)
    }
 }

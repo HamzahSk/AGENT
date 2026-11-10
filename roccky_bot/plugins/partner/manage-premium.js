@@ -55,14 +55,14 @@ export default {
             userData.premiumExpiry + expiry :
             Date.now() + expiry
          userData._notifiedPremium = false
-         m.reply(`✅ Successfully add premium access for @${userData.jid.split('@')[0]} and will expired at ${formatTime(undefined, userData.premiumExpiry)}.`)
+         await m.reply(`✅ Successfully add premium access for @${userData.jid.split('@')[0]} and will expired at ${formatTime(undefined, userData.premiumExpiry)}.`)
       }
       else if (command === '-premium' || command === '-prem') {
          userData.limit = defaultLimit
          userData.energy = 100
          userData.premiumExpiry = 0
          userData._notifiedPremium = false
-         m.reply(`✅ Successfully removed premium access for @${userData.jid.split('@')[0]}.`)
+         await m.reply(`✅ Successfully removed premium access for @${userData.jid.split('@')[0]}.`)
       }
    },
    partner: true

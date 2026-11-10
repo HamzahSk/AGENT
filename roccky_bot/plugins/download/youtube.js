@@ -8,7 +8,7 @@ export default {
          if (!args[0]) return m.reply(`👉🏻 *Example*: ${isPrefix + command} https://youtube.com/watch?v=xxxx`)
          if (!func.isURL(args[0])) return m.reply('❌ Invalid URL.')
 
-         m.react('🕒')
+         await m.react('🕒')
 
          const isAudio = ['ytmp3', 'yta'].includes(command)
          // Menentukan target kualitas berdasarkan tipe media
@@ -57,7 +57,7 @@ export default {
 
       } catch (error) {
          console.error(error)
-         m.reply('❌ Error: ' + error.message)
+         await m.reply('❌ Error: ' + error.message)
       }
    },
    limit: 1

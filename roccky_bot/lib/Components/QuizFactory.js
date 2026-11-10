@@ -1,10 +1,11 @@
+import { reportError } from '../Runtime.js'
 
 import { readFile } from 'fs/promises'
 import { join } from 'path'
 
 import { CONSONANT_REGEX, MINUTE } from '../Constants.js'
 import { frame, isFileExists, levenshtein, randomInteger, randomValue, toTime, toTitleCase } from '../Utilities.js'
-import { indexModule, ModuleCache } from '../Watcher.js'
+import { LRUCache } from 'lru-cache'
 
 const QUIZ_DATA_PATH = join(process.cwd(), 'media', 'Text')
 
@@ -17,15 +18,17 @@ const DEFAULT_GAME_CONFIG = Object.freeze({
    mediaSource: null
 })
 
-const GameData = new Map()
-const RegisteredGame = new Set()
+const GameData = new LRUCache({ max: 3 })
+const RegisteredGame = new Map()
+const sessions = new Set()
+export const stopQuizzes = () => { for (const map of sessions) { for (const session of map.values()) clearTimeout(session.timeout); map.clear() } }
 
 const getRemainingTimeout = (timeout, startTime) =>
    Math.max(0, timeout - (Date.now() - startTime))
 
 export default async (gameName, gameConfig = {}) => {
    if (RegisteredGame.has(gameName))
-      return console.log(`💭 ${gameName} has already been registered, skipping`)
+      return RegisteredGame.get(gameName)
 
    const quizDataPath = join(QUIZ_DATA_PATH, gameName)
 
@@ -33,10 +36,6 @@ export default async (gameName, gameConfig = {}) => {
    if (!isQuizDataExists)
       throw new Error(`❌ Game data file not found at ${quizDataPath}`)
 
-   GameData.set(
-      gameName,
-      JSON.parse(await readFile(quizDataPath, 'utf8'))
-   )
 
    gameConfig = {
       ...DEFAULT_GAME_CONFIG,
@@ -53,6 +52,7 @@ export default async (gameName, gameConfig = {}) => {
       throw new Error(`❌ Missing pass command for ${gameName}`)
 
    const GameSession = new Map()
+   sessions.add(GameSession)
    const Processing = new Set()
 
    const gameCommand = {
@@ -71,8 +71,10 @@ export default async (gameName, gameConfig = {}) => {
          if (Processing.has(m.chat))
             return m.reply('🔗 Please wait, previous request is still processing.')
          Processing.add(m.chat)
+         try {
          const timeout = gameConfig.timeout
          const reward = randomInteger(1, 5)
+         if (!GameData.has(gameName)) GameData.set(gameName, JSON.parse(await readFile(quizDataPath, 'utf8')))
          const data = randomValue(GameData.get(gameName))
          const question = data[gameConfig.questionField] || gameConfig.questionField
          const correctAnswer = data[gameConfig.answerField]?.toLowerCase()
@@ -98,14 +100,12 @@ export default async (gameName, gameConfig = {}) => {
             createdAt: Date.now(),
             isAnswered: false,
             timeout: setTimeout(() => {
-               try {
-                  sock.sendText(m.chat, `🕒 Time's up! The correct answer was: *${toTitleCase(correctAnswer)}*`, chat)
-                  GameSession.delete(m.chat)
-               }
-               catch { }
-            }, timeout)
+               GameSession.delete(m.chat)
+               void sock.sendText(m.chat, `🕒 Time's up! The correct answer was: *${toTitleCase(correctAnswer)}*`, chat).catch(error => reportError('Quiz timeout', error))
+            }, timeout).unref()
+
          })
-         Processing.delete(m.chat)
+         } finally { Processing.delete(m.chat) }
       },
       group: true,
       energy: 15
@@ -122,7 +122,7 @@ export default async (gameName, gameConfig = {}) => {
          if (gameSession.usageClue >= 3)
             return m.reply(`❌ All clue attempts already used.`)
          CONSONANT_REGEX.lastIndex = 0
-         m.reply(`💬 *Clue*: \`${gameSession.correctAnswer.replace(CONSONANT_REGEX, '_')}\``)
+         await m.reply(`💬 *Clue*: \`${gameSession.correctAnswer.replace(CONSONANT_REGEX, '_')}\``)
          ++gameSession.usageClue
       },
       group: true,
@@ -142,6 +142,8 @@ export default async (gameName, gameConfig = {}) => {
          if (Processing.has(m.chat))
             return m.reply('🔗 Please wait, previous request is still processing.')
          Processing.add(m.chat)
+         try {
+         GameSession.delete(m.chat)
          clearTimeout(gameSession.timeout)
          if (user.limit >= gameSession.reward) {
             user.limit -= gameSession.reward
@@ -151,8 +153,7 @@ export default async (gameName, gameConfig = {}) => {
             user.limit = 0
             await m.reply(`✅ Successfully deleted *${toTitleCase(gameConfig.title.toLowerCase())}* game session. All of your limit has been removed.`)
          }
-         GameSession.delete(m.chat)
-         Processing.delete(m.chat)
+         } finally { Processing.delete(m.chat) }
       },
       group: true
    }
@@ -180,6 +181,7 @@ export default async (gameName, gameConfig = {}) => {
          if (similarity > 90) {
             if (gameSession.isAnswered) return
             gameSession.isAnswered = true
+            GameSession.delete(m.chat)
             clearTimeout(gameSession.timeout)
             const remainingTimeout = getRemainingTimeout(gameConfig.timeout, gameSession.createdAt)
             if ((remainingTimeout / gameConfig.timeout) >= 0.8) {
@@ -199,15 +201,7 @@ export default async (gameName, gameConfig = {}) => {
       group: true
    }
 
-   ModuleCache.set(gameName, gameCommand)
-   ModuleCache.set('clue-' + gameName, clueCommand)
-   ModuleCache.set('pass-' + gameName, passCommand)
-   ModuleCache.set('_' + gameName, gameEvent)
-
-   indexModule(gameCommand)
-   indexModule(clueCommand)
-   indexModule(passCommand)
-   indexModule(gameEvent)
-
-   RegisteredGame.add(gameName)
+   const modules = [gameCommand, clueCommand, passCommand, gameEvent]
+   RegisteredGame.set(gameName, modules)
+   return modules
 }

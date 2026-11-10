@@ -21,14 +21,14 @@ export default {
             const result = userPreviousResult[Number(text) - 1]
             if (!result)
                return m.reply(`❌ Invalid input.`)
-            m.react('🕒')
+            await m.react('🕒')
             const musicUrl = result.music_info?.url
             if (result.images.length < 2) {
                const buffer = await resizeImage(
                   result.images[0],
                   720, null
                )
-               sock.sendMedia(m.chat, buffer, result.title, m)
+               await sock.sendMedia(m.chat, buffer, result.title, m)
             }
             else {
                const album = []
@@ -43,21 +43,21 @@ export default {
                         { url }
                   })
                }
-               sock.sendMessage(m.chat, {
+               await sock.sendMessage(m.chat, {
                   album
                }, {
                   quoted: m
                })
             }
             if (musicUrl)
-               sock.sendMedia(m.chat, musicUrl, '', m, {
+               await sock.sendMedia(m.chat, musicUrl, '', m, {
                   audio: true
                })
          }
          else {
             if (!text)
                return m.reply(`👉🏻 *Example*: ${isPrefix + command} nature`)
-            m.react('🕒')
+            await m.react('🕒')
             const data = await nexray('search/tiktokphoto', {
                q: text
             })
@@ -78,13 +78,13 @@ export default {
             ], '📄')
             const printList = frame('TIKTOK PHOTO', flattedResult, '🖼️')
             ExploreSession.set(keyCache, data.result)
-            m.reply(printHowTo + '\n\n' +
+            await m.reply(printHowTo + '\n\n' +
                printList)
          }
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

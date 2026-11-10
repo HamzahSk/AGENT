@@ -1,20 +1,20 @@
 import { CATEGORY_DESCRIPTIONS, CATEGORY_EMOJIS, FAKE_QUOTE, POPULAR_CATEGORIES } from '../lib/Constants.js'
 
 import { Func } from '#func'
-import { CommandIndex, ModuleCache } from '../lib/Watcher.js'
+import { CommandIndex, ModuleCache, registryRevision } from '../lib/Watcher.js'
 
 const HIGHLIGHT_LABEL = { highlight_label: 'Most Used' }
 
 // Mimetype dokumen PPT modern (Open XML Presentation).
 const DOC_MIMETYPE = 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
 // Mimetype dokumen PPT legacy.
-const PPT_MIMETYPE = 'application/vnd.ms-powerpoint'
+const PPT_MIMETYPE = DOC_MIMETYPE
 
 let CACHED_REGISTRY = null,
    LAST_REGISTRY_SIZE = 0
 
 const getCommandRegistry = () => {
-   const commandIndexSize = CommandIndex.size
+   const commandIndexSize = registryRevision
    if (CACHED_REGISTRY && LAST_REGISTRY_SIZE === commandIndexSize)
       return CACHED_REGISTRY
 
@@ -82,7 +82,7 @@ const buildDocumentHeader = async (title = '', mimetype = DOC_MIMETYPE) => {
    try {
       const buffer = await Func.createMenuDocument(title || botName)
       const jpegThumbnail = await Func.resizeImage(botThumbnail, 300).catch(() => undefined)
-      const extension = mimetype === PPT_MIMETYPE ? 'ppt' : 'pptx'
+      const extension = 'pptx'
       return {
          document: buffer,
          fileName: `${title || botName} - Menu.${extension}`,
@@ -150,9 +150,13 @@ export default {
                Func.frame(text.toUpperCase(), grouped[text].map(cmd => isPrefix + cmd), CATEGORY_EMOJIS[text] ?? '📁')
             return m.reply(print.trim())
          }
-         else if (setting.menuStyle == 1) {
+         const categoryText = Func.frame('CATEGORIES', categories.map(cmd => isPrefix + command + ' ' + cmd), '📋')
+         if (text?.trim().toLowerCase() === 'text' || global.interactiveMenuMode === 'text') return m.reply((message + categoryText).trim())
+         const fallbackText = (message + categoryText + '\n\n' + isPrefix + 'allmenu').trim()
+         if (setting.menuStyle != 1) message += `Ketik ${isPrefix}menu text jika menu tidak tampil.\n\n`
+         if (setting.menuStyle == 1) {
             message += Func.frame('CATEGORIES', categories.map(cmd => isPrefix + command + ' ' + cmd), '📋')
-            m.reply(message.trim(), {
+            await m.reply(message.trim(), {
                externalAdReply: {
                   title: botName,
                   body: Func.greeting(),
@@ -162,19 +166,20 @@ export default {
             })
          }
          else if (setting.menuStyle == 2) {
-            return safeSend(m, message.trim(), () => sock.sendList(m.chat, {
+            return await safeSend(m, fallbackText, () => sock.sendList(m.chat, {
                title: '📚 Daftar Kategori',
                text: message.trim(),
                buttonText: 'Pilih Kategori',
                footer,
                sections: buildSections(categories, grouped, isPrefix, command),
-               quoted: m
+               quoted: m,
+               fallback: false
             }))
          }
          else if (setting.menuStyle == 3) {
             // Karena tombol list tidak didukung bersamaan dengan button biasa, kita tambahkan list ke pesan teks
             message += Func.frame('CATEGORIES', categories.map(cmd => isPrefix + command + ' ' + cmd), '📋')
-            return safeSend(m, message.trim(), () => sock.sendCard(m.chat, {
+            return await safeSend(m, fallbackText, () => sock.sendCard(m.chat, {
                header: 'Menu Utama',
                text: message.trim(),
                image: botThumbnail,
@@ -182,43 +187,46 @@ export default {
                buttons: [
                   { type: 'reply', displayText: '📃 All Menu', id: `${isPrefix}allmenu` },
                   { type: 'reply', displayText: '📊 Statistic', id: `${isPrefix}statistic` },
-                  { type: 'url', displayText: '💰 Donate', url: donateUrl }
+                  { type: 'reply', displayText: '💰 Donate', id: `${isPrefix}credits` }
                ],
-               quoted: m
+               quoted: m,
+               fallback: false
             }))
          }
          else if (setting.menuStyle == 4) {
             message += Func.frame('CATEGORIES', categories.map(cmd => isPrefix + command + ' ' + cmd), '📋')
-            return safeSend(m, message.trim(), () => sock.sendCard(m.chat, {
+            return await safeSend(m, fallbackText, () => sock.sendCard(m.chat, {
                header: 'Menu Utama',
                text: message.trim(),
                image: botThumbnail,
                footer,
                buttons: [
                   { type: 'reply', displayText: '📃 All Menu', id: `${isPrefix}allmenu` },
-                  { type: 'url', displayText: '💰 Donate', url: donateUrl }
+                  { type: 'reply', displayText: '💰 Donate', id: `${isPrefix}credits` }
                ],
-               quoted: m
+               quoted: m,
+               fallback: false
             }))
          }
          else if (setting.menuStyle == 5) {
             message += Func.frame('CATEGORIES', categories.map(cmd => isPrefix + command + ' ' + cmd), '📋')
-            return safeSend(m, message.trim(), () => sock.sendCard(m.chat, {
+            return await safeSend(m, fallbackText, () => sock.sendCard(m.chat, {
                header: 'Menu Utama',
                text: message.trim(),
                image: botThumbnail,
                footer,
                buttons: [
                   { type: 'reply', displayText: '📃 All Menu', id: `${isPrefix}allmenu` },
-                  { type: 'url', displayText: '💰 Donate', url: donateUrl }
+                  { type: 'reply', displayText: '💰 Donate', id: `${isPrefix}credits` }
                ],
-               quoted: m
+               quoted: m,
+               fallback: false
             }))
          }
          else if (setting.menuStyle == 6) {
             message += Func.frame('CATEGORIES', categories.map(cmd => isPrefix + command + ' ' + cmd), '📋')
             const documentHeader = await buildDocumentHeader()
-            return safeSend(m, message.trim(), () => sock.sendButton(m.chat, {
+            return await safeSend(m, fallbackText, () => sock.sendButton(m.chat, {
                text: message.trim(),
                footer,
                ...documentHeader,
@@ -226,13 +234,14 @@ export default {
                   { type: 'reply', displayText: '📃 All Menu', id: `${isPrefix}allmenu` },
                   { type: 'reply', displayText: '📊 Statistic', id: `${isPrefix}statistic` }
                ],
-               quoted: m
+               quoted: m,
+               fallback: false
             }))
          }
          else if (setting.menuStyle == 7) {
             message += Func.frame('CATEGORIES', categories.map(cmd => isPrefix + command + ' ' + cmd), '📋')
             const profilePicture = await sock.profilePicture(m.sender)
-            return safeSend(m, message.trim(), () => sock.sendCard(m.chat, {
+            return await safeSend(m, fallbackText, () => sock.sendCard(m.chat, {
                header: 'Menu Utama',
                text: message.trim(),
                image: profilePicture,
@@ -241,13 +250,14 @@ export default {
                   { type: 'reply', displayText: '📃 All Menu', id: `${isPrefix}allmenu` },
                   { type: 'reply', displayText: '📊 Statistic', id: `${isPrefix}statistic` }
                ],
-               quoted: m
+               quoted: m,
+               fallback: false
             }))
          }
          else if (setting.menuStyle == 8) {
             message += Func.frame('CATEGORIES', categories.map(cmd => isPrefix + command + ' ' + cmd), '📋')
             const documentHeader = await buildDocumentHeader('', PPT_MIMETYPE)
-            return safeSend(m, message.trim(), () => sock.sendButton(m.chat, {
+            return await safeSend(m, fallbackText, () => sock.sendButton(m.chat, {
                text: message.trim(),
                footer,
                ...documentHeader,
@@ -255,14 +265,15 @@ export default {
                   { type: 'reply', displayText: '📃 All Menu', id: `${isPrefix}allmenu` },
                   { type: 'reply', displayText: '📊 Statistic', id: `${isPrefix}statistic` }
                ],
-               quoted: m
+               quoted: m,
+               fallback: false
             }))
          }
          else if (setting.menuStyle == 9) {
-            return safeSend(m, message.trim(), () => sock.sendCarousel(m.chat, {
-               text: message.trim(),
+            return await safeSend(m, fallbackText, () => sock.sendCarousel(m.chat, {
+               text: message + categoryText,
                footer,
-               cards: categories.map(category => ({
+               cards: categories.slice(0, 10).map(category => ({
                   title: (CATEGORY_EMOJIS[category] ?? '📁') + ' ' + Func.toTitleCase(category),
                   text: Func.frame(category.toUpperCase(), [CATEGORY_DESCRIPTIONS[category]], CATEGORY_EMOJIS[category] ?? '📁'),
                   image: botThumbnail,
@@ -272,17 +283,20 @@ export default {
                      id: `${isPrefix + command} ${category}`
                   }]
                })),
-               quoted: m
+               quoted: m,
+               fallback: false
             }))
          }
-         if (setting.menuMusic)
-            sock.sendMedia(m.chat, botMenuMusic, '', FAKE_QUOTE, {
-               ptt: true
-            })
+         else return m.reply(fallbackText)
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ Menu gagal diproses. Coba menu text.')
+      } finally {
+         if (setting.menuMusic) {
+            try { await sock.sendMedia(m.chat, botMenuMusic, '', FAKE_QUOTE, { ptt: true }) }
+            catch (error) { console.error('Menu music failed', error) }
+         }
       }
    }
 }

@@ -23,13 +23,13 @@ export default {
             const result = userPreviousResult[Number(args[0]) - 1]
             if (!result)
                return m.reply(`❌ Invalid input.`)
-            m.react('🕒')
+            await m.react('🕒')
             const printDetail = frame('TERABOX', [
                `*File Name*: ${result.server_filename}`,
                `*File Size*: ${result.formatted_size}`,
                `*Uploaded at*: ${formatTime(undefined, result.server_mtime * SECOND)}`
             ], '🗃️')
-            sock.sendMedia(m.chat, result.direct_link, printDetail, m, {
+            await sock.sendMedia(m.chat, result.direct_link, printDetail, m, {
                document: true,
                fileName: result.server_filename
             })
@@ -39,7 +39,7 @@ export default {
                return m.reply(`👉🏻 *Example*: ${isPrefix + command} https://www.1024tera.com/wap/share/filelist?surl=YrsEOjBk-sgaswPZ6NVozA`)
             if (!isURL(args[0]))
                return m.reply('❌ Invalid URL.')
-            m.react('🕒')
+            await m.react('🕒')
             const data = await zenzxz('download/terabox', {
                url: args[0]
             })
@@ -60,13 +60,13 @@ export default {
             ], '📄')
             const printList = frame('TERABOX LISTS', flattedResult, '🗃️')
             ExploreSession.set(keyCache, data.result.list)
-            m.reply(printHowTo + '\n\n' +
+            await m.reply(printHowTo + '\n\n' +
                printList)
          }
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

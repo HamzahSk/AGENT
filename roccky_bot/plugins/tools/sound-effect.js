@@ -12,7 +12,7 @@ export default {
          const mimetype = (q.msg || q).mimetype
          if (!isMimeAudio(mimetype))
             return m.reply('💭 Provide an audio to apply the effects.')
-         m.react('🕒')
+         await m.react('🕒')
          let set
          switch (command) {
             case 'bass':
@@ -141,13 +141,13 @@ export default {
             return m.reply('❌ Failed to download media.')
          const filePath = await persistToFile(buffer)
          const audioPath = await ffmpeg(filePath, [], set.split(' '), 'mp3')
-         sock.sendMedia(m.chat, audioPath, '', m, {
+         await sock.sendMedia(m.chat, audioPath, '', m, {
             ptt: true
          })
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

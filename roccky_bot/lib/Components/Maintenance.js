@@ -3,116 +3,37 @@ import { join } from 'path'
 
 import { INACTIVE_THRESHOLD, TEMP_THRESHOLD } from '../Constants.js'
 import { Func } from '#func'
+import { reportError } from '../Runtime.js'
+import { connectCloudDB } from '../Database.js'
 
 /**
  * Maintenance tasks berjalan di background (dipanggil dari socket.js):
  *  - Tugas harian: bersihkan user/grup tidak aktif, reset limit & energi
  *  - Autosave database + guard memori (kirim sinyal 'reset' via IPC)
  *  - Pembersih berkala folder temp
- *  - Pembersih berkala folder session (auth) — JANGAN hapus creds.json
+ *  - Session keys are never pruned by age.
  *  - Garbage collector manual (jika runtime mengekspos global.gc)
  */
 
-// ==========================================
-//  AUTO CLEAN SESSION (AUTH FOLDER)
-// ==========================================
-// File yang WAJIB dipertahankan (tidak boleh dihapus, apapun usianya)
-const PROTECTED_SESSION_FILES = new Set([
-   'creds.json',
-   'creds.json.bak',
-   'creds.json.temp',
-])
-
-// File yang boleh dibersihkan bila sudah kadaluarsa
-// Pola nama file Baileys yang aman untuk dihapus (bukan state utama):
-const CLEANABLE_PATTERNS = [
-   /^pre-key-\d+\.json$/,
-   /^session-\d+\.json$/,
-   /^sender-key-\d+\.json$/,
-   /^sender-key-memory-\d+\.json$/,
-   /^sender-key-.*\.json$/,
-   /^app-state-sync-key-.*\.json$/,
-   /^app-state-sync-version-.*\.json$/,
-]
-
-// Umur maksimum file session sebelum dianggap sampah.
-// Default: 30 menit (mengikuti permintaan).
-const SESSION_FILE_MAX_AGE_MS = () => global.sessionFileMaxAge ?? 30 * 60 * 1000
-
-/**
- * Membersihkan file session lama di folder auth.
- * - creds.json (dan varian backupnya) DIJAMIN tidak dihapus.
- * - Hanya file dengan pola CLEANABLE_PATTERNS yang dipertimbangkan.
- * - File yang masih "fresh" (mtime < SESSION_FILE_MAX_AGE_MS) dipertahankan.
- *
- * @param {string} sessionFolder - path folder auth/session
- * @returns {Promise<{scanned:number, removed:number, skipped:number}>}
- */
-export const cleanSessionFolder = async (sessionFolder) => {
-   const result = { scanned: 0, removed: 0, skipped: 0 }
-   if (!sessionFolder) return result
-
-   let files
-   try {
-      files = await readdir(sessionFolder)
-   } catch {
-      // Folder belum ada — tidak masalah
-      return result
-   }
-
-   const now = Date.now()
-   const maxAge = SESSION_FILE_MAX_AGE_MS()
-
-   for (const fileName of files) {
-      // Proteksi mutlak: jangan pernah sentuh creds.json & backup-nya
-      if (PROTECTED_SESSION_FILES.has(fileName)) {
-         result.skipped++
-         continue
-      }
-
-      // Hanya proses file yang cocok dengan pola sampah session
-      if (!CLEANABLE_PATTERNS.some((rx) => rx.test(fileName))) {
-         result.skipped++
-         continue
-      }
-
-      const filePath = join(sessionFolder, fileName)
-      try {
-         const st = await stat(filePath)
-
-         // Lewati direktori (jaga-jaga)
-         if (!st.isFile()) {
-            result.skipped++
-            continue
-         }
-
-         result.scanned++
-
-         if (now - st.mtimeMs > maxAge) {
-            await unlink(filePath)
-            result.removed++
-         } else {
-            result.skipped++
-         }
-      } catch (err) {
-         // File mungkin sudah hilang / sedang di-rename oleh Baileys → abaikan
-         if (err?.code !== 'ENOENT') {
-            console.error(`❌ Gagal memproses session file ${fileName}:`, err.message)
-         }
-      }
-   }
-
-   return result
-}
+// Compatibility export: Signal and app-state keys have no safe age-based expiry.
+// Only Baileys knows when they can be removed.
+export const cleanSessionFolder = async () => ({ scanned: 0, removed: 0, skipped: 0 })
 
 // ==========================================
 //  START MAINTENANCE
 // ==========================================
-export const startMaintenance = ({ db, store, temporaryFolderPath, sessionFolderPath }) => {
+export const startMaintenance = ({ db, store, temporaryFolderPath, requestRestart = () => {} }) => {
+   const timers = new Set()
+   let stopped = false, checking = false, cleaning = false, overLimit = 0
+   const every = (fn, ms) => { const timer = setInterval(fn, ms); timer.unref?.(); timers.add(timer); return timer }
    // -------- TUGAS HARIAN --------
    const scheduleDailyTasks = () => {
       const resetTimeout = Func.getNextMidnight()
-      setTimeout(() => {
+      if (stopped) return
+      const timer = setTimeout(() => {
+         timers.delete(timer)
+         if (stopped) return
+         try {
          const timestampMs = Date.now()
          const threshold = timestampMs - INACTIVE_THRESHOLD
          const setting = db?.getSetting()
@@ -134,38 +55,46 @@ export const startMaintenance = ({ db, store, temporaryFolderPath, sessionFolder
             store.prune?.()
             db.requestWrite?.()
          }
-         scheduleDailyTasks()
+         } catch (error) { reportError('Daily maintenance', error) }
+         finally { scheduleDailyTasks() }
       }, resetTimeout)
+      timer.unref?.()
+      timers.add(timer)
       console.log('🔃 Tugas harian dijadwalkan dalam', ':', Func.toTime(resetTimeout))
    }
    scheduleDailyTasks()
 
    // -------- GARBAGE COLLECTOR --------
    if (global.gc) {
-      setInterval(() => {
+      every(() => {
          global.gc()
-         console.log('🧹 Garbage collector dipanggil, memori dibersihkan')
+
       }, global.gcInterval || 60000)
    }
 
    // -------- AUTOSAVE DATABASE + MEMORY GUARD --------
    const dataInterval = global.dataInterval || 30000
    const rssLimit = global.rssLimit || 1024 * 1024 * 500
-   const check = setInterval(async () => {
-      if (db && store) {
-         await db.flush()
-         await store.flush()
-      }
-      if (process.memoryUsage().rss >= rssLimit) {
-         clearInterval(check)
-         await Promise.all([db?.flushNow?.(), store?.flushNow?.()]).catch(() => {})
-         process.send('reset')
-      }
+   every(async () => {
+      if (checking || stopped) return
+      checking = true
+      try {
+         if (global.databaseUrl || process.env.ROCCKY_DATABASE_URL) await connectCloudDB(process.env.ROCCKY_DATABASE_URL ?? global.databaseUrl)
+         store.prune?.()
+         await Promise.all([db.flush(), store.flush()])
+         await Promise.all([db.sync?.(), store.sync?.()])
+         overLimit = process.memoryUsage().rss >= rssLimit ? overLimit + 1 : 0
+         if (overLimit === 1) global.gc?.()
+         if (overLimit >= 3) { overLimit = 0; await requestRestart() }
+      } catch (error) { reportError('Maintenance', error) }
+      finally { checking = false }
    }, dataInterval)
 
    // -------- PEMBERSIH FOLDER TEMP --------
    const temporaryFileInterval = global.temporaryFileInterval || 3600000
-   setInterval(async () => {
+   every(async () => {
+      if (cleaning || stopped) return
+      cleaning = true
       try {
          const timestampMs = Date.now()
          const temporaryFiles = await readdir(temporaryFolderPath)
@@ -173,7 +102,7 @@ export const startMaintenance = ({ db, store, temporaryFolderPath, sessionFolder
          for (const fileName of temporaryFiles) {
             const filePath = join(temporaryFolderPath, fileName)
             const fileStatistic = await stat(filePath)
-            if (timestampMs - fileStatistic.mtimeMs > TEMP_THRESHOLD) {
+            if (fileStatistic.isFile() && timestampMs - fileStatistic.mtimeMs > TEMP_THRESHOLD) {
                await unlink(filePath)
                removedFiles++
             }
@@ -181,26 +110,9 @@ export const startMaintenance = ({ db, store, temporaryFolderPath, sessionFolder
          if (removedFiles > 0) console.log('🗑️ Membersihkan folder temp:', removedFiles, 'file dihapus')
       }
       catch (error) {
-         console.error('❌ Gagal membersihkan folder temp:', error.message)
-      }
+         if (error.code !== 'ENOENT') reportError('Temporary cleanup', error)
+      } finally { cleaning = false }
    }, temporaryFileInterval)
 
-   // -------- PEMBERSIH FOLDER SESSION (AUTH) --------
-   // Setiap 30 menit (bisa dioverride lewat global.sessionCleanInterval)
-   const sessionCleanInterval = global.sessionCleanInterval || 30 * 60 * 1000
-   if (sessionFolderPath) {
-      setInterval(async () => {
-         try {
-            const { removed } = await cleanSessionFolder(sessionFolderPath)
-            if (removed > 0)
-               console.log(`🧹 Session clean: ${removed} file sampah dihapus (creds.json aman)`)
-         } catch (error) {
-            console.error('❌ Gagal membersihkan folder session:', error.message)
-         }
-      }, sessionCleanInterval)
-
-      console.log(
-         `🧼 Auto-clean session aktif (interval: ${(sessionCleanInterval / 60000).toFixed(1)} menit, creds.json dilindungi)`
-      )
-   }
+   return () => { stopped = true; for (const timer of timers) { clearTimeout(timer); clearInterval(timer) }; timers.clear() }
 }

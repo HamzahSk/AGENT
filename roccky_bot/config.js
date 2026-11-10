@@ -129,7 +129,7 @@ Object.assign(globalThis, {
    rssLimit: 1_024 * 1_024 * 768,
 
    // FFmpeg stream max concurrent processes (min: 1)
-   ffmpegConcurrency: Math.max(4, Math.floor(CPU_COUNT * 1.3)),
+   ffmpegConcurrency: 1,
 
    // Maximum allowed NSFW score (lower values are stricter)
    maxNSFWScore: 0.75,

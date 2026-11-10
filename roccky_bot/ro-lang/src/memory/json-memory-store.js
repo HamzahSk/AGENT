@@ -30,16 +30,17 @@ export class JsonMemoryStore {
   }
 
   async saveLearner(learner) {
-    this.writeQueue = this.writeQueue.then(async () => {
+    const write = this.writeQueue.then(async () => {
       const state = await this.readState();
       state.learners[learner.id] = learner;
 
       const temporaryPath = `${this.filePath}.tmp-${process.pid}`;
-      await writeFile(temporaryPath, `${JSON.stringify(state, null, 2)}\n`, "utf8");
+      await writeFile(temporaryPath, `${JSON.stringify(state, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
       await rename(temporaryPath, this.filePath);
     });
 
-    await this.writeQueue;
+    this.writeQueue = write.catch(() => {});
+    await write;
     return learner;
   }
 

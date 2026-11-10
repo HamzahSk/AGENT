@@ -1,23 +1,25 @@
+import { finished } from 'node:stream/promises'
+import { fetchBuffer } from './Http.js'
+import { Boom } from '@hapi/boom'
+import { LRUCache } from 'lru-cache'
+import { reportError } from './Runtime.js'
 // SocketClient.js
 import fs from 'fs'
-import path from 'path'
-import axios from 'axios'
 import { Readable } from 'stream'
 import { fileTypeFromBuffer } from 'file-type'
 import { Func } from '#func'
 
-// Folder temporary untuk proses audio
-const tmpDir = path.join(process.cwd(), 'tmp')
-if (!fs.existsSync(tmpDir)) {
-   fs.mkdirSync(tmpDir, { recursive: true })
+const closeMediaStream = async stream => {
+   if (!stream) return
+   const completion = finished(stream)
+   stream.destroy()
+   await completion.catch(() => {})
 }
 
 // Konstanta & Default Config
 const minDelay = global.minDelay ?? 1000
 const maxDelay = global.maxDelay ?? 3000
 const stickerPackPublisher = global.stickerPackPublisher ?? 'Rockky Bot'
-
-const USER_AGENT = { 'User-Agent': 'Mozilla/5.0' }
 
 // Key media yang dikenali Baileys (prepareWAMessageMedia). Jika salah satu key
 // ini hadir dengan nilai null/undefined pada payload teks, Baileys bisa jatuh
@@ -60,11 +62,10 @@ const resolveMediaSource = async (source, { toStream = false, mimetype = '' } = 
          return { mediaContent: { stream: Readable.from(source) }, mimetype }
 
       if (typeof source === 'string' && Func.isURL(source)) {
-         const res = await axios.get(source, { responseType: 'stream', headers: USER_AGENT })
-         return {
-            mediaContent: { stream: res.data },
-            mimetype: mimetype || res.headers['content-type']?.split(';')[0] || 'application/octet-stream'
-         }
+         const file = await Func.persistToFile(source)
+         const stream = fs.createReadStream(file)
+         stream.once('close', () => { void fs.promises.unlink(file).catch(error => reportError('Download cleanup', error)) })
+         return { mediaContent: { stream }, mimetype }
       }
 
       if (typeof source === 'string' && await Func.isFileExists(source))
@@ -78,12 +79,14 @@ const resolveMediaSource = async (source, { toStream = false, mimetype = '' } = 
       mediaContent = source
    }
    else if (typeof source === 'string' && Func.isURL(source)) {
-      const res = await axios.get(source, { responseType: 'arraybuffer', headers: USER_AGENT })
-      mediaContent = Buffer.from(res.data)
-      mimetype = mimetype || res.headers['content-type']?.split(';')[0]
+      const result = await fetchBuffer(source)
+      mediaContent = result.buffer
+      mimetype = mimetype || result.contentType.split(';')[0]
    }
    else if (typeof source === 'string' && await Func.isFileExists(source)) {
-      mediaContent = fs.readFileSync(source)
+      const info = await fs.promises.stat(source)
+      if (info.size > (global.maxDownloadBytes || 32 * 1024 * 1024)) throw new RangeError('Media exceeds configured limit')
+      mediaContent = await fs.promises.readFile(source)
    }
    else {
       throw new Error('Source media tidak valid untuk buffer')
@@ -123,30 +126,8 @@ export default function Client(sock, options = {}) {
       if (secureMetaServiceLabel && safeContent)
          safeContent.secureMetaServiceLabel = secureMetaServiceLabel
 
-      try {
-         return await originalSendMessage(jid, safeContent, opts)
-      }
-      catch (error) {
-         console.error('❌ sendMessage error:', error?.message || error)
+      return originalSendMessage(jid, safeContent, opts)
 
-         // Fallback aman: kirim ulang sebagai teks biasa tanpa embel-embel
-         // media/UI agar pengguna tetap menerima jawaban bot.
-         if (typeof safeContent?.text === 'string') {
-            try {
-               return await originalSendMessage(jid, {
-                  text: safeContent.text
-               }, {
-                  ...opts,
-                  quoted: opts?.quoted
-               })
-            }
-            catch (fallbackError) {
-               console.error('❌ sendMessage fallback ({ text }) error:', fallbackError?.message || fallbackError)
-            }
-         }
-
-         return undefined
-      }
    }
 
    // ==================================================
@@ -165,6 +146,7 @@ export default function Client(sock, options = {}) {
    // SEND MEDIA
    // ==================================================
    sock.sendMedia = async (jid, source, caption = '', quoted = null, content = {}, options = {}) => {
+      let mediaStream
       try {
          caption = typeof caption === 'string' ? caption : JSON.stringify(caption, null, 3)
 
@@ -180,7 +162,7 @@ export default function Client(sock, options = {}) {
             source = await Func.persistToFile(source)
             content.stickerPackPublisher ??= stickerPackPublisher
             const media = await Func.createSticker(source, content)
-            return sock.sendMessage(jid, {
+            return await sock.sendMessage(jid, {
                sticker: media,
                mimetype: 'image/webp',
                caption,
@@ -192,8 +174,9 @@ export default function Client(sock, options = {}) {
          if (content.ptt || content.audio) {
             source = await Func.persistToFile(source)
             const media = content.ptt ? await Func.toPTT(source, toStream) : await Func.toAudio(source, toStream)
+            if (toStream) mediaStream = media
 
-            return sock.sendMessage(jid, {
+            return await sock.sendMessage(jid, {
                audio: toStream ? { stream: media } : { url: media },
                mimetype: content.ptt ? 'audio/ogg; codecs=opus' : 'audio/mpeg',
                ptt: content.ptt ? true : false,
@@ -211,6 +194,7 @@ export default function Client(sock, options = {}) {
          if (isAudioDocument) {
             source = await Func.persistToFile(source)
             const media = await Func.toAudio(source, toStream)
+            if (toStream) mediaStream = media
 
             mimetype = 'audio/mpeg'
             if (!filename.includes('.')) filename += '.mp3'
@@ -226,6 +210,7 @@ export default function Client(sock, options = {}) {
 
          // 4. PENANGANAN GENERAL (IMAGE, VIDEO, DOKUMEN NON-AUDIO)
          const { mediaContent, mimetype: resolvedMimetype } = await resolveMediaSource(source, { toStream, mimetype })
+         mediaStream = mediaContent?.stream
          mimetype = resolvedMimetype
 
          // 5. PENENTUAN TIPE & EKSTENSI FALLBACK
@@ -242,7 +227,9 @@ export default function Client(sock, options = {}) {
          }
 
          // 6. EKSEKUSI PENGIRIMAN
+         const { toStream: _stream, type: _type, document: _document, ...extra } = content
          const message = {
+            ...extra,
             [type]: mediaContent,
             mimetype,
             caption: caption || undefined,
@@ -254,62 +241,42 @@ export default function Client(sock, options = {}) {
          return await sock.sendMessage(jid, message, { quoted, ...options })
       }
       catch (error) {
-         console.error('sendMedia error:', error)
-         return sock.sendMessage(jid, { text: '❌ Gagal mengirim media: ' + error.message }, { quoted })
-      }
+         reportError('Media delivery', error)
+         throw error
+      } finally { await closeMediaStream(mediaStream) }
    }
 
    // ==================================================
    // SEND AUDIO (DENGAN METADATA & COVER)
    // ==================================================
    sock.sendAudio = async (jid, input, opts = {}, quoted = null) => {
-      try {
-         // 1. Download input dan cover dengan instan menggunakan Func.persistToFile
-         const raw = await Func.persistToFile(input)
-         const coverFile = opts.cover ? await Func.persistToFile(opts.cover) : null
-
-         // 2. Ganti URL cover di dalam opts dengan path lokal yang sudah di-download
-         opts.cover = coverFile
-
-         // 3. Proses menggunakan Func.toAudioAlbum (termasuk antrean & proses super cepat)
-         const outPath = await Func.toAudioAlbum(raw, opts, false)
-
-         // 4. Kirim file yang sudah jadi sebagai stream
-         const stream = fs.createReadStream(outPath)
-         const type = opts.type || 'audio'
-
-         if (type === 'document') {
-            await sock.sendMessage(jid, {
-               document: { stream },
-               mimetype: 'audio/mpeg',
-               fileName: `${opts.title || 'Audio'} - ${opts.artist || 'Unknown'}.mp3`
-            }, { quoted })
-         }
-         else {
-            await sock.sendMessage(jid, {
-               audio: { stream },
-               mimetype: type === 'ptt' ? 'audio/ogg; codecs=opus' : 'audio/mpeg',
-               ptt: type === 'ptt'
-            }, { quoted })
-         }
-
-         // 5. Bersihkan semua file sampah (delay 5 detik)
-         setTimeout(() => {
-            [raw, coverFile, outPath].forEach(f => {
-               if (f && fs.existsSync(f)) fs.unlinkSync(f)
-            })
-         }, 5000)
+      const owned = new Set()
+      let stream
+      const persist = async value => {
+         const file = await Func.persistToFile(value)
+         if (file !== value) owned.add(file)
+         return file
       }
-      catch (error) {
-         console.error('sendAudio error:', error)
-         throw error
+      try {
+         const raw = await persist(input)
+         const cover = opts.cover ? await persist(opts.cover) : null
+         const output = await Func.toAudioAlbum(raw, { ...opts, cover }, false)
+         if (output !== input && output !== opts.cover) owned.add(output)
+         stream = fs.createReadStream(output)
+         const type = opts.type || 'audio'
+         return await sock.sendMessage(jid, type === 'document' ? {
+            document: { stream }, mimetype: 'audio/mpeg', fileName: `${opts.title || 'Audio'} - ${opts.artist || 'Unknown'}.mp3`
+         } : { audio: { stream }, mimetype: type === 'ptt' ? 'audio/ogg; codecs=opus' : 'audio/mpeg', ptt: type === 'ptt' }, { quoted })
+      } finally {
+         await closeMediaStream(stream)
+         for (const file of owned) await fs.promises.unlink(file).catch(error => { if (error.code !== 'ENOENT') reportError('Audio cleanup', error) })
       }
    }
 
    // ==================================================
    // PROFILE PICTURE
    // ==================================================
-   const ProfilePictureCache = new Map()
+   const ProfilePictureCache = new LRUCache({ max: 1000, ttl: 300000 })
    sock.profilePicture = async (jid) => {
       if (ProfilePictureCache.has(jid)) return ProfilePictureCache.get(jid)
       let url
@@ -336,11 +303,9 @@ export default function Client(sock, options = {}) {
    sock.sendInteractiveMessage = (jid, options = {}) =>
       Func.sendInteractiveMessage(sock, jid, options)
 
-   sock.sendButton = (jid, options = {}) =>
-      Func.sendButton(sock, jid, options)
+   sock.sendButton = (jid, ...args) => Func.sendButton(sock, jid, ...args)
 
-   sock.sendList = (jid, options = {}) =>
-      Func.sendList(sock, jid, options)
+   sock.sendList = (jid, ...args) => Func.sendList(sock, jid, ...args)
 
    sock.sendSections = (jid, options = {}) =>
       Func.sendSections(sock, jid, options)

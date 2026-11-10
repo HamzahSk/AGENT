@@ -1,3 +1,5 @@
+import { once } from 'node:events'
+import { finished } from 'node:stream/promises'
 import { isJidNewsletter } from 'baileys'
 import { unzip, Zip, ZipDeflate } from 'fflate'
 import { createWriteStream, createReadStream } from 'fs'
@@ -15,12 +17,12 @@ const HIGHLIGHT_LABEL = { highlight_label: 'Subscription Only' }
 const MENU_STYLES = {
    1: '🌱 `Extended Text Message` with `externalAdReply`.',
    2: '👉🏻 `Interactive Message` with `single_select`.',
-   3: '🏷️ `Interactive Message` with `bottom_sheet` and `limited_time_offer`.',
-   4: '🛒 `Interactive Message` with `Product Header`.',
-   5: '🛒 `Interactive Message` with `Product Header` and `bottom_sheet`.',
-   6: '🛒 `Interactive Message` with `Document Header`, `bottom_sheet`, and `externalAdReply`.',
-   7: '📍 `Interactive Message` with `Location Header`, `bottom_sheet`, and `externalAdReply`.',
-   8: '🛒 `Buttons Message` with `Document Header` and `externalAdReply`.',
+   3: '🏷️ Image card with quick replies.',
+   4: '🛒 Image card with quick replies.',
+   5: '🛒 Image card with quick replies.',
+   6: '📄 PPTX document header with quick replies.',
+   7: '👤 Profile image card with quick replies.',
+   8: '📄 PPTX document header with native-flow quick replies.',
    9: '🖼️ `Interactive Message` with `Carousel Message`.'
 }
 
@@ -64,18 +66,9 @@ const PRETTY_SETTING_MAPS = {
    typingpresence: 'Typing Presence'
 }
 
-const ExcludeForWrap = new Set(['.git', '.github', '.gitignore', 'node_modules', 'package-lock.json', 'session', 'yarn.lock', databaseFilename, storeFilename, temporaryFolder])
+const ExcludeForWrap = new Set(['auth', global.authFolder, 'storage', 'logs', 'config.js', 'AI-SEERVER','.git', '.github', '.gitignore', 'node_modules', 'package-lock.json', 'session', 'yarn.lock', databaseFilename, storeFilename, temporaryFolder])
 const ExcludeForUnzip = new Set(['.git', '.github', '.gitignore', 'broadcast.jpg', 'mosque.jpg', 'profile.jpg', 'thumbnail.jpg'])
 const EvaluateCharacters = new Set(['=>', '~>', '>', '$', '%'])
-
-const writeAndDrain = (stream, chunk) =>
-   new Promise((resolve, reject) => {
-      const isOk = stream.write(chunk)
-      if (isOk)
-         return res()
-      stream.once('drain', resolve)
-      stream.once('error', reject)
-   })
 
 const unzipAsync = (data) =>
    new Promise((resolve, reject) => {
@@ -105,54 +98,40 @@ const addDirectory = async (zip, directoryPath = process.cwd(), topPath = proces
    }
 }
 
-const addStream = async (zip, fullPath, relPath, outputStream) => {
-   const deflate = new ZipDeflate(relPath, { level: 6 })
-
-   const origOndata = deflate.ondata
-   deflate.ondata = async (error, data, final) => {
-      if (error)
-         throw error
-
-      await writeAndDrain(outputStream, data)
-
-      if (origOndata)
-         origOndata(error, data, final)
-   }
-
+const addStream = async (zip, fullPath, relPath) => {
+   const deflate = new ZipDeflate(relPath, { level: 1 })
    zip.add(deflate)
-
-   const stream = createReadStream(fullPath, { highWaterMark: 64 * 1024 })
-   for await (const chunk of stream) {
-      if (chunk instanceof Buffer)
-         deflate.push(chunk)
-      else
-         deflate.push(Buffer.from(chunk))
-
-      await new Promise(r => setImmediate(r))
+   for await (const chunk of createReadStream(fullPath, { highWaterMark: 64 * 1024 })) {
+      deflate.push(chunk)
+      if (zip.output.writableNeedDrain) await once(zip.output, 'drain')
+      await new Promise(resolve => { setImmediate(resolve) })
    }
-
    deflate.push(new Uint8Array(0), true)
 }
 
-const wrapScript = () => {
+const wrapScript = async () => {
    const filePath = join(temporaryFolder, `Starseed-${createFileName()}.zip`)
    const output = createWriteStream(filePath)
-
-   return new Promise((resolve, reject) => {
+   const completion = finished(output)
+   // Attach immediately; errors can occur while directory traversal is running.
+   completion.catch(() => {})
+   try {
       const zip = new Zip((error, chunk, final) => {
-         if (error)
-            return reject(error)
+         if (error) { output.destroy(error); return }
          output.write(chunk)
-         if (final) {
-            output.end()
-            resolve(filePath)
-         }
+         if (final) output.end()
       })
-
-      addDirectory(zip)
-         .then(() => zip.end())
-         .catch(reject)
-   })
+      zip.output = output
+      await addDirectory(zip)
+      zip.end()
+      await completion
+      return filePath
+   } catch (error) {
+      output.destroy()
+      await completion.catch(() => {})
+      await unlink(filePath).catch(() => {})
+      throw error
+   }
 }
 
 const updateScript = async () => {
@@ -166,8 +145,8 @@ const updateScript = async () => {
       if (!fileName.startsWith(TOP_PATH)) continue
       if (fileName.endsWith('/')) continue
 
-      const relative = fileName.slice(14)
-      if (!relative || ExcludeForUnzip.has(relative)) continue
+      const relative = fileName.slice(TOP_PATH.length)
+      if (!relative || relative.split(/[\\/]/).some(part => !part || part === '..' || part.startsWith('.') || ExcludeForUnzip.has(part) || ExcludeForWrap.has(part))) continue
 
       const destination = join(process.cwd(), relative)
 
@@ -238,19 +217,19 @@ export default {
             command === 'typingpresence'
          )
             print += '\n\n> ⚠️ Restart is required to apply the changes.'
-         m.reply(print)
+         await m.reply(print)
       }
       else if (command === 'backup') {
-         m.react('🕒')
+         await m.react('🕒')
          await atomicWrite(db, store)
-         sock.sendMedia(m.chat, resolve(databaseFilename), '✅ Backup completed.', m, {
+         await sock.sendMedia(m.chat, resolve(databaseFilename), '✅ Backup completed.', m, {
             fileName: databaseFilename
          })
       }
       else if (command === 'backupsc') {
-         m.react('🕒')
+         await m.react('🕒')
          const filePath = await wrapScript()
-         sock.sendMedia(m.chat, filePath, '✅ Backup completed.', m, {
+         await sock.sendMedia(m.chat, filePath, '✅ Backup completed.', m, {
             document: true,
             fileName: basename(filePath)
          })
@@ -274,7 +253,7 @@ export default {
          if (setting.disabledCommand.includes(cmd))
             return m.reply('💭 Command already disabled.')
          setting.disabledCommand.push(cmd)
-         m.reply(`✅ Successfully disabling *"${cmd}"*.`)
+         await m.reply(`✅ Successfully disabling *"${cmd}"*.`)
       }
       else if (command === 'enable') {
          const [cmd] = args
@@ -286,29 +265,29 @@ export default {
             if (data === cmd)
                setting.disabledCommand.splice(index, 1)
          })
-         m.reply(`✅ Successfully enabling *"${cmd}"*.`)
+         await m.reply(`✅ Successfully enabling *"${cmd}"*.`)
       }
       else if (command === 'resetlimit') {
          for (const user of db.users.values())
             user.limit = defaultLimit
          setting.lastReset = Date.now()
          await atomicWrite(db, store)
-         m.reply('✅ Successfully reset limit for all user to default.')
+         await m.reply('✅ Successfully reset limit for all user to default.')
       }
       else if (command === 'restart') {
          await m.reply('🔃 Restarting...')
          await atomicWrite(db, store)
-         process.send('reset')
+         if (process.send) process.send('reset'); else process.kill(process.pid, 'SIGTERM')
       }
       else if (command === 'restore') {
          const q = m.quoted ? m.quoted : m
          if (!q.type.startsWith('document') || !q.fileName.includes(databaseFilename))
             return m.reply('❌ Reply to the backup file first.')
-         m.react('🕒')
+         await m.react('🕒')
          const filePath = await persistToFile(await q.download())
          await db.readFromFile(filePath)
          await atomicWrite(db, store)
-         m.reply('✅ Database was successfully restored.')
+         await m.reply('✅ Database was successfully restored.')
       }
       else if (command === 'setbroadcastcd') {
          const value = Number(args[0])
@@ -317,13 +296,13 @@ export default {
          if (value < 1000)
             return m.reply('❌ Cooldown is too short.')
          setting.broadcastCooldown = value
-         m.reply(`✅ Successfully set broadcast cooldown to *${value}* ms.`)
+         await m.reply(`✅ Successfully set broadcast cooldown to *${value}* ms.`)
       }
       else if (command === 'setinstruction') {
          if (!text)
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} You're Starseed AI, developed and maintained by Starfall Co. Ltd.`)
          setting.botInstruction = text
-         m.reply(`✅ Successfully set bot instruction.`)
+         await m.reply(`✅ Successfully set bot instruction.`)
       }
       else if (command === 'setmenu') {
          if (!args.length)
@@ -332,7 +311,7 @@ export default {
          if (!selected)
             return m.reply('❌ Style not available.')
          setting.menuStyle = args[0]
-         m.reply('✅ Successfully set menu style.' +
+         await m.reply('✅ Successfully set menu style.' +
             '\n\n> ' + selected)
       }
       else if (command === 'setmenumusic') {
@@ -340,19 +319,19 @@ export default {
          const mimetype = (q.msg || q).mimetype
          if (!isMimeAudio(mimetype))
             return m.reply(`❌ Invalid media type, audio only.`)
-         m.react('🕒')
+         await m.react('🕒')
          const buffer = await q.download()
          if (!Buffer.isBuffer(buffer))
             return m.reply('❌ Failed to download media.')
          const filePath = await persistToFile(buffer)
          await rename(filePath, botMenuMusic)
-         m.reply('✅ Successfully set music.')
+         await m.reply('✅ Successfully set music.')
       }
       else if (command === 'setmenumessage') {
          if (!text)
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} Hello +tag (+name) +greeting 👋🏻`)
          setting.menuMessage = text
-         m.reply('✅ Successfully set menu message.')
+         await m.reply('✅ Successfully set menu message.')
       }
        else if (command === 'setmodel') {
           if (!text.includes('--model'))
@@ -378,7 +357,7 @@ export default {
          if (!(model in AVAILABLE_MODELS))
             return m.reply(`❌ Model "${model}" not found.`)
          setting.botModel = model
-         m.reply('✅ Successfully set bot model.')
+         await m.reply('✅ Successfully set bot model.')
       }
       else if (command === 'setname') {
          if (!text)
@@ -386,7 +365,7 @@ export default {
          if (text.length > 25)
             return m.reply('❌ Maximum 25 characters.')
          await sock.updateProfileName(text)
-         m.reply('✅ Successfully change the profile name.')
+         await m.reply('✅ Successfully change the profile name.')
       }
       else if (command === 'setbio') {
          if (!text)
@@ -394,23 +373,23 @@ export default {
          if (text.length > 50)
             return m.reply('❌ Maximum 50 characters.')
          await sock.updateProfileStatus(text)
-         m.reply('✅ Successfully change the profile bio.')
+         await m.reply('✅ Successfully change the profile bio.')
       }
       else if (command === 'setpp') {
          const q = m.quoted?.url ? m.quoted : m
          const mimetype = (q.msg || q).mimetype
          if (!isMimeImage(mimetype))
             return m.reply('💭 Provide an image to change profile picture.')
-         m.react('🕒')
+         await m.react('🕒')
          await sock.updateProfilePicture(sock.user.decodedId, await q.download())
-         m.reply('✅ Successfully changed.')
+         await m.reply('✅ Successfully changed.')
       }
       else if (command === 'setcover') {
          const q = m.quoted?.url ? m.quoted : m
          const mimetype = (q.msg || q).mimetype
          if (!isMimeImage(mimetype))
             return m.reply(`❌ Invalid media type, image only.`)
-         m.react('🕒')
+         await m.react('🕒')
          const buffer = await q.download()
          if (!Buffer.isBuffer(buffer))
             return m.reply('❌ Failed to download media.')
@@ -418,7 +397,7 @@ export default {
             await resizeImage(buffer, 720)
          )
          await rename(filePath, botThumbnail)
-         m.reply('✅ Successfully set cover.')
+         await m.reply('✅ Successfully set cover.')
       }
       else if (command === 'setchid') {
          if (!args.length)
@@ -426,7 +405,7 @@ export default {
          if (!isJidNewsletter(args[0]))
             return m.reply('❌ Invalid newsletter id, you can get it your newsletter id with \`${isPrefix}channelid\` command.')
          setting.newsletterId = args[0]
-         m.reply('✅ Successfully set newsletter id.')
+         await m.reply('✅ Successfully set newsletter id.')
       }
       else if (command === 'setreply') {
          if (!args.length)
@@ -435,23 +414,23 @@ export default {
          if (!selected)
             return m.reply('❌ Style not available.')
          setting.replyStyle = args[0]
-         m.reply('✅ Successfully set reply style.' +
+         await m.reply('✅ Successfully set reply style.' +
             '\n\n> ' + selected)
       }
       else if (command === 'public') {
          if (!setting.self)
             return m.reply('❌ Already in public mode.')
          setting.self = false
-         m.reply('✅ Successfully set to public mode.')
+         await m.reply('✅ Successfully set to public mode.')
       }
       else if (command === 'self') {
          if (setting.self)
             return m.reply('❌ Already in self mode.')
          setting.self = true
-         m.reply('✅ Successfully set to self mode.')
+         await m.reply('✅ Successfully set to self mode.')
       }
       else if (command === 'updatesc') {
-         m.react('🕒')
+         await m.react('🕒')
          await atomicWrite(db, store)
          await sock.sendMedia(m.chat, resolve(databaseFilename), '✅ *(1/3)* Backup database completed.', m, {
             fileName: databaseFilename
@@ -464,11 +443,11 @@ export default {
          try {
             await updateScript()
             await m.reply('✅ *(3/3)* Successfully updated, restarting...')
-            process.send('reset')
+            if (process.send) process.send('reset'); else process.kill(process.pid, 'SIGTERM')
          }
          catch (error) {
             console.error(error)
-            m.reply('❌ Failed to update the script.')
+            await m.reply('❌ Failed to update the script.')
          }
       }
       else if (command === '+prefix') {
@@ -484,7 +463,7 @@ export default {
          if (setting.prefixes.includes(symbol))
             return m.reply('💭 Symbol already used as prefix.')
          setting.prefixes.push(symbol)
-         m.reply(`✅ Successfully add *"${symbol}"* as prefix.`)
+         await m.reply(`✅ Successfully add *"${symbol}"* as prefix.`)
       }
       else if (command === '-prefix') {
          const [symbol] = args
@@ -498,7 +477,7 @@ export default {
             if (data === symbol)
                setting.prefixes.splice(index, 1)
          })
-         m.reply(`✅ Successfully removed *"${symbol}"* from database.`)
+         await m.reply(`✅ Successfully removed *"${symbol}"* from database.`)
       }
    },
    owner: true

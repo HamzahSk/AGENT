@@ -21,7 +21,7 @@ export default {
       const restored = chargedEnergy - user.energy
       user.energy = chargedEnergy
       user.lastCharge = user.lastSeen
-      m.reply(`✨ ${restored} energy restored. And 3 of your limits has been consumed.`)
+      await m.reply(`✨ ${restored} energy restored. And 3 of your limits has been consumed.`)
    },
    limit: 3
 }

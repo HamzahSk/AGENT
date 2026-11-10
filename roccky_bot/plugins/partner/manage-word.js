@@ -14,7 +14,7 @@ export default {
          if (setting.forbiddenWords.includes(word))
             return m.reply('💭 Already in database.')
          setting.forbiddenWords.push(word)
-         m.reply(`✅ Successfully add *"${word}"* to database.`)
+         await m.reply(`✅ Successfully add *"${word}"* to database.`)
       }
       else if (command === '-word') {
          const [word] = args
@@ -28,7 +28,7 @@ export default {
             if (data === word)
                setting.forbiddenWords.splice(index, 1)
          })
-         m.reply(`✅ Successfully removed *"${word}"* from database.`)
+         await m.reply(`✅ Successfully removed *"${word}"* from database.`)
       }
    },
    partner: true

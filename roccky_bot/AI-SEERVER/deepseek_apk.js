@@ -1,3 +1,4 @@
+import { solvePow } from './pow.js';
 /**
  DeepSeek unofficial API — Android client (similar to apk.js) WITHOUT WASM.
  The PoW solver uses a Keccak implementation reverse-engineered from ds_tai.wasm
@@ -594,7 +595,8 @@ class DeepSeek {
 
     const { algorithm, challenge, salt, difficulty, expire_at, signature, target_path } = response;
 
-    const answer = this.calculateHash(algorithm, challenge, salt, difficulty, expire_at);
+    if (algorithm !== 'DeepSeekHashV1') throw new Error('Unsupported PoW algorithm');
+    const answer = await solvePow(challenge, `${salt}_${expire_at}_`, difficulty, { signal, timeoutMs: this.requestTimeoutMs });
     if (answer === undefined) throw new Error("PoW failed: nonce not found");
 
     const sh = Buffer.from(JSON.stringify({

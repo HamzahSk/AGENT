@@ -41,11 +41,11 @@ export default {
       )
       if (command === '+limit') {
          user.limit += quantity
-         m.reply(`✅ Successfully add ${quantity} limit to @${userId.split('@')[0]}.`)
+         await m.reply(`✅ Successfully add ${quantity} limit to @${userId.split('@')[0]}.`)
       }
       else if (command === '-limit') {
          user.limit -= quantity
-         m.reply(`✅ Successfully remove ${quantity} limit from @${userId.split('@')[0]}.`)
+         await m.reply(`✅ Successfully remove ${quantity} limit from @${userId.split('@')[0]}.`)
       }
    },
    partner: true

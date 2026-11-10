@@ -8,6 +8,16 @@ import { CommandIndex, EventIndex } from './Watcher.js'
 import Client from './SocketClient.js'
 
 import Scheduler from './Components/Scheduler.js'
+import { reportError } from './Runtime.js'
+
+export const runPlugin = async (plugin, m, context) => {
+   try { await plugin.run(m, context) }
+   catch (error) {
+      reportError('Plugin ' + (context.command || 'event'), error)
+      try { await context.sock.sendText(m.chat, '❌ Fitur gagal diproses. Coba lagi nanti.', m) }
+      catch (sendError) { reportError('Plugin error response', sendError) }
+   } finally { context.db.requestWrite() }
+}
 
 const IgnoreProtocolTypes = new Set([5, 6, 9, 17])
 
@@ -20,6 +30,7 @@ export default (db, store) => {
       bind: (socket) => {
          if (!socket) return
 
+         scheduler?.stop()
          sock = socket
 
          scheduler = Scheduler({
@@ -31,9 +42,9 @@ export default (db, store) => {
                ) return
 
                if (type === 'user')
-                  sock.sendText(data.jid, `📣 Akses premium kamu akan berakhir dalam *${Func.toTime(remaining)}*`, FAKE_QUOTE)
+                  await sock.sendText(data.jid, `📣 Akses premium kamu akan berakhir dalam *${Func.toTime(remaining)}*`, FAKE_QUOTE)
                else if (type === 'group')
-                  sock.sendText(data.id, `📣 Masa aktif bot untuk grup ini akan berakhir dalam ${Func.toTime(remaining)}`, FAKE_QUOTE, { mentionAll: true })
+                  await sock.sendText(data.id, `📣 Masa aktif bot untuk grup ini akan berakhir dalam ${Func.toTime(remaining)}`, FAKE_QUOTE, { mentionAll: true })
 
                // Tidak blokir jalur pesan: cukup tandai dirty, flush digabung & dijadwalkan
                store.requestWrite()
@@ -46,7 +57,7 @@ export default (db, store) => {
                ) return
 
                if (type === 'user')
-                  sock.sendText(data.jid, '📣 Akses premium kamu telah berakhir.', FAKE_QUOTE)
+                  await sock.sendText(data.jid, '📣 Akses premium kamu telah berakhir.', FAKE_QUOTE)
                else if (type === 'group') {
                   await sock.sendText(data.id, '📣 Masa aktif bot untuk grup ini telah berakhir.', FAKE_QUOTE, { mentionAll: true })
                   await sock.groupLeave(data.id)
@@ -75,7 +86,7 @@ export default (db, store) => {
             let callFrom = callerPn || from
             if (callFrom?.endsWith(LID)) {
                const result = await sock.findUserId(callFrom)
-               if (!callFrom.phoneNumber.startsWith('id'))
+               if (result.phoneNumber && !result.phoneNumber.startsWith('id'))
                   callFrom = result.phoneNumber
             }
 
@@ -85,7 +96,7 @@ export default (db, store) => {
 
             if (
                !userData ||
-               callFrom.startsWith(ownerNumber)
+               callFrom === `${ownerNumber}@s.whatsapp.net`
             ) return
 
             if (userData.callAttempt >= 3) {
@@ -94,8 +105,9 @@ export default (db, store) => {
             }
 
             ++userData.callAttempt
+            db.requestWrite()
 
-            sock.sendText(callFrom, '⚠️ Jangan menelepon lagi, atau kamu akan diblokir.')
+            await sock.sendText(callFrom, '⚠️ Jangan menelepon lagi, atau kamu akan diblokir.')
          }
       },
       message: async (message) => {
@@ -104,11 +116,11 @@ export default (db, store) => {
          const timestampMs = Date.now()
          const timestampSec = timestampMs / SECOND
 
-         if (!message.message || timestampSec - message.messageTimestamp > ignoreOldMessageTS) return
+         if (!message.message || timestampSec - Number(message.messageTimestamp) > (global.ignoreOldMessageTS ?? 30)) return
 
          const m = Serialize(sock, store, setting, message)
 
-         const msg = m.msg
+         const msg = m.msg || {}
 
          const protocolType = msg.type
          if (
@@ -144,6 +156,7 @@ export default (db, store) => {
             }
 
             db.updateUser(m.sender, user)
+            user = db.getUser(m.sender)
          }
 
          if (!user.jid)
@@ -155,7 +168,7 @@ export default (db, store) => {
          user.name = m.pushName
          user.lastSeen = timestampMs
 
-         const isOwner = m.fromMe || m.sender.startsWith(ownerNumber)
+         const isOwner = m.fromMe || m.sender === `${ownerNumber}@s.whatsapp.net`
          const isPartner = isOwner || setting.partner.includes(m.sender)
          const isPremium = isPartner || user.premiumExpiry > 0
          const isBanned = user.banned
@@ -185,6 +198,7 @@ export default (db, store) => {
                }
 
                db.updateGroup(m.chat, group)
+               group = db.getGroup(m.chat)
             }
 
             group.name = groupMetadata.subject
@@ -254,6 +268,12 @@ export default (db, store) => {
                   lastSeen: timestampMs
                }
             }
+
+            const adminIds = new Set(groupMetadata.participants.filter(p => p.admin).flatMap(p => [p.id, p.phoneNumber, p.lid]).filter(Boolean))
+            isAdmin = adminIds.has(m.sender) || adminIds.has(m.senderLid)
+            isBotAdmin = adminIds.has(sock.user.decodedId) || adminIds.has(sock.user.decodedLid)
+            memberData.isAdmin = isAdmin
+            group.participants[sock.user.decodedId].isAdmin = isBotAdmin
 
             if (!Func.isEmptyObject(user.afkContext)) {
                const print = Func.frame('HALO', [
@@ -382,7 +402,7 @@ let fileSize = 0
 
             user.commandUsage++
 
-            plugin.run(m, {
+            await runPlugin(plugin, m, {
                sock,
                db,
                store,
@@ -446,7 +466,7 @@ let fileSize = 0
 
                if (event.botAdmin && !isBotAdmin) continue
 
-               event.run(m, {
+               await runPlugin(event, m, {
                   sock,
                   db,
                   store,
@@ -483,6 +503,8 @@ let fileSize = 0
       },
       participant: async ({ id, author, participant, action }) => {
          const timestampMs = Date.now()
+         participant = typeof participant === 'string' ? { id: participant } : participant
+         if (!participant?.id) return
 
          let group = db.getGroup(id)
          let groupMetadata = store.getGroup(id)
@@ -500,6 +522,7 @@ let fileSize = 0
             }
 
             db.updateGroup(id, group)
+            group = db.getGroup(id)
          }
 
          group.name = groupMetadata.subject
@@ -515,8 +538,7 @@ let fileSize = 0
          let userId = participant.phoneNumber
          if (!userId) {
             const result = await sock.findUserId(participant.id)
-            if (!result.phoneNumber.startsWith('id'))
-               userId = result.phoneNumber
+            userId = result.phoneNumber || participant.id
          }
 
          let memberData = group.participants[userId]
@@ -526,10 +548,10 @@ let fileSize = 0
             }
 
          const isMuted = group.mute
-         let isBotAdmin = memberData.isAdmin
+         const isBotAdmin = groupMetadata.participants.some(p => p.admin && [p.id, p.phoneNumber].some(id => id && [sock.user.decodedId, sock.user.decodedLid].includes(id)))
 
          if (action === 'add') {
-            groupMetadata.participants.push(participant)
+            if (!groupMetadata.participants.some(p => p.id === participant.id)) groupMetadata.participants.push(participant)
 
             if (
                group.antiRejoin &&
@@ -548,7 +570,7 @@ let fileSize = 0
                   .replace('+tag', '@' + userId.split('@')[0])
                   .replace('+date', Func.formatTime(undefined, timestampMs))
 
-               sock.sendText(id, printWelcome, null, {
+               await sock.sendText(id, printWelcome, null, {
                   externalAdReply: {
                      title: botName,
                      body: Func.greeting(),
@@ -559,18 +581,18 @@ let fileSize = 0
             }
          }
          else if (action === 'promote') {
-            groupMetadata.participants.find(x => x.id === participant.id).admin = 'admin'
+            Object.assign(groupMetadata.participants.find(x => x.id === participant.id) || {}, { admin: 'admin' })
             memberData.isAdmin = true
 
             if (!isMuted)
-               sock.sendText(id, `🎉 @${userId.split('@')[0]} dipromosikan menjadi admin oleh @${author.split('@')[0]}.`)
+               await sock.sendText(id, `🎉 @${userId.split('@')[0]} dipromosikan menjadi admin oleh @${(author || '').split('@')[0]}.`)
          }
          else if (action === 'demote') {
-            groupMetadata.participants.find(x => x.id === participant.id).admin = null
+            Object.assign(groupMetadata.participants.find(x => x.id === participant.id) || {}, { admin: null })
             memberData.isAdmin = false
 
             if (!isMuted)
-               sock.sendText(id, `⬇️ @${userId.split('@')[0]} diturunkan dari admin oleh @${author.split('@')[0]}.`)
+               await sock.sendText(id, `⬇️ @${userId.split('@')[0]} diturunkan dari admin oleh @${(author || '').split('@')[0]}.`)
          }
          else if (action === 'remove') {
             if (sock.user.decodedId === userId) {
@@ -590,7 +612,7 @@ let fileSize = 0
                   .replace('+tag', '@' + userId.split('@')[0])
                   .replace('+date', Func.formatTime(undefined, timestampMs))
 
-               sock.sendText(id, printLeft, null, {
+               await sock.sendText(id, printLeft, null, {
                   externalAdReply: {
                      title: botName,
                      body: Func.greeting(),
@@ -632,17 +654,12 @@ let fileSize = 0
             userData.afkReason = ''
             userData.afkContext = {}
             userData.afkTimestamp = -1
+            db.requestWrite()
          }
       },
-      unbind: () => {
-         clearInterval(scheduler)
-
-         if (!sock) return
-
-         sock.ev.flush()
-         sock.ev.removeAllListeners()
-         sock.ws.close()
-
+      unbind: async () => {
+         await scheduler?.stop()
+         scheduler = null
          sock = null
       }
    }

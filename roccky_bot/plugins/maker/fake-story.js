@@ -17,7 +17,7 @@ export default {
          const [caption, username = m.pushName] = text.split('|')
          if (!text)
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} nice gurl | @itsliaaa`)
-         m.react('🕒')
+         await m.react('🕒')
          let profilePicture
          if (mimetype)
             profilePicture = await q.download()
@@ -33,11 +33,11 @@ export default {
          })
          if (!Buffer.isBuffer(data))
             return m.reply('❌ Failed to get data.')
-         sock.sendMedia(m.chat, data, '', m)
+         await sock.sendMedia(m.chat, data, '', m)
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

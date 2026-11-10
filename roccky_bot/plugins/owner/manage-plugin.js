@@ -76,7 +76,7 @@ export default {
          if (!pluginPath)
             return m.reply('❌ Plugin not found.')
          await unlink(pluginPath)
-         m.reply('✅ Successfully delete plugin.')
+         await m.reply('✅ Successfully delete plugin.')
       }
       else if (command === 'getplugin' || command === 'gp') {
          const allPluginsPath = await getAllPluginsPath()
@@ -91,7 +91,7 @@ export default {
             `*Created At*: ${formatTime(undefined, fileStatistic.birthtime)}`,
             `*Modified At*: ${formatTime(undefined, fileStatistic.mtime)}`
          ], '🔧')
-         sock.sendMessage(m.chat, {
+         await sock.sendMessage(m.chat, {
             headerText: printHeader,
             code: plugin,
             language: 'javascript'
@@ -107,7 +107,7 @@ export default {
             return m.reply('❌ Invalid plugin content.')
          const savedPath = join(pluginsFolder, text)
          await writeFile(savedPath, sanitizeCode(qBody))
-         m.reply('✅ Successfully saved plugin to: ' + savedPath)
+         await m.reply('✅ Successfully saved plugin to: ' + savedPath)
       }
    },
    owner: true

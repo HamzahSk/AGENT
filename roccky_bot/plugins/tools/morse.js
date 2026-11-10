@@ -12,7 +12,7 @@ export default {
       if (command === 'morse') {
          if (!text)
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} hi`)
-         m.reply(
+         await m.reply(
             text
                .toLowerCase()
                .split(/\s+/)
@@ -24,7 +24,7 @@ export default {
       else if (command === 'dmorse') {
          if (!text)
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} –•––•–`)
-         m.reply(
+         await m.reply(
             text
                .split(/\s*\/\s*/g)
                .map(word => word.split(/\s+/)

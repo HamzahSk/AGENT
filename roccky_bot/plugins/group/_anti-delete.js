@@ -23,7 +23,7 @@ export default {
                forward: message,
                force: true
             })
-            sock.sendText(m.chat, `🗑️ Deleted message from @${m.sender.split('@')[0]}.`, context)
+            await sock.sendText(m.chat, `🗑️ Deleted message from @${m.sender.split('@')[0]}.`, context)
          }
       }
    },

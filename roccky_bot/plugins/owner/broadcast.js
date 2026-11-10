@@ -15,6 +15,7 @@ export default {
       setting,
       sock,
       command,
+      isPrefix,
       text
    }) {
       try {
@@ -23,7 +24,7 @@ export default {
          const body = text ?? q?.body
          if (!body)
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} fresh updates!`)
-         m.react('🕒')
+         await m.react('🕒')
          const isPrivate = command === 'broadcast' ||
             command === 'bc' ||
             command === 'jpm'
@@ -57,7 +58,7 @@ export default {
             setting.broadcastCooldown >= 1000 ?
                setting.broadcastCooldown :
                DEFAULT_BROADCAST_COOLDOWN
-         for (const id of ids) {
+         for (const id of new Set(ids)) {
             if (bufferMedia)
                await sock.sendMedia(id, bufferMedia, printBody, FAKE_QUOTE, {
                   sticker: isMimeWebP(mimetype),
@@ -87,11 +88,11 @@ export default {
                })
             await delay(broadcastCooldown)
          }
-         m.reply(`✅ Successfully sent broadcast to ${ids.length} chats.`)
+         await m.reply(`✅ Successfully sent broadcast to ${new Set(ids).size} chats.`)
       }
       catch (error) {
-         console.error(e)
-         m.reply('❌ ' + error.message)
+         console.error(error)
+         await m.reply('❌ ' + error.message)
       }
    },
    owner: true

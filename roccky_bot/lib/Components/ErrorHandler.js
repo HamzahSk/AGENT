@@ -1,140 +1,24 @@
+import { reportError } from '../Runtime.js'
 
-const ERROR_MESSAGES = [
-   'Timed',
-   'Error',
-   'TypeError',
-   'SessionError',
-   'ENOENT',
-   'ENOSPC',
-   'Device logged out',
-   'Connection Closed',
-   'bad-request',
-   'forbidden',
-   'terminated',
-   'defined',
-   'undefined',
-   'null',
-   'Analysis.',
-   'simultaneous',
-   'all hosts'
-]
-
-// Error yang dianggap transien / tidak fatal — cukup dicatat, JANGAN mematikan
-// process. Termasuk seluruh kegagalan pengiriman satu pesan (contoh:
-// "Invalid media type", "Bad Request", koneksi/upload media, dll).
-const TRANSIENT_MESSAGES = [
-   'invalid media type',
-   'bad request',
-   'forbidden',
-   'not allowed',
-   'connection',
-   'timed out',
-   'etimedout',
-   'enotfound',
-   'econnreset',
-   'econnaborted',
-   'enetunreach',
-   'epipe',
-   'socket hang up',
-   '429',
-   '403',
-   '404'
-]
-
-// Deteksi error transien: berdasarkan pesan ATAU status code Boom/HTTP.
-const isTransientError = (error) => {
-   const message = String(error?.message || error || '').toLowerCase()
-
-   if (TRANSIENT_MESSAGES.some(pattern => message.includes(pattern)))
-      return true
-
-   const statusCode = error?.output?.statusCode || error?.statusCode
-   if (typeof statusCode === 'number' && (statusCode === 400 || statusCode === 403 || statusCode === 429))
-      return true
-
-   return false
-}
-
-const patchConsole = (method, { ignore = [], transform } = {}) => {
-   const original = console[method]
-
+// libsignal can print complete key records through console methods.
+const privatePrefixes = ['Closing session:', 'Opening session:', 'Removing old closed session:', 'Migrating session to:', 'Closing stale', 'Closing open session', 'Session error:', 'Bad MAC']
+for (const method of ['log', 'info', 'warn', 'error']) {
+   const original = console[method].bind(console)
    console[method] = (...args) => {
-      const first = args?.[0]
-      const message = String(first?.message || first || '')
-
-      if (ignore.some(pattern => message.includes(pattern))) return
-
-      if (typeof transform === 'function') {
-         const result = transform(message, args)
-         if (result === false) return
-         if (typeof result === 'string')
-            return original(result)
-      }
-
-      original(...args)
+      if (privatePrefixes.some(prefix => typeof args[0] === 'string' && args[0].includes(prefix))) return
+      original(...args.map(value => value instanceof Error ? `${value.name} (${value.code != null && /^[A-Z_0-9-]+$/i.test(String(value.code)) ? value.code : 'unclassified'})` : value))
    }
 }
 
-patchConsole('info', {
-   ignore: [
-      'Closing session:',
-      'Opening session:',
-      'Removing old closed session:',
-      'Migrating session to:'
-   ]
-})
-
-patchConsole('warn', {
-   ignore: [
-      'Closing stale',
-      'Closing open session'
-   ]
-})
-
-patchConsole('error', {
-   ignore: [
-      'Bad MAC',
-      'Session error:'
-   ],
-   transform: (message) => {
-      if (message.includes('Failed to decrypt'))
-         return `🔐 ${message}`
+export const installFatalHandlers = shutdown => {
+   let failing = false
+   const fatal = error => {
+      reportError('Unexpected runtime failure; shutting down', error)
+      if (failing) return
+      failing = true
+      Promise.resolve().then(() => shutdown(1)).catch(() => { process.exitCode = 1 })
    }
-})
-
-process.on('warning', (warning) => {
-   if (warning?.name === 'MaxListenersExceededWarning')
-      console.warn('⚠️ Potential memory leak detected.')
-})
-
-process.on('uncaughtException', (error) => {
-   const message = String(error?.code || error || '')
-
-   if (message === 'ENOMEM') {
-      console.error('❌ Out of memory, restarting...')
-      process.exit(1)
-      return
-   }
-
-   console.error('❌ Uncaught Exception', ':', error)
-
-   // Error transien (termasuk gagal kirim satu pesan) hanya dicatat,
-   // bot tetap berjalan.
-   if (isTransientError(error) || ERROR_MESSAGES.some(condition => message.includes(condition)))
-      return
-
-   process.exit(1)
-})
-
-process.on('unhandledRejection', (reason) => {
-   // Log-only ANTI-CRASH: kegagalan promise (mis. satu sendMessage) TIDAK
-   // boleh mematikan process Node.js. Cukup dicatat agar bisa diinvestigasi.
-   const message = String(reason?.message || reason || '')
-
-   if (isTransientError(reason)) {
-      console.warn('⚠️ Unhandled Rejection (transien, diabaikan):', message)
-      return
-   }
-
-   console.error('❌ Unhandled Rejection', ':', reason)
-})
+   process.on('uncaughtException', fatal)
+   process.on('unhandledRejection', fatal)
+   return () => { process.off('uncaughtException', fatal); process.off('unhandledRejection', fatal) }
+}

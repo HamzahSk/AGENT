@@ -29,16 +29,16 @@ export default {
       const url = match[0]
       try {
          if (url.includes('capcut.com')) {
-            m.react('🕒')
+            await m.react('🕒')
             const data = await nexray('downloader/capcut', {
                url
             })
             if (!data.status)
                return m.reply('❌ Failed to get data.')
-            sock.sendMedia(m.chat, data.result.url, data.result.title, m)
+            await sock.sendMedia(m.chat, data.result.url, data.result.title, m)
          }
          else if (url.includes('douyin.com')) {
-            m.react('🕒')
+            await m.react('🕒')
             const data = await nexray('downloader/douyin', {
                url
             })
@@ -56,28 +56,28 @@ export default {
                }, {
                   quoted: m
                })
-            sock.sendMedia(m.chat, videoContent.url, data.result.title, m)
+            await sock.sendMedia(m.chat, videoContent.url, data.result.title, m)
          }
          else if (url.includes('facebook.')) {
-            m.react('🕒')
+            await m.react('🕒')
             const data = await nexray('downloader/facebook', {
                url
             })
             if (!data.status)
                return m.reply('❌ Failed to get data.')
-            sock.sendMedia(m.chat, data.result.video_hd || data.result.video_sd, '', m)
+            await sock.sendMedia(m.chat, data.result.video_hd || data.result.video_sd, '', m)
          }
          else if (url.includes('drive.google')) {
-            m.react('🕒')
+            await m.react('🕒')
             const data = await nexray('downloader/googledrive', {
                url
             })
             if (!data.status)
                return m.reply('❌ Failed to get data.')
-            sock.sendMedia(m.chat, data.result.url, data.result.name, m)
+            await sock.sendMedia(m.chat, data.result.url, data.result.name, m)
          }
          else if (url.includes('instagram.')) {
-            m.react('🕒')
+            await m.react('🕒')
             const data = await reelsvideo(url)
             if (!data.media.length)
                return m.reply('❌ Failed to get data.')
@@ -88,7 +88,7 @@ export default {
                      data.media[0].url
                return sock.sendMedia(m.chat, resized, '', m)
             }
-            sock.sendMessage(m.chat, {
+            await sock.sendMessage(m.chat, {
                album: data.media.map(media => {
                   if (media.type === 'audio') return
                   return ({
@@ -103,38 +103,38 @@ export default {
             })
          }
          else if (url.includes('mediafire.com')) {
-            m.react('🕒')
+            await m.react('🕒')
             const data = await nexray('downloader/mediafire', {
                url
             })
             if (!data.status)
                return m.reply('❌ Failed to get data.')
-            sock.sendMedia(m.chat, data.result.download_url, '', m, {
+            await sock.sendMedia(m.chat, data.result.download_url, '', m, {
                document: true
             })
          }
          else if (url.includes('pin.it')) {
-            m.react('🕒')
+            await m.react('🕒')
             const data = await nekolabs('downloader/pinterest', {
                url
             })
             if (!data.success)
                return m.reply('❌ Failed to get data.')
-            sock.sendMedia(m.chat, data.result.medias.at(-1).url, '', m)
+            await sock.sendMedia(m.chat, data.result.medias.at(-1).url, '', m)
          }
          else if (url.includes('open.spotify.com')) {
-            m.react('🕒')
+            await m.react('🕒')
             const data = await nexray('downloader/spotify', {
                url
             })
             if (!data.status)
                return m.reply('❌ Failed to get data.')
-            sock.sendMedia(m.chat, data.result.url, '', m, {
+            await sock.sendMedia(m.chat, data.result.url, '', m, {
                audio: true
             })
          }
          else if (url.includes('tiktok.com')) {
-            m.react('🕒')
+            await m.react('🕒')
             const data = await tikwm(url)
             const videoContent = data.play
             const imageContent = data.images
@@ -148,10 +148,10 @@ export default {
                }, {
                   quoted: m
                })
-            sock.sendMedia(m.chat, imageContent?.[0] || videoContent, data.title, m)
+            await sock.sendMedia(m.chat, imageContent?.[0] || videoContent, data.title, m)
          }
          else if (url.includes('twitter.com') || url.includes('x.com')) {
-            m.react('🕒')
+            await m.react('🕒')
             const data = await nexray('downloader/twitter', {
                url
             })
@@ -159,7 +159,7 @@ export default {
                return m.reply('❌ Failed to get data.')
             if (data.result.length < 2)
                return sock.sendMedia(m.chat, data.result.download_url[0].url, '', m)
-            sock.sendMessage(m.chat, {
+            await sock.sendMessage(m.chat, {
                album: data.result.download_url
                   .filter(result => result.type === 'image' || result.type === 'video')
                   .map(value => ({
@@ -172,16 +172,16 @@ export default {
             })
          }
          else if (url.includes('videy.co')) {
-            m.react('🕒')
+            await m.react('🕒')
             const data = await nexray('downloader/videy', {
                url
             })
             if (!data.status)
                return m.reply('❌ Failed to get data.')
-            sock.sendMedia(m.chat, data.result, '', m)
+            await sock.sendMedia(m.chat, data.result, '', m)
          }
          else if (url.includes('youtube.com') || url.includes('youtu.be')) {
-            m.react('🕒')
+            await m.react('🕒')
             const data = await nexray('downloader/v1/ytmp4', {
                url
             })
@@ -189,12 +189,12 @@ export default {
                return m.reply('❌ Failed to get data.')
             if (data.result.duration > 1440)
                return m.reply('❌ Video is too long. Maximum duration is 24 minutes.')
-            sock.sendMedia(m.chat, data.result.url, data.result.title, m)
+            await sock.sendMedia(m.chat, data.result.url, data.result.title, m)
          }
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    }
 }

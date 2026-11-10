@@ -3,6 +3,7 @@ export default {
    category: 'group',
    async run(m, {
       sock,
+      command,
       isPrefix,
       args
    }) {
@@ -19,13 +20,13 @@ export default {
                key: q.key
             }
          })
-         m.reply(isRemove ?
+         await m.reply(isRemove ?
             '✅ Successfully unpinned the message.' :
             '✅ Successfully pinned the message for 24 hours.')
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    group: true,

@@ -22,7 +22,7 @@ export default {
       const printSourceCode = frame('SOURCE CODE', [
          'https://github.com/itsliaaa/starseed#readme'
       ], '🧩')
-      m.reply(printCredits + '\n\n' +
+      await m.reply(printCredits + '\n\n' +
          printDonateUrl + '\n\n' +
          printAPIs + '\n\n' +
          printSourceCode, {

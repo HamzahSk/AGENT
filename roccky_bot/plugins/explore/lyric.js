@@ -21,12 +21,12 @@ export default {
             const result = userPreviousResult[Number(text) - 1]
             if (!result)
                return m.reply(`❌ Invalid input.`)
-            m.reply(result.plainLyrics)
+            await m.reply(result.plainLyrics)
          }
          else {
             if (!text)
                return m.reply(`👉🏻 *Example*: ${isPrefix + command} Army dreamers`)
-            m.react('🕒')
+            await m.react('🕒')
             const data = await deline('tools/lyrics', {
                title: text
             })
@@ -47,13 +47,13 @@ export default {
             ], '📄')
             const printList = frame('LYRICS', flattedResult, '🎼')
             ExploreSession.set(keyCache, data.result)
-            m.reply(printHowTo + '\n\n' +
+            await m.reply(printHowTo + '\n\n' +
                printList)
          }
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

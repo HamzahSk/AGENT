@@ -14,7 +14,7 @@ export default {
       try {
          if (!text)
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} Fern x Stark`)
-         m.react('🕒')
+         await m.react('🕒')
          const data = await nexray('search/pinterest', {
             q: text
          })
@@ -26,7 +26,7 @@ export default {
             return m.reply('❌ Failed to get data.')
          if (album.length < 2)
             return sock.sendMedia(m.chat, album[0].videos_url || album[0].images_url, '', m)
-         sock.sendMessage(m.chat, {
+         await sock.sendMessage(m.chat, {
             album: album.map((media) => ({
                [media.type]: {
                   url: media.videos_url || media.images_url
@@ -38,7 +38,7 @@ export default {
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

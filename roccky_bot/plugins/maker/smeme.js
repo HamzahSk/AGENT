@@ -19,7 +19,7 @@ export default {
          const [top = '', bottom = ''] = text.split('|')
          if (!text)
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} nice | gurl`)
-         m.react('🕒')
+         await m.react('🕒')
          const upload = await uguu(
             await q.download()
          )
@@ -30,13 +30,13 @@ export default {
          })
          if (!Buffer.isBuffer(data))
             return m.reply('❌ Failed to get data.')
-         sock.sendMedia(m.chat, data, '', m, {
+         await sock.sendMedia(m.chat, data, '', m, {
             sticker: true
          })
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

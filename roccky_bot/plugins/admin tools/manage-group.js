@@ -13,11 +13,11 @@ export default {
    }) {
       if (command === 'closegc') {
          await sock.groupSettingUpdate(m.chat, 'announcement')
-         m.reply('✅ Successfully closing the grup.')
+         await m.reply('✅ Successfully closing the grup.')
       }
       else if (command === 'opengc') {
          await sock.groupSettingUpdate(m.chat, 'not_announcement')
-         m.reply('✅ Successfully open the grup.')
+         await m.reply('✅ Successfully open the grup.')
       }
       else if (command === 'del' || command === 'delete') {
          await sock.sendMessage(m.chat, {
@@ -28,7 +28,7 @@ export default {
                participant: m.quoted.sender
             }
          })
-         m.reply('✅ Successfully deleted.')
+         await m.reply('✅ Successfully deleted.')
       }
       else if (command === 'setgcdesc') {
          if (!text)
@@ -36,7 +36,7 @@ export default {
          if (text.length > 1000)
             return m.reply('❌ Maximum 1000 characters.')
          await sock.groupUpdateDescription(m.chat, text)
-         m.reply('✅ Successfully change the group description.')
+         await m.reply('✅ Successfully change the group description.')
       }
       else if (command === 'setgcname') {
          if (!text)
@@ -44,28 +44,28 @@ export default {
          if (text.length > 100)
             return m.reply('❌ Maximum 100 characters.')
          await sock.groupUpdateSubject(m.chat, text)
-         m.reply('✅ Successfully change the group name.')
+         await m.reply('✅ Successfully change the group name.')
       }
       else if (command === 'setgcpp') {
          const q = m.quoted?.url ? m.quoted : m
          const mimetype = (q.msg || q).mimetype
          if (!isMimeImage(mimetype))
             return m.reply('💭 Provide an image to change group picture.')
-         m.react('🕒')
+         await m.react('🕒')
          await sock.updateProfilePicture(m.chat, await q.download())
-         m.reply('✅ Successfully changed.')
+         await m.reply('✅ Successfully changed.')
       }
       else if (command === 'setleft') {
          if (!text)
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} Hi +tag, welcome to +grup group, we hope you enjoyed with us!`)
          group.leftMessage = text
-         m.reply('✅ Successfully changed left message.')
+         await m.reply('✅ Successfully changed left message.')
       }
       else if (command === 'setwelcome') {
          if (!text)
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} Good bye! +tag`)
          group.welcomeMessage = text
-         m.reply('✅ Successfully changed welcome message.')
+         await m.reply('✅ Successfully changed welcome message.')
       }
       else if (command === 'upgcsw') {
          const q = m.quoted ? m.quoted : m
@@ -73,7 +73,7 @@ export default {
          const mimetype = (q.msg || q).mimetype
          if (!body && !mimetype)
             return m.reply('💭 Provide text or media you would like to send to the group status.')
-         m.react('🕒')
+         await m.react('🕒')
          let context
          if (mimetype)
             context = await sock.sendMedia(m.chat, await q.download(), body, null, {
@@ -86,7 +86,7 @@ export default {
             }, {
                backgroundColor: randomHex()
             })
-         sock.sendText(m.chat, '✅ Successfully sent group status.', context)
+         await sock.sendText(m.chat, '✅ Successfully sent group status.', context)
       }
    },
    group: true,

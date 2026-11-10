@@ -1,3 +1,4 @@
+import { once } from 'node:events'
 
 import { exec, spawn } from 'child_process'
 import { format, promisify } from 'util'
@@ -44,25 +45,15 @@ export default {
                   args.push(rawArgs[i].trim())
             const cmd = args.shift()
             const proc = spawn(cmd, args)
-            let stdoutData = ''
-            let stderrData = ''
-            proc.stdout.on('data', (data) => stdoutData += data.toString())
-            proc.stderr.on('data', (data) => stderrData += data.toString())
-            proc.on('close', async (exitCode) => {
-               let result = ''
-               if (stdoutData)
-                  result += `[STDOUT]:\n${stdoutData.trim()}\n\n`
-               if (stderrData)
-                  result += `[STDERR]:\n${stderrData.trim()}\n\n`
-               if (!result)
-                  result = `Process exited with code ${exitCode}`
-               if (result.length > 50000)
-                  result = result.substring(0, 50000) + '\n\n...[Output Trimmed]'
-               await m.reply(result.trim())
-            })
-            proc.on('error', async (error) => {
-               await m.reply(`❌ Unexpected error occurred: ${error.message}`)
-            })
+            let stdoutData = '', stderrData = ''
+            const timer = setTimeout(() => proc.kill('SIGKILL'), 60000)
+            proc.stdout.on('data', data => { stdoutData += data.toString(); if (stdoutData.length > 50000) { stdoutData = stdoutData.slice(0, 50000); proc.kill('SIGKILL') } })
+            proc.stderr.on('data', data => { stderrData += data.toString(); if (stderrData.length > 50000) { stderrData = stderrData.slice(0, 50000); proc.kill('SIGKILL') } })
+            try {
+               const [code] = await once(proc, 'close')
+               const result = [stdoutData && `[STDOUT]:\n${stdoutData.trim()}`, stderrData && `[STDERR]:\n${stderrData.trim()}`].filter(Boolean).join('\n\n')
+               await m.reply(result || `Process exited with code ${code}`)
+            } finally { clearTimeout(timer) }
          }
          else if (command === '%') {
             await m.react('🕒')

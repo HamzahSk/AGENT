@@ -16,7 +16,7 @@ export default {
          (new RegExp('\\b' + setting.forbiddenWords.join('\\b|\\b') + '\\b')).test(body.toLowerCase())
       ) {
          const participant = group.participants[m.sender]
-         handleWarning(m, {
+         await handleWarning(m, {
             sock,
             participant,
             note: `5 warnings and you’ll be removed. No more toxicity.`

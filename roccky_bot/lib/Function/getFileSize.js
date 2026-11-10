@@ -4,7 +4,7 @@ import axios from 'axios'
 
 Func.getFileSize = async (url) => {
    try {
-      const res = await axios.head(url, { headers: { 'User-Agent': 'Mozilla/5.0' } })
+      const res = await axios.head(url, { timeout: 10000, headers: { 'User-Agent': 'Mozilla/5.0' } })
       const bytes = parseInt(res.headers['content-length'] || 0)
       return {
          bytes: bytes,
@@ -12,7 +12,7 @@ Func.getFileSize = async (url) => {
       }
    } catch {
       try {
-         const res = await axios.get(url, { responseType: 'stream', headers: { 'User-Agent': 'Mozilla/5.0' } })
+         const res = await axios.get(url, { timeout: 10000, responseType: 'stream', headers: { 'User-Agent': 'Mozilla/5.0' } })
          const bytes = parseInt(res.headers['content-length'] || 0)
          res.data.destroy()
          return {

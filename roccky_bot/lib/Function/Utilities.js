@@ -1,10 +1,11 @@
+import { fetchResource, byteLimit, downloadLimit } from '../Http.js'
 
 import { fileTypeFromBuffer, fileTypeFromFile, fileTypeStream } from 'file-type'
 import { LRUCache } from 'lru-cache'
 import { once } from 'events'
 import { spawn } from 'child_process'
 import { createWriteStream } from 'fs'
-import { access, unlink, readdir, readFile, rm, stat } from 'fs/promises'
+import { access, unlink, readdir, readFile, rm, stat, mkdir } from 'fs/promises'
 import { join, resolve } from 'path'
 import { Readable } from 'stream'
 import { pipeline } from 'stream/promises'
@@ -114,57 +115,27 @@ Func.getDiskStats = async () => {
    return primaryDisk
 }
 
-Func.persistToFile = async (source) => {
-   const isSourceURL = Func.isURL(source)
-
-   if (typeof source === 'string' && !isSourceURL)
-      return source
-
-   if (source instanceof ArrayBuffer)
-      source = Buffer.from(source)
-
-   let readable, check
-
-   if (source instanceof Buffer) {
+Func.persistToFile = async (source, options = {}) => {
+   if (typeof source === 'string' && !Func.isURL(source)) return source
+   if (source instanceof ArrayBuffer) source = Buffer.from(source)
+   let readable, signal, check
+   const maxBytes = options.maxBytes || downloadLimit()
+   if (Buffer.isBuffer(source)) {
+      if (source.length > maxBytes) throw new RangeError('Media exceeds configured limit')
       readable = Readable.from(source)
       check = await fileTypeFromBuffer(source)
-   }
-   else if (typeof source === 'string' && isSourceURL) {
-      const response = await fetch(source, {
-         headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': '*/*'
-         }
-      })
-
-      if (!response.ok) {
-         await response.body?.cancel()
-         throw new Error(`Gagal fetch URL: ${response.status} ${response.statusText}`)
-      }
-
-      readable = await fileTypeStream(
-         Readable.fromWeb(response.body)
-      )
-      check = readable.fileType
-   }
-   else
-      throw new Error('Invalid source type')
-
-   const extension = check?.ext || 'txt'
-   const fileName = resolve(process.cwd(), temporaryFolder, Func.createFileName())
-   const filePath = fileName + '.' + extension
-
+   } else if (typeof source === 'string') {
+      const resource = await fetchResource(source, { ...options, maxBytes })
+      readable = resource.stream; signal = resource.signal
+   } else throw new TypeError('Invalid media source')
+   const directory = resolve(process.cwd(), global.temporaryFolder || 'temp')
+   await mkdir(directory, { recursive: true })
+   const filePath = join(directory, `${Func.createFileName()}.${check?.ext || 'bin'}`)
    try {
-      await pipeline(
-         readable,
-         createWriteStream(filePath)
-      )
-   } catch (err) {
-      console.error('Error saat menulis file:', err)
-      throw new Error('Gagal menyimpan media ke penyimpanan lokal')
-   }
-
-   return filePath
+      await pipeline(readable, byteLimit(maxBytes), createWriteStream(filePath, { flags: 'wx' }), { signal })
+      return filePath
+   } catch (error) { await unlink(filePath).catch(() => {}); throw error }
+   finally { readable.destroy() }
 }
 
 Func.createExif = (json) => {

@@ -1,93 +1,45 @@
 import { spawn } from 'child_process'
 import { once } from 'events'
 import { join, resolve } from 'path'
-import { writeFile } from 'fs/promises'
-import PQueue from 'p-queue'
+import { writeFile, mkdir, unlink } from 'fs/promises'
+import { createMediaRunner } from '../MediaProcess.js'
+import { positiveInt } from '../Runtime.js'
 
 import { BRAT_GIF_ARGS, FFMPEG_CONCAT_ARGS, IMAGE_TO_WEBP, VIDEO_TO_WEBP, AUDIO_TO_MPEG, AUDIO_TO_OPUS } from '../Constants.js'
 
 import { Func } from '#func'
 
-// ========== FFMPEG QUEUE ==========
-Func.FFmpegQueue = new PQueue({
-   concurrency: ffmpegConcurrency
-})
-
-// ========== FFMPEG UTILITIES ==========
-Func.ffmpeg = async (inputPath, inputArgs = [], outputArgs = [], extension, stream = false) =>
-   Func.FFmpegQueue.add(async () => {
-      if (!extension)
-         throw new Error('Extension required')
-
-      const fileName = Func.createFileName() + '.' + extension
-      const filePath = join(process.cwd(), temporaryFolder, fileName)
-
-      // Jika mode stream true, arahkan ke stdout (-) dan set format (-f). Jika false, ke file.
-      const finalOutputArgs = stream
-         ? [...outputArgs, '-threads', '0', '-f', extension, '-']
-         : [...outputArgs, '-threads', '0', filePath]
-
-      const ff = spawn('ffmpeg', [
-         '-y',
-         '-loglevel', 'quiet',
-         '-nostdin',
-         ...inputArgs,
-         '-threads', '0',
-         '-i', inputPath,
-         ...finalOutputArgs
-      ], {
-         // Tangkap stdout jika mode stream, abaikan jika ke file
-         stdio: stream ? ['ignore', 'pipe', 'ignore'] : 'ignore'
-      })
-
-      let timeout
-      const timeoutId = setTimeout(() => {
-         timeout = true
-         ff.kill('SIGKILL')
-      }, ffmpegTimeout)
-
-      // Langsung return stream-nya jika mode stream true
-      if (stream) {
-         ff.once('close', () => clearTimeout(timeoutId))
-         return ff.stdout
-      }
-
-      try {
-         const [code] = await once(ff, 'close')
-
-         if (code !== 0)
-            throw new Error(`FFmpeg failed (${code})`)
-
-         return filePath
-      }
-      catch (error) {
-         if (timeout)
-            throw new Error(`FFmpeg timeout after ${ffmpegTimeout}ms`)
-         throw error
-      }
-      finally {
-         clearTimeout(timeoutId)
-         ff.removeAllListeners()
-      }
-   })
+const runner = createMediaRunner({ concurrency: positiveInt(global.ffmpegConcurrency, 1, 4), maxPending: positiveInt(global.mediaQueueLimit, 8), timeoutMs: positiveInt(global.ffmpegTimeout, 60000) })
+Func.FFmpegQueue = runner.queue
+Func.ffmpeg = async (inputPath, inputArgs = [], outputArgs = [], extension, stream = false) => {
+   if (!/^[a-z0-9]+$/i.test(extension || '')) throw new TypeError('Valid media extension required')
+   const directory = join(process.cwd(), global.temporaryFolder || 'temp')
+   await mkdir(directory, { recursive: true })
+   const filePath = join(directory, `${Func.createFileName()}.${extension}`)
+   const threads = String(positiveInt(global.ffmpegThreads, 1, 4))
+   const args = ['-y', '-loglevel', 'error', '-nostdin', '-threads', threads, ...inputArgs, '-i', inputPath, ...outputArgs, '-threads', threads,
+      ...(stream ? ['-f', extension === 'opus' ? 'ogg' : extension, 'pipe:1'] : [filePath])]
+   try {
+      const output = await runner.run('ffmpeg', args, { stream })
+      return stream ? output : filePath
+   } catch (error) { await unlink(filePath).catch(() => {}); throw error }
+}
 
 Func.bratVideoSticker = async (text = 'Hi', stream = false) => {
-   const texts = text.trim().split(' ')
-   const temporaryDirectory = resolve(process.cwd(), temporaryFolder)
-
-   const files = await Promise.all(
-      texts.map((_, index) =>
-         Func.persistToFile(`https://aqul-brat.hf.space/?text=${encodeURIComponent(texts.slice(0, index + 1).join(' '))}`)
-      )
-   )
-
-   const list = files.map(file => `file '${resolve(temporaryDirectory, file)}'\nduration 0.4`).join('\n') 
-      + `\nfile '${resolve(temporaryDirectory, files[files.length - 1])}'\nduration 3\n`
-
-   const listPath = resolve(temporaryDirectory, `${Func.createFileName()}.txt`)
-   await writeFile(listPath, list)
-
-   return Func.ffmpeg(listPath, FFMPEG_CONCAT_ARGS, BRAT_GIF_ARGS, 'gif', stream)
+   const words = text.trim().split(/\s+/)
+   if (words.length > 30 || text.length > 500) throw new RangeError('Brat animation is limited to 30 words / 500 characters')
+   const files = []
+   const directory = resolve(process.cwd(), global.temporaryFolder || 'temp')
+   const listPath = join(directory, `${Func.createFileName()}.txt`)
+   const cleanup = async () => { for (const file of [...files, listPath]) await unlink(file).catch(() => {}) }
+   try {
+      for (let index = 0; index < words.length; index++) files.push(await Func.persistToFile(`https://aqul-brat.hf.space/?text=${encodeURIComponent(words.slice(0, index + 1).join(' '))}`))
+      const quote = file => resolve(file).replace(/'/g, "'\\''")
+      await writeFile(listPath, files.map(file => `file '${quote(file)}'\nduration 0.4`).join('\n') + `\nfile '${quote(files.at(-1))}'\nduration 3\n`)
+      const output = await Func.ffmpeg(listPath, FFMPEG_CONCAT_ARGS, BRAT_GIF_ARGS, 'gif', stream)
+      if (stream) { output.once('close', () => { void cleanup() }); return output }
+      await cleanup(); return output
+   } catch (error) { await cleanup(); throw error }
 }
 
 Func.imageToWebP = (media, stream = false) =>
@@ -141,20 +93,14 @@ Func.videoToAudio = (media, stream = false) =>
    
 
 // Tambahkan fungsi ini untuk mengecek codec asli file
-Func.detectCodec = (file) => {
-   return new Promise((resolve) => {
-      const proc = spawn('ffprobe', [
-         '-v', 'error',
-         '-select_streams', 'a:0',
-         '-show_entries', 'stream=codec_name',
-         '-of', 'default=noprint_wrappers=1:nokey=1',
-         file
-      ])
-      let out = ''
-      proc.stdout.on('data', d => out += d)
-      proc.on('close', () => resolve(out.trim()))
-      proc.on('error', () => resolve('unknown'))
-   })
+Func.detectCodec = async file => {
+   const proc = spawn('ffprobe', ['-v', 'error', '-select_streams', 'a:0', '-show_entries', 'stream=codec_name', '-of', 'default=noprint_wrappers=1:nokey=1', file], { stdio: ['ignore', 'pipe', 'ignore'] })
+   let output = ''
+   const timer = setTimeout(() => proc.kill('SIGKILL'), 10000)
+   proc.stdout.on('data', chunk => { if (output.length < 1024) output += chunk; else proc.kill('SIGKILL') })
+   try { const [code] = await once(proc, 'close'); return code === 0 ? output.trim() : 'unknown' }
+   catch { return 'unknown' }
+   finally { clearTimeout(timer) }
 }
 
 // Fungsi utama untuk memproses Metadata Audio & Cover

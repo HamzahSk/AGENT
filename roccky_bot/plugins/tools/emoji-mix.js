@@ -14,20 +14,20 @@ export default {
          const [emoji1, emoji2] = text.split('+')
          if (!emoji1 || !emoji2)
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} 😁+😆`)
-         m.react('🕒')
+         await m.react('🕒')
          const data = await nexray('tools/emojimix', {
             emoji1,
             emoji2
          })
          if (!Buffer.isBuffer(data))
             return m.reply('❌ Failed to get data.')
-         sock.sendMedia(m.chat, data, '', m, {
+         await sock.sendMedia(m.chat, data, '', m, {
             sticker: true
          })
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

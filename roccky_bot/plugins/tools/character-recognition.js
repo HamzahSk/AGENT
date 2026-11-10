@@ -15,7 +15,7 @@ export default {
          const mimetype = (q.msg || q).mimetype
          if (!isMimeImage(mimetype))
             return m.reply('💭 Provide an image to recognize the characters.')
-         m.react('🕒')
+         await m.react('🕒')
          const upload = await uguu(
             await q.download()
          )
@@ -24,11 +24,11 @@ export default {
          })
          if (!data.status)
             return m.reply('❌ Failed to get data.')
-         m.reply(data.result.text)
+         await m.reply(data.result.text)
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

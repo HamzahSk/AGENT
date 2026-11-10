@@ -12,6 +12,6 @@ export default {
       const url = 'https://wa.me/' +
          number.split('@')[0] + '?' +
          encodeURIComponent(text)
-      m.reply(url)
+      await m.reply(url)
    }
 }

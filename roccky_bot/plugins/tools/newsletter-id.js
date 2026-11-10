@@ -14,7 +14,7 @@ export default {
       try {
          if (!args[0])
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} https://whatsapp.com/channel/0029VbBeIi33AzNKAeODXg16`)
-         m.react('🕒')
+         await m.react('🕒')
          const match = args[0].match(NEWSLETTER_URL_REGEX)
          if (!match) return m.reply('❌ Invalid URL.')
          const newsletterMetadata = await sock.newsletterMetadata('INVITE', match[1])
@@ -27,7 +27,7 @@ export default {
             `*Status*: ${newsletterMetadata.state.type}`,
             `*Verified*: ${newsletterMetadata.thread_metadata.verification}`
          ], '📢')
-         m.reply(print, {
+         await m.reply(print, {
             externalAdReply: {
                title: botName,
                body: greeting(),
@@ -38,7 +38,7 @@ export default {
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

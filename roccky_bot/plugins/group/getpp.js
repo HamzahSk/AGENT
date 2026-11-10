@@ -25,7 +25,7 @@ export default {
       catch {
          return m.reply('❌ User didn\'t put a profile picture.')
       }
-      sock.sendMedia(m.chat, profilePicture, '', m)
+      await sock.sendMedia(m.chat, profilePicture, '', m)
    },
    group: true,
    premium: true

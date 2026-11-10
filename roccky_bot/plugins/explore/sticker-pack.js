@@ -24,7 +24,7 @@ export default {
             const result = userPreviousResult[Number(text) - 1]
             if (!result)
                return m.reply(`❌ Invalid input.`)
-            m.react('🕒')
+            await m.react('🕒')
             const data = await getStickerPack.detail(result.slug)
             const stickers = []
             for (const value of data.images)
@@ -48,7 +48,7 @@ export default {
          else {
             if (!text)
                return m.reply(`👉🏻 *Example*: ${isPrefix + command} cat`)
-            m.react('🕒')
+            await m.react('🕒')
             const data = await getStickerPack.search(text)
             const sliced = shuffleArray(data)
                .splice(0, 10)
@@ -67,13 +67,13 @@ export default {
             ], '📄')
             const printList = frame('STICKER PACKS', flattedResult, '📦')
             ExploreSession.set(keyCache, sliced)
-            m.reply(printHowTo + '\n\n' +
+            await m.reply(printHowTo + '\n\n' +
                printList)
          }
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

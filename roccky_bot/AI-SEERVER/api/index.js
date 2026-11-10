@@ -1,3 +1,4 @@
+import { positiveInt, reportError } from '../../lib/Runtime.js';
 import { Hono } from 'hono';
 import { fileURLToPath } from 'url';
 import { DeepSeek } from '../deepseek_apk.js';
@@ -5,7 +6,8 @@ import { DeepSeek } from '../deepseek_apk.js';
 const isBun = typeof Bun !== 'undefined';
 let apiKeys = (process.env.DEEPSEEK_KEYS || process.env.DEEPSEEK_TOKEN || '')
   .split(',').map(value => value.trim()).filter(Boolean);
-const MAX_SESSIONS = Number(process.env.MAX_SESSIONS || 50);
+const MAX_SESSIONS = positiveInt(process.env.MAX_SESSIONS, 50, 1000);
+const MAX_RESPONSE_IDS = positiveInt(process.env.MAX_RESPONSE_IDS, 1000, 10000);
 const sessions = new Map();
 const responseSessions = new Map();
 let sessionFactory = async ({ apiKey, signal }) => new DeepSeek({ auth: apiKey }).create({ signal });
@@ -292,7 +294,7 @@ function responseInputMessages(input) {
 }
 
 const app = new Hono();
-app.onError((error, c) => { console.error('Gateway error:', error); return errorResponse(c, error); });
+app.onError((error, c) => { reportError('Gateway', error); return errorResponse(c, error); });
 app.get('/', c => c.json({ status: true, message: 'AI gateway active' }));
 app.get('/health', c => c.json({ status: 'ok', sessions: sessions.size, keys: apiKeys.length, runtime: isBun ? 'bun' : 'node' }));
 app.get('/v1/models', c => c.json({ object: 'list', data: [
@@ -390,6 +392,7 @@ app.post('/v1/responses', async c => {
   const { record } = selected;
   const responseId = newId('resp');
   responseSessions.set(responseId, selected.chatId);
+  while (responseSessions.size > MAX_RESPONSE_IDS) responseSessions.delete(responseSessions.keys().next().value);
   const createdAt = unixNow();
   const useThinking = model === 'deepseek-reasoner' || !!body.reasoning?.effort;
   const useSearch = !!body.web_search || body.tools?.some(tool => tool?.type === 'web_search' || tool?.type === 'web_search_preview');

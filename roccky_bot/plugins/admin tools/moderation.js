@@ -82,7 +82,7 @@ export default {
       print = isActivating ?
          `✅ Successfully activating ${prettyKeyName}.` :
          `✅ Successfully deactivating ${prettyKeyName}.`
-      m.reply(print)
+      await m.reply(print)
    },
    group: true,
    admin: true

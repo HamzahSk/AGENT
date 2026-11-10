@@ -4,6 +4,7 @@ export default {
    category: 'group',
    async run(m, {
       sock,
+      command,
       isPrefix,
       text
    }) {
@@ -28,7 +29,7 @@ export default {
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    group: true,

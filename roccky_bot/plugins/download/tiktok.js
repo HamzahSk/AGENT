@@ -16,7 +16,7 @@ export default {
          if (!args[0].includes('tiktok.com'))
             return m.reply('❌ Invalid URL.')
 
-         m.react('🕒')
+         await m.react('🕒')
 
          // Mengambil data dari API baru
          const apiUrl = `https://tiktok-downloader-kohl-eight.vercel.app/api/tiktok?url=${encodeURIComponent(args[0])}`
@@ -73,12 +73,12 @@ export default {
             }
          )
 
-         m.react('✅')
+         await m.react('✅')
       }
       catch (error) {
          console.error(error)
-         m.react('❌')
-         m.reply('❌ Error: ' + error.message)
+         await m.react('❌')
+         await m.reply('❌ Error: ' + error.message)
       }
    },
    limit: 1

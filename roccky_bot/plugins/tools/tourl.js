@@ -13,7 +13,7 @@ export default {
          const mimetype = (q.msg || q).mimetype
          if (!mimetype)
             return m.reply('💭 Reply media to upload.')
-         m.react('🕒')
+         await m.react('🕒')
          const buffer = await q.download()
          const response = await Promise.allSettled([
             catbox(buffer),
@@ -24,11 +24,11 @@ export default {
             .filter(res => res.status === 'fulfilled')
             .map(res => res.value)
          const print = frame('TO URL', urls, '💾')
-         m.reply(print)
+         await m.reply(print)
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

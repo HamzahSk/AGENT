@@ -26,7 +26,7 @@ export default {
          return lines
       })
       const printTopChat = frame('TOTAL CHAT', topChat, '💬')
-      m.reply(printTopChat)
+      await m.reply(printTopChat)
    },
    group: true
 }

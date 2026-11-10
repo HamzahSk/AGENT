@@ -13,7 +13,7 @@ export default {
             return m.reply(`👉🏻 *Example:*\n- Generate: ${isPrefix + command} cat eating banana\n- Edit: Balas/reply gambar dengan caption "${isPrefix + command} jadikan background taman"`)
          }
 
-         m.react('🕒')
+         await m.react('🕒')
 
          const quoted = m.quoted || m
          const mime = (quoted.msg || quoted).mimetype || ''
@@ -52,12 +52,12 @@ export default {
          const caption = `✅ *Prompt:* ${text}`
          await sock.sendMedia(m.chat, finalBuffer, caption, m)
 
-         m.react('✅')
+         await m.react('✅')
 
       } catch (error) {
          console.error(error)
-         m.react('❌')
-         m.reply('❌ ' + error.message)
+         await m.react('❌')
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

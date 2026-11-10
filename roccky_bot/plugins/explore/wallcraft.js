@@ -21,13 +21,13 @@ export default {
             const result = userPreviousResult[Number(text) - 1]
             if (!result)
                return m.reply(`❌ Invalid input.`)
-            m.react('🕒')
-            sock.sendMedia(m.chat, result.url, result.description, m)
+            await m.react('🕒')
+            await sock.sendMedia(m.chat, result.url, result.description, m)
          }
          else {
             if (!text)
                return m.reply(`👉🏻 *Example*: ${isPrefix + command} nature`)
-            m.react('🕒')
+            await m.react('🕒')
             const data = await nexray('search/wallcraft', {
                q: text
             })
@@ -48,13 +48,13 @@ export default {
             ], '📄')
             const printList = frame('WALLCRAFT', flattedResult, '🖼️')
             ExploreSession.set(keyCache, data.result)
-            m.reply(printHowTo + '\n\n' +
+            await m.reply(printHowTo + '\n\n' +
                printList)
          }
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

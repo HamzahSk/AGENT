@@ -8,6 +8,7 @@ export default {
    category: 'tools',
    async run(m, {
       sock,
+      command,
       isPrefix,
       args
    }) {
@@ -17,7 +18,7 @@ export default {
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} https://chat.whatsapp.com/AbCdEfGhIjK`)
          if (code.includes(CHAT_WHATSAPP_URL))
             code = code.replace(CHAT_WHATSAPP_URL, '').trim()
-         m.react('🕒')
+         await m.react('🕒')
          const metadata = await sock.groupGetInviteInfo(code)
          if (!metadata)
             return m.reply('❌ Invite code is invalid or has been revoked.')
@@ -26,11 +27,11 @@ export default {
             `*Owner*: @${metadata.owner?.split('@')[0] || '-'}`,
             `*Size*: ${metadata.size || metadata.participants?.length || '-'}`
          ], '👥')
-         m.reply(print)
+         await m.reply(print)
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

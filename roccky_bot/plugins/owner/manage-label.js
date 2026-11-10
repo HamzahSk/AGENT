@@ -13,11 +13,11 @@ export default {
          if (text.length > 30)
             return m.reply('❌ Maximum 30 characters.')
          await sock.updateMemberLabel(m.chat, text)
-         m.reply('✅ Successfully set member label for bot.')
+         await m.reply('✅ Successfully set member label for bot.')
       }
       else if (command === 'dellabel') {
          await sock.updateMemberLabel(m.chat, '')
-         m.reply('✅ Successfully delete member label for bot.')
+         await m.reply('✅ Successfully delete member label for bot.')
       }
    },
    owner: true,

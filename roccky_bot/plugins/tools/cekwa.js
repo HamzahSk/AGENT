@@ -7,6 +7,7 @@ export default {
    category: 'tools',
    async run(m, {
       sock,
+      command,
       isPrefix
    }) {
       try {
@@ -14,7 +15,7 @@ export default {
          if (!userId)
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} 6281234567890`)
          const number = userId.split('@')[0]
-         m.react('🕒')
+         await m.react('🕒')
          const [result] = await sock.onWhatsApp(number)
          if (!result?.exists)
             return m.reply(frame('CEK WA', [
@@ -25,11 +26,11 @@ export default {
             `*Number*: ${result.jid?.split('@')[0] || number}`,
             `*Status*: ✅ Terdaftar di WhatsApp`
          ], '📱')
-         m.reply(print)
+         await m.reply(print)
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

@@ -1,3 +1,4 @@
+import { reportError } from '../Runtime.js'
 
 import { delay } from 'baileys'
 
@@ -55,111 +56,44 @@ const getSchedule = async (kotaId) => {
 }
 
 export default (db = {}) => {
-   let socket = {},
-      groupIds = [],
-      timeouts = [],
-      currentDate = null,
-      isRunning = false
-
-   const clearAll = () => {
-      timeouts.forEach(timeout => clearTimeout(timeout))
-      timeouts = []
+   let socket, generation = 0, active = false
+   const timers = new Set()
+   const later = (run, ms, epoch) => {
+      const timer = setTimeout(() => {
+         timers.delete(timer)
+         if (active && epoch === generation) void run().catch(error => reportError('Prayer reminder', error))
+      }, ms)
+      timer.unref?.(); timers.add(timer)
    }
-
-   const getGroupIds = async () => {
-      const groups = await socket.groupFetchAllParticipating()
-      groupIds = Object.keys(groups)
-   }
-
-   const scheduleMidnightRefresh = async () => {
-      const resetTimeout = Func.getNextMidnight()
-
-      const timeout = setTimeout(async () => {
-         if (!isRunning) return
-         await refresh()
-      }, resetTimeout)
-
-      timeouts.push(timeout)
-   }
-
-   const schedulePrayers = (data) => {
-      const now = Func.getNowInTZ()
-
-      const dateStr = data.jadwal.date
-
-      const timeZone = Func.getIndonesianTimezone()
-
-      currentDate = dateStr
-      clearAll()
-
-      Object.entries(data.jadwal)
-         .forEach(([name, value]) => {
-            if (name === 'date' || name === 'tanggal') return
-
-            const prayerTime = parseTime(dateStr, value)
-            const difference = prayerTime - now
-
-            if (difference > 0) {
-               const timeout = setTimeout(async () => {
-                  const printMessage = Func.frame(name.toUpperCase(), [
-                     MESSAGES[name]
-                  ], MESSAGE_EMOJIS[name])
-
-                  const thumbnailAttributes = {
-                     contextInfo: {
-                        isForwarded: true,
-                        forwardingScore: 999
-                     },
-                     externalAdReply: {
-                        title: Func.toTitleCase(name) + ' Prayer Time',
-                        body: `⏰ ${value} ${timeZone} • 📍 ${Func.toTitleCase(data.lokasi.toLowerCase())}`,
-                        thumbnail: await Func.fetchAsBuffer('./media/Image/mosque.jpg'),
-                        largeThumbnail: true
-                     }
-                  }
-
-                  for (const groupId of groupIds) {
-                     const group = db.getGroup(groupId)
-                     if (!group?.sholatReminder || group.mute) continue
-
-                     await socket.sendText(groupId, printMessage, FAKE_QUOTE, thumbnailAttributes)
-
-                     await delay(500)
-                  }
-               }, difference)
-
-               timeouts.push(timeout)
-            }
-         })
-
-      scheduleMidnightRefresh()
-   }
-
+   const stop = () => { active = false; generation++; socket = null; for (const timer of timers) clearTimeout(timer); timers.clear() }
    const refresh = async () => {
-      const data = await getSchedule(LOCALE_TIME_MAP[localTimezone] || 1301)
-      if (!data) return
-
-      await getGroupIds()
-
-      if (data.jadwal.date !== currentDate)
-         schedulePrayers(data)
+      const epoch = generation, sock = socket
+      if (!active) return
+      try {
+         const data = await getSchedule(LOCALE_TIME_MAP[global.localTimezone] || 1301)
+         const groups = await sock.groupFetchAllParticipating()
+         if (!active || epoch !== generation) return
+         const now = Func.getNowInTZ()
+         for (const [name, value] of Object.entries(data.jadwal)) {
+            if (!MESSAGES[name]) continue
+            const ms = parseTime(data.jadwal.date, value) - now
+            if (ms <= 0) continue
+            later(async () => {
+               for (const id of Object.keys(groups)) {
+                  if (!active || epoch !== generation) return
+                  const group = db.getGroup(id)
+                  if (!group?.sholatReminder || group.mute) continue
+                  try { await sock.sendText(id, Func.frame(name.toUpperCase(), [MESSAGES[name]], MESSAGE_EMOJIS[name]), FAKE_QUOTE) }
+                  catch (error) { reportError('Prayer delivery', error) }
+                  await delay(500)
+               }
+            }, ms, epoch)
+         }
+         later(refresh, Func.getNextMidnight(), epoch)
+      } catch (error) {
+         reportError('Prayer schedule; retry in five minutes', error)
+         if (active && epoch === generation) later(refresh, 300000, epoch)
+      }
    }
-
-   const start = async (sock = {}) => {
-      if (isRunning) return
-      socket = sock
-      isRunning = true
-      await refresh()
-   }
-
-   const stop = () => {
-      isRunning = false
-      clearAll()
-   }
-
-   return {
-      start,
-      stop,
-      refresh
-   }
+   return { stop, refresh, async start(sock) { stop(); socket = sock; active = true; await refresh() } }
 }

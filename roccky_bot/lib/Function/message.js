@@ -1,616 +1,114 @@
-// lib/Function/message.js
-// Helper pengiriman pesan interaktif (Native Flow Messages) untuk WhatsApp resmi & WA MD.
-//
-// LATAR BELAKANG:
-//   WhatsApp sudah mematikan (deprecated) metode lama `buttonsMessage` / `templateMessage`
-//   (error 405 / pesan tidak tampil di klien resmi). Penggantinya adalah struktur
-//   `interactiveMessage` + `nativeFlowMessage` (button `name` + `buttonParamsJson`),
-//   dengan pembungkus Binary Node `biz` -> `interactive` -> `native_flow` ketika
-//   dikirim lewat `sock.relayMessage`.
-//
-//   - Private Chat (1:1) : node `biz` + node `bot` (attrs `biz_bot: '1'`)
-//   - Group Chat         : node `biz` (tanpa node `bot`)
-//   - Fallback otomatis  : jika relay gagal / error, kirim versi teks berformat list.
-import { generateWAMessageFromContent, prepareWAMessageMedia, unixTimestampSeconds } from 'baileys'
-
+// Native-flow payloads follow DOCS_BAILEYS.md. The installed fork adds its own
+// protocol nodes in relayMessage; do not duplicate outdated biz/bot nodes here.
+import { generateWAMessageFromContent, prepareWAMessageMedia } from 'baileys'
 import { Func } from '#func'
+import { reportError, positiveInt } from '../Runtime.js'
+import { fetchBuffer } from '../Http.js'
 
-// Node akun bot (dibutuhkan agar native flow dikenali pada obrolan 1:1).
-const BOT_NODE = {
-   tag: 'bot',
-   attrs: {
-      biz_bot: '1'
+export const stripNullish = value => {
+   if (value == null) return undefined
+   // Media keys/hashes are protobuf bytes, not dictionaries of numeric keys.
+   if (ArrayBuffer.isView(value) || value instanceof ArrayBuffer) return value
+   if (Array.isArray(value)) return value.map(stripNullish).filter(value => value !== undefined)
+   if (typeof value !== 'object') return value
+   return Object.fromEntries(Object.entries(value).map(([key, value]) => [key, stripNullish(value)]).filter(([, value]) => value !== undefined))
+}
+export const buttonToNativeFlow = button => {
+   const btn = typeof button === 'string' ? { type: 'reply', displayText: button, id: button } : button
+   if (!btn || typeof btn !== 'object') throw new TypeError('Invalid interactive button')
+   // Preserve raw native-flow parameters before considering friendly aliases.
+   if (btn.name && btn.buttonParamsJson !== undefined) {
+      const params = typeof btn.buttonParamsJson === 'string' ? JSON.parse(btn.buttonParamsJson) : btn.buttonParamsJson
+      return { name: btn.name, buttonParamsJson: JSON.stringify(params) }
    }
-}
-
-// Buang key bernilai null/undefined secara rekursif. Header/body interactive
-// message yang mengandung key null/undefined dapat ditolak server WhatsApp
-// (HTTP 400 Bad Request) atau memicu error "Invalid media type".
-const stripNullish = (value) => {
-   if (value === null || value === undefined) return undefined
-   if (Array.isArray(value)) {
-      const arr = value.map(stripNullish).filter(v => v !== undefined)
-      return arr.length ? arr : undefined
-   }
-   if (typeof value === 'object') {
-      const out = {}
-      for (const key of Object.keys(value)) {
-         const cleaned = stripNullish(value[key])
-         if (cleaned !== undefined)
-            out[key] = cleaned
-      }
-      return Object.keys(out).length ? out : undefined
-   }
-   return value
-}
-
-// ==================================================
-// BINARY NODE `biz` (pembungkus native_flow)
-// ==================================================
-const buildBizNode = () => {
-   const ts = unixTimestampSeconds(new Date()) - 77980457
-
-   return {
-      tag: 'biz',
-      attrs: {
-         actual_actors: '2',
-         host_storage: '2',
-         privacy_mode_ts: `${ts}`
-      },
-      content: [
-         {
-            tag: 'engagement',
-            attrs: {
-               customer_service_state: 'open',
-               conversation_state: 'open'
-            }
-         },
-         {
-            tag: 'interactive',
-            attrs: {
-               type: 'native_flow',
-               v: '1'
-            },
-            content: [
-               {
-                  tag: 'native_flow',
-                  attrs: {
-                     v: '9',
-                     name: 'mixed'
-                  }
-               }
-            ]
-         }
-      ]
-   }
-}
-
-// Private (1:1) => `biz` + `bot`. Group => `biz` saja.
-const buildInteractiveNodes = (jid) => {
-   const nodes = [buildBizNode()]
-
-   if (!Func.isJidGroup(jid))
-      nodes.push(BOT_NODE)
-
-   return nodes
-}
-
-// ==================================================
-// KONVERSI BUTTON -> NATIVE FLOW (buttonParamsJson)
-// ==================================================
-const normalizeButton = (btn) => {
-   if (typeof btn === 'string')
-      return {
-         type: 'reply',
-         displayText: btn,
-         id: btn
-      }
-
-   if (!btn || typeof btn !== 'object')
-      return null
-
-   return btn
-}
-
-const buttonToNativeFlow = (btn) => {
-   btn = normalizeButton(btn)
-   if (!btn) return null
-
+   const label = String(btn.displayText || btn.text || btn.title || '')
    const type = (btn.type || btn.name || '').toLowerCase()
-   const label = btn.displayText || btn.text || btn.title || ''
-
-   // Quick Reply
-   if (type === 'reply' || type === 'quick_reply')
-      return {
-         name: 'quick_reply',
-         buttonParamsJson: JSON.stringify({
-            display_text: label,
-            id: btn.id ?? btn.value ?? ''
-         })
-      }
-
-   // Link CTA
-   if (type === 'url' || type === 'cta_url')
-      return {
-         name: 'cta_url',
-         buttonParamsJson: JSON.stringify({
-            display_text: label,
-            url: btn.url ?? '',
-            webview_interaction: btn.webview || false
-         })
-      }
-
-   // Telepon CTA
-   if (type === 'call' || type === 'cta_call')
-      return {
-         name: 'cta_call',
-         buttonParamsJson: JSON.stringify({
-            display_text: label,
-            id: btn.phoneNumber ?? btn.id ?? ''
-         })
-      }
-
-   // Single Select / Section List
-   if (type === 'list' || type === 'single_select' || type === 'sections')
-      return {
-         name: 'single_select',
-         buttonParamsJson: JSON.stringify({
-            title: btn.title || label,
-            sections: (btn.sections || []).map(section => ({
-               title: section.title || '',
-               rows: (section.rows || []).map(row => ({
-                  title: row.title || '',
-                  description: row.description || '',
-                  id: row.id ?? row.title ?? ''
-               }))
-            }))
-         })
-      }
-
-   // Raw native flow button (diteruskan apa adanya)
-   if (btn.name && btn.buttonParamsJson)
-      return {
-         name: btn.name,
-         buttonParamsJson:
-            typeof btn.buttonParamsJson === 'string'
-               ? btn.buttonParamsJson
-               : JSON.stringify(btn.buttonParamsJson)
-      }
-
-   return null
+   let name, params
+   if (['reply', 'quick_reply'].includes(type)) { name = 'quick_reply'; params = { display_text: label, id: String(btn.id ?? btn.value ?? '') } }
+   else if (['url', 'cta_url'].includes(type)) { name = 'cta_url'; params = { display_text: label, url: btn.url, merchant_url: btn.url } }
+   else if (['call', 'cta_call'].includes(type)) { name = 'cta_call'; params = { display_text: label, phone_number: btn.phoneNumber ?? btn.id } }
+   else if (['list', 'single_select', 'sections'].includes(type)) {
+      name = 'single_select'
+      params = { title: btn.title || label, sections: (btn.sections || []).map(section => ({ title: section.title || '', rows: (section.rows || []).map(row => ({ title: row.title || '', description: row.description || '', id: String(row.id ?? row.title ?? '') })) })) }
+   } else throw new TypeError('Unsupported interactive button')
+   return { name, buttonParamsJson: JSON.stringify(params) }
 }
-
-// ==================================================
-// NORMALISASI QUOTED (m | m.quoted | WAMessage)
-// ==================================================
-const normalizeQuoted = (quoted) => {
-   if (!quoted) return undefined
-
-   if (quoted.key && quoted.message)
-      return quoted
-
-   if (quoted.key && quoted.msg)
-      return {
-         key: quoted.key,
-         message: {
-            [quoted.type || 'extendedTextMessage']: quoted.msg
-         }
-      }
-
-   return quoted
-}
-
-// ==================================================
-// TEKS FALLBACK (saat interactive gagal)
-// ==================================================
-const toFallbackText = ({ text = '', footer = '', buttons = [] }) => {
-   const lines = buttons
-      .map((btn, index) => {
-         btn = normalizeButton(btn) || {}
-
-         const label = btn.displayText || btn.text || btn.title || ''
-         const value = btn.id ?? btn.url ?? btn.phoneNumber ?? ''
-
-         return `  ${index + 1}. ${label}${value ? ` — ${value}` : ''}`
-      })
-      .filter(Boolean)
-      .join('\n')
-
-   return [
-      text,
-      footer,
-      lines
-   ]
-      .filter(Boolean)
-      .join('\n\n')
-}
-
-// ==================================================
-// RELAY INTI (interactiveMessage + binary nodes)
-// ==================================================
-const relayInteractive = async (sock, jid, interactiveMessage, {
-   quoted = null,
-   fallback = true,
-   fallbackText = '',
-   relayOptions = {}
-} = {}) => {
-   try {
-      const message = generateWAMessageFromContent(jid, { interactiveMessage }, {
-         quoted: normalizeQuoted(quoted),
-         userJid: sock?.user?.id
-      })
-
-      return await sock.relayMessage(jid, message.message, {
-         messageId: message.key.id,
-         additionalNodes: buildInteractiveNodes(jid),
-         ...relayOptions
-      })
+export const buildNativeFlow = (buttons = [], messageParams = {}) => {
+   const native = buttons.map(buttonToNativeFlow)
+   const replies = native.filter(btn => btn.name === 'quick_reply').length
+   if (replies && replies !== native.length) throw new TypeError('Quick replies must not mix with CTA/list buttons')
+   if (native.length > (replies ? 10 : 3)) throw new RangeError('Too many interactive buttons')
+   for (const btn of native) {
+      const params = JSON.parse(btn.buttonParamsJson)
+      if (btn.name === 'quick_reply' && (!params.id || !params.display_text)) throw new TypeError('Quick reply requires a label and command')
+      if (btn.name === 'cta_url' && !/^https?:\/\//i.test(params.url)) throw new TypeError('CTA requires an absolute URL')
    }
+   return { buttons: native, messageParamsJson: JSON.stringify(messageParams), messageVersion: 1 }
+}
+export const toFallbackText = ({ text = '', header = '', footer = '', buttons = [], cards = [] }) => {
+   const lines = [header, text, footer]
+   for (const button of buttons) {
+      try {
+         const btn = buttonToNativeFlow(button), p = JSON.parse(btn.buttonParamsJson)
+         if (btn.name === 'single_select') for (const section of p.sections || []) {
+            if (section.title) lines.push(section.title)
+            for (const row of section.rows || []) lines.push(`${row.title || ''}: ${row.id || ''}`)
+         }
+         else lines.push(`${p.display_text || ''}: ${p.id || p.url || p.phone_number || p.copy_code || ''}`)
+      } catch { if (typeof button === 'object') lines.push(`${button.displayText || button.title || ''}: ${button.id || button.url || ''}`) }
+   }
+   for (const card of cards) lines.push(toFallbackText({ ...card, header: card.title }))
+   return lines.filter(Boolean).join('\n\n')
+}
+const normalizeQuoted = quoted => quoted?.key && quoted?.msg && !quoted.message ? { key: quoted.key, message: { [quoted.type || 'extendedTextMessage']: quoted.msg } } : quoted || undefined
+const relay = async (sock, jid, interactiveMessage, options) => {
+   const message = generateWAMessageFromContent(jid, { interactiveMessage: stripNullish(interactiveMessage) }, { quoted: normalizeQuoted(options.quoted), userJid: sock.user?.id })
+   await sock.relayMessage(jid, message.message, { ...options.relayOptions, messageId: message.key.id })
+   return message
+}
+const prepareHeader = async (sock, options, carousel = false) => {
+   const kind = options.document ? 'document' : options.image ? 'image' : options.video ? 'video' : null
+   if (carousel && !['image', 'video'].includes(kind)) throw new TypeError('Carousel cards require image or video')
+   let media = {}
+   if (kind) {
+      let source = options[kind]
+      if (typeof source === 'string' && /^https?:\/\//i.test(source)) source = (await fetchBuffer(source, { maxBytes: positiveInt(global.interactiveMediaMaxBytes, 8 * 1024 * 1024) })).buffer
+      media = await prepareWAMessageMedia({ [kind]: typeof source === 'string' ? { url: source } : source,
+         ...(kind === 'document' ? { fileName: options.fileName, mimetype: options.mimetype, jpegThumbnail: options.jpegThumbnail } : {}) }, { upload: sock.waUploadToServer, mediaUploadTimeoutMs: positiveInt(global.requestTimeout, 30000) })
+      if (!media[`${kind}Message`]) throw new Error('Interactive header preparation failed')
+   }
+   return { title: String(options.header || options.title || ''), hasMediaAttachment: !!kind, ...media }
+}
+const sendWithFallback = async (sock, jid, options, build) => {
+   const fallbackText = options.fallbackText || toFallbackText(options)
+   if (options.textOnly || global.interactiveMenuMode === 'text') return sock.sendText(jid, fallbackText, options.quoted)
+   try { return await relay(sock, jid, await build(), options) }
    catch (error) {
-      console.error('❌ relayInteractive error:', error)
-
-      if (!fallback)
-         throw error
-
-      return sock.sendText(jid, fallbackText, quoted)
+      reportError('Interactive delivery', error)
+      if (options.fallback === false) throw error
    }
+   // Outside the catch: a failed fallback is propagated once, never retried here.
+   return sock.sendText(jid, fallbackText, options.quoted)
 }
-
-const buildNativeFlow = (buttons, messageParams = {}) => {
-   const nativeFlowButtons = (buttons || [])
-      .map(buttonToNativeFlow)
-      .filter(Boolean)
-
-   if (!nativeFlowButtons.length)
-      return null
-
-   return {
-      buttons: nativeFlowButtons,
-      ...(messageParams && Object.keys(messageParams).length
-         ? { messageParamsJson: JSON.stringify(messageParams) }
-         : {}),
-      messageVersion: 1
-   }
+Func.sendInteractiveMessage = (sock, jid, options = {}) => sendWithFallback(sock, jid, options, async () => ({
+   body: { text: String(options.text || '') }, footer: options.footer ? { text: String(options.footer) } : undefined,
+   header: await prepareHeader(sock, options), contextInfo: options.contextInfo || {},
+   nativeFlowMessage: buildNativeFlow(options.buttons, options.messageParams)
+}))
+Func.sendButton = (sock, jid, options = {}, buttons, quoted) => Func.sendInteractiveMessage(sock, jid, typeof options === 'string' ? { text: options, buttons, quoted } : options)
+Func.sendList = (sock, jid, options = {}, sections, quoted) => {
+   if (typeof options === 'string') options = { text: options, sections, quoted }
+   return Func.sendInteractiveMessage(sock, jid, { ...options, buttons: [{ type: 'list', title: options.title || options.buttonText || 'Pilih', sections: options.sections || [] }] })
 }
-
-const prepareMedia = async (sock, kind, media, options = {}) => {
-   if (!media) return null
-
-   try {
-      // URL kosong / bukan string valid -> jangan diteruskan ke
-      // prepareWAMessageMedia (menghindari error media tidak valid).
-      if (typeof media === 'string' && !media.trim())
-         return null
-
-      // Buffer -> langsung; string URL -> bungkus { url }.
-      const messageContent = {
-         [kind]: typeof media === 'string' ? { url: media.trim() } : media
-      }
-
-      // Dokumen (PPT/PDF/dll.) butuh metadata agar header native flow tampil
-      // benar: fileName, mimetype, dan jpegThumbnail (tanpa null pointer).
-      if (kind === 'document') {
-         if (options.fileName)
-            messageContent.fileName = options.fileName
-         if (options.mimetype)
-            messageContent.mimetype = options.mimetype
-         if (options.jpegThumbnail)
-            messageContent.jpegThumbnail = options.jpegThumbnail
-      }
-
-      return await prepareWAMessageMedia(messageContent, {
-         upload: sock.waUploadToServer
-      })
-   }
-   catch (error) {
-      console.error('❌ prepareMedia error:', error)
-      return null
-   }
-}
-
-// ==================================================
-// PUBLIC API
-// ==================================================
-
-/**
- * Kirim pesan interaktif Native Flow (quick_reply / cta_url / cta_call / single_select).
- * @param {object} sock - socket Baileys
- * @param {string} jid - tujuan (private atau grup)
- * @param {object} options
- * @returns {Promise<*>}
- */
-Func.sendInteractiveMessage = async (sock, jid, options = {}) => {
-   const {
-      text = '',
-      footer = '',
-      header = '',
-      image,
-      video,
-      document: documentSource,
-      fileName,
-      mimetype,
-      jpegThumbnail,
-      buttons = [],
-      contextInfo = {},
-      messageParams = {},
-      quoted = null,
-      fallback = true,
-      relayOptions = {}
-   } = options
-
-   const fallbackText = toFallbackText({ text, footer, buttons })
-
-   try {
-      const media = documentSource
-         ? await prepareMedia(sock, 'document', documentSource, { fileName, mimetype, jpegThumbnail })
-         : image
-            ? await prepareMedia(sock, 'image', image)
-            : video
-               ? await prepareMedia(sock, 'video', video)
-               : null
-
-      const interactiveMessage = {
-         body: { text: String(text) },
-         ...(footer ? { footer: { text: String(footer) } } : {}),
-         header: {
-            title: String(header || ''),
-            hasMediaAttachment: !!media,
-            ...(media || {})
-         },
-         contextInfo: contextInfo || {}
-      }
-
-      const nativeFlowMessage = buildNativeFlow(buttons, messageParams)
-
-      if (!nativeFlowMessage)
-         return sock.sendText(jid, text, quoted, { footer })
-
-      interactiveMessage.nativeFlowMessage = nativeFlowMessage
-
-      return relayInteractive(sock, jid, stripNullish(interactiveMessage), {
-         quoted,
-         fallback,
-         fallbackText,
-         relayOptions
-      })
-   }
-    catch (error) {
-      console.error('❌ sendInteractiveMessage error:', error)
-
-      if (!fallback)
-         throw error
-
-      return sock.sendText(jid, fallbackText, quoted)
-   }
-}
-
-/**
- * Tombol Quick Reply (dan CTA) berbasis Native Flow.
- * @param {object} sock
- * @param {string} jid
- * @param {object|string} options - objek opsi ATAU teks (posisi) untuk
- *    kompatibilitas pemanggilan lama: sock.sendButton(jid, text, buttons, quoted)
- */
-Func.sendButton = async (sock, jid, options = {}, positionalButtons, positionalQuoted) => {
-   if (typeof options === 'string' || Array.isArray(options))
-      options = {
-         text: typeof options === 'string' ? options : String(options),
-         buttons: positionalButtons,
-         quoted: positionalQuoted
-      }
-
-   const { text, footer, header, image, video, buttons = [], ...rest } = options
-
-   return Func.sendInteractiveMessage(sock, jid, {
-      text,
-      footer,
-      header,
-      image,
-      video,
-      buttons,
-      ...rest
+Func.sendSections = (...args) => Func.sendList(...args)
+Func.sendCard = (...args) => Func.sendInteractiveMessage(...args)
+Func.sendCarousel = (sock, jid, options = {}) => sendWithFallback(sock, jid, options, async () => {
+   if (!options.cards?.length || options.cards.length > 10) throw new RangeError('Carousel requires 1–10 cards')
+   const cards = []
+   for (const card of options.cards) cards.push({
+      body: { text: String(card.text || '') }, footer: card.footer ? { text: String(card.footer) } : undefined,
+      header: await prepareHeader(sock, card, true), nativeFlowMessage: buildNativeFlow(card.buttons, card.messageParams)
    })
-}
-
-/**
- * Daftar pilihan (Single Select / Section List) berbasis Native Flow.
- * @param {object} sock
- * @param {string} jid
- * @param {object|string} options - objek opsi ATAU teks (posisi) untuk
- *    kompatibilitas pemanggilan lama: sock.sendList(jid, text, sections, quoted)
- */
-Func.sendList = async (sock, jid, options = {}, positionalSections, positionalQuoted) => {
-   if (typeof options === 'string')
-      options = {
-         text: options,
-         sections: positionalSections,
-         quoted: positionalQuoted
-      }
-
-   const {
-      title = 'Pilih Opsi',
-      buttonText = 'Pilih',
-      footer = '',
-      text = '',
-      image,
-      video,
-      sections = [],
-      ...rest
-   } = options
-
-   return Func.sendInteractiveMessage(sock, jid, {
-      text: text || title,
-      footer,
-      image,
-      video,
-      buttons: [{
-         type: 'list',
-         title,
-         displayText: buttonText,
-         sections
-      }],
-      ...rest
-   })
-}
-
-/**
- * Alias dari sendList.
- */
-Func.sendSections = async (sock, jid, options = {}) =>
-   Func.sendList(sock, jid, options)
-
-/**
- * Kirim kartu interaktif (opsional dengan media image/video di header).
- * @param {object} sock
- * @param {string} jid
- * @param {object} options
- */
-Func.sendCard = async (sock, jid, options = {}) => {
-   const {
-      text = '',
-      footer = '',
-      header = '',
-      image,
-      video,
-      document: documentSource,
-      fileName,
-      mimetype,
-      jpegThumbnail,
-      buttons = [],
-      contextInfo = {},
-      messageParams = {},
-      quoted = null,
-      fallback = true,
-      relayOptions = {}
-   } = options
-
-   const fallbackText = toFallbackText({ text, footer, buttons })
-
-   try {
-      const interactiveMessage = {
-         body: { text: String(text) },
-         ...(footer ? { footer: { text: String(footer) } } : {}),
-         contextInfo: contextInfo || {},
-         header: {
-            title: String(header || ''),
-            hasMediaAttachment: false
-         }
-      }
-
-      const media = documentSource
-         ? await prepareMedia(sock, 'document', documentSource, { fileName, mimetype, jpegThumbnail })
-         : image
-            ? await prepareMedia(sock, 'image', image)
-            : video
-               ? await prepareMedia(sock, 'video', video)
-               : null
-
-      if (media) {
-         interactiveMessage.header = {
-            title: String(header || ''),
-            hasMediaAttachment: true,
-            ...media
-         }
-      }
-
-      const nativeFlowMessage = buildNativeFlow(buttons, messageParams)
-      if (nativeFlowMessage)
-         interactiveMessage.nativeFlowMessage = nativeFlowMessage
-
-      return relayInteractive(sock, jid, stripNullish(interactiveMessage), {
-         quoted,
-         fallback,
-         fallbackText,
-         relayOptions
-      })
-   }
-    catch (error) {
-      console.error('❌ sendCard error:', error)
-
-      if (!fallback)
-         throw error
-
-      return sock.sendText(jid, fallbackText, quoted)
-   }
-}
-
-/**
- * Kartu berantai (Carousel) berbasis interactiveMessage.
- * @param {object} sock
- * @param {string} jid
- * @param {object} options - cards: [{ title, text, footer, image, video, buttons }]
- */
-Func.sendCarousel = async (sock, jid, options = {}) => {
-   const {
-      text = '',
-      footer = '',
-      cards = [],
-      contextInfo = {},
-      quoted = null,
-      fallback = true,
-      relayOptions = {}
-   } = options
-
-   if (!cards.length)
-      throw new Error('sendCarousel membutuhkan minimal 1 kartu')
-
-   const processedCards = []
-
-   for (const card of cards) {
-      const cardImage = card.image
-      const cardVideo = card.video
-      const media = cardImage
-         ? await prepareMedia(sock, 'image', cardImage)
-         : cardVideo
-            ? await prepareMedia(sock, 'video', cardVideo)
-            : null
-
-      const cardMessage = {
-         body: { text: String(card.text || '') },
-         ...(card.footer ? { footer: { text: String(card.footer) } } : {}),
-         header: {
-            title: String(card.title || ''),
-            hasMediaAttachment: !!media,
-            ...(media || {})
-         }
-      }
-
-      const nativeFlowMessage = buildNativeFlow(card.buttons || [], card.messageParams || {})
-      if (nativeFlowMessage)
-         cardMessage.nativeFlowMessage = nativeFlowMessage
-
-      processedCards.push(cardMessage)
-   }
-
-   const interactiveMessage = {
-      body: { text: String(text) },
-      ...(footer ? { footer: { text: String(footer) } } : {}),
-      header: {
-         title: '',
-         hasMediaAttachment: false
-      },
-      contextInfo: contextInfo || {},
-      carouselMessage: {
-         cards: processedCards,
-         messageVersion: 1,
-         carouselCardType: 1
-      }
-   }
-
-   const fallbackText = [
-      text,
-      footer,
-      ...cards.map((card, index) =>
-         `  ${index + 1}. ${card.title || ''}${card.text ? ` — ${card.text}` : ''}`
-      )
-   ]
-      .filter(Boolean)
-      .join('\n\n')
-
-   return relayInteractive(sock, jid, stripNullish(interactiveMessage), {
-      quoted,
-      fallback,
-      fallbackText,
-      relayOptions
-   })
-}
+   return { body: { text: String(options.text || '') }, footer: options.footer ? { text: String(options.footer) } : undefined,
+      contextInfo: options.contextInfo || {}, carouselMessage: { cards, messageVersion: 1 } }
+})

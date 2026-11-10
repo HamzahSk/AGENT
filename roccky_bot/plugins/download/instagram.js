@@ -16,7 +16,7 @@ export default {
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} https://www.instagram.com/p/CK0tLXyAzEI/`)
          if (!isURL(args[0]))
             return m.reply('❌ Invalid URL.')
-         m.react('🕒')
+         await m.react('🕒')
          const data = await reelsvideo(args[0])
          if (!data.media.length)
             return m.reply('❌ Failed to get data.')
@@ -27,7 +27,7 @@ export default {
                   data.media[0].url
             return sock.sendMedia(m.chat, resized, '', m)
          }
-         sock.sendMessage(m.chat, {
+         await sock.sendMessage(m.chat, {
             album: data.media.map(media => {
                if (media.type === 'audio') return
                return ({
@@ -43,7 +43,7 @@ export default {
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

@@ -21,8 +21,8 @@ export default {
          const [packName = '', publisher = ''] = text.split('|')
          if (!text)
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} ${stickerPackName} | ${stickerPackPublisher}`)
-         m.react('🕒')
-         sock.sendMedia(m.chat, await q.download(), '', m, {
+         await m.react('🕒')
+         await sock.sendMedia(m.chat, await q.download(), '', m, {
             sticker: true,
             mimetype,
             stickerPackName: packName,
@@ -31,7 +31,7 @@ export default {
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    premium: true,

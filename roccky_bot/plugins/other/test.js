@@ -20,7 +20,7 @@ export default {
    }) {
       if (command === 'disk') {
          const diskUsage = await getDiskStats()
-         m.reply('🗂️ *Disk Used*: ' + formatSize(diskUsage.used) + ' / ' + formatSize(diskUsage.total))
+         await m.reply('🗂️ *Disk Used*: ' + formatSize(diskUsage.used) + ' / ' + formatSize(diskUsage.total))
       }
       else if (command === 'ping') {
          const [rtt, presence] = await Promise.all([
@@ -39,12 +39,12 @@ export default {
             '*RTT*: ' + rtt + ' ms',
             '*Presence*: ' + presence + ' ms'
          ], getPingEmojis(rtt))
-         m.reply(print)
+         await m.reply(print)
       }
       else if (command === 'ram')
-         m.reply('💾 *RAM Usage*: ' + formatSize(process.memoryUsage().rss) + ' / ' + formatSize(totalmem()))
+         await m.reply('💾 *RAM Usage*: ' + formatSize(process.memoryUsage().rss) + ' / ' + formatSize(totalmem()))
       else if (command === 'run')
-         m.reply('🕒 *Runtime*: ' + toTime(process.uptime() * SECOND))
+         await m.reply('🕒 *Runtime*: ' + toTime(process.uptime() * SECOND))
       else if (command === 'server') {
          const cpu = cpus()
          const totalMemory = totalmem()
@@ -72,7 +72,7 @@ export default {
             `*External*: ${formatSize(memoryUsage.external)}`,
             `*Runtime*: ${toTime(process.uptime() * SECOND)}`
          ], '🔃')
-         m.reply(
+         await m.reply(
             printServer +
             '\n\n' + printSystem +
             '\n\n' + printProcess
@@ -111,7 +111,7 @@ export default {
             `*Prefixes*: [${setting.prefixes}]`,
             `*Last Reset*: ${formatTime('YYYY/MM/DD HH:mm:ss', setting.lastReset)}`
          ], '⚙️')
-         m.reply(
+         await m.reply(
             printStatistic +
             '\n\n' + printSettings
          , {

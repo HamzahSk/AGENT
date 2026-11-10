@@ -460,7 +460,7 @@ export default {
 
         } catch (error) {
             console.error(error);
-            m.reply(`❌ Error: ${error.message || String(error)}`);
+            await m.reply(`❌ Error: ${error.message || String(error)}`);
         }
     }
 };

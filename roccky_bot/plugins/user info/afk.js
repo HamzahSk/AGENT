@@ -12,6 +12,6 @@ export default {
       user.afkReason = text
       user.afkContext = m
       user.afkTimestamp = user.lastSeen
-      m.reply(`🏷️ @${m.sender.split('@')[0]} is now AFK.`)
+      await m.reply(`🏷️ @${m.sender.split('@')[0]} is now AFK.`)
    }
 }

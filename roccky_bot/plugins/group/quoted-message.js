@@ -19,11 +19,11 @@ export default {
             forward: quoted,
             force: true
          })
-         sock.sendText(m.chat, `✉️ Message from @${quoted.sender.split('@')[0]}.`, context)
+         await sock.sendText(m.chat, `✉️ Message from @${quoted.sender.split('@')[0]}.`, context)
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ Failed to get quoted message.')
+         await m.reply('❌ Failed to get quoted message.')
       }
    },
    group: true

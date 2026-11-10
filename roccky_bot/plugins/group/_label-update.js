@@ -13,7 +13,7 @@ export default {
          m.msg.type == 30 &&
          m.msg.memberLabel?.label
       ) 
-         sock.sendText(m.chat, `🏷️ @${m.sender.split('@')[0]} updated their member label to: ${m.msg.memberLabel.label}.`)
+         await sock.sendText(m.chat, `🏷️ @${m.sender.split('@')[0]} updated their member label to: ${m.msg.memberLabel.label}.`)
    },
    group: true
 }

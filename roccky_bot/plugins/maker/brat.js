@@ -14,19 +14,19 @@ export default {
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} i'm here`)
          if (text.length > 150)
             return m.reply('❌ Maximum 150 characters.')
-         m.react('🕒')
+         await m.react('🕒')
          const data = await (
             command === 'brat' ?
                bratSticker(text) :
                bratVideoSticker(text)
          )
-         sock.sendMedia(m.chat, data, '', m, {
+         await sock.sendMedia(m.chat, data, '', m, {
             sticker: true
          })
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

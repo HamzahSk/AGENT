@@ -21,7 +21,7 @@ export default {
          if (!Buffer.isBuffer(buffer)) return
          if (!isPartner)
             --user.limit
-         sock.sendMedia(m.chat, buffer, '', m, {
+         await sock.sendMedia(m.chat, buffer, '', m, {
             sticker: true
          })
       }

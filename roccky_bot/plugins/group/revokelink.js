@@ -14,11 +14,11 @@ export default {
             '',
             'https://chat.whatsapp.com/' + code
          ], '🏷️')
-         m.reply(print)
+         await m.reply(print)
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    group: true,

@@ -1,664 +1,616 @@
-ROCCKY BOT — Full Codebase Audit, Bug Fixing & Documentation
+ROCCKY BOT — API EXPLORATION & PLUGIN DEVELOPMENT
 
 ROLE
 
-Act as a Senior Backend Engineer, Node.js Performance Engineer, and WhatsApp Bot Specialist.
+Act as a Senior Node.js Developer, WhatsApp Bot Developer, API Integration Engineer, and Plugin Architect.
 
-Your responsibility is to thoroughly audit, debug, optimize, repair, and document the existing ROCCKY WhatsApp Bot project.
+Your task is to explore the available APIs from Siputzx Playground, integrate useful APIs into the existing ROCCKY WhatsApp Bot, develop new plugins, and repair outdated or broken features.
 
-You must work directly with the existing codebase. Do not simply provide suggestions or theoretical solutions. Perform actual code analysis and implement necessary improvements.
+You must work directly inside the existing project.
 
-Your primary objectives are:
+Project directory: "roccky_bot"
 
-1. Eliminate existing bugs and runtime errors.
-2. Fix unexpected bot restarts and crashes.
-3. Improve WhatsApp connection stability.
-4. Fix unreliable interactive buttons and message responses.
-5. Improve Cloud Database connectivity and reliability.
-6. Optimize performance for low-spec servers.
-7. Create comprehensive technical documentation.
+API Playground: https://app.siputzx.my.id/playground
+
+Your goal is to expand ROCCKY's capabilities while maintaining stability, lightweight resource consumption, and compatibility with low-spec servers.
 
 ---
 
-PHASE 1 — PROJECT DISCOVERY
+PHASE 1 — PROJECT RECONNAISSANCE
 
-First, locate and open the project directory:
-
-"roccky_bot"
-
-Before modifying anything, thoroughly understand the existing project.
+Before implementing anything, understand the existing project.
 
 Required actions:
 
-1. Inspect the complete project structure.
-2. Read "DOCS_BAILEYS.md" from beginning to end.
-3. Read "package.json" and identify all dependencies.
-4. Inspect the main entry point and initialization process.
-5. Analyze the plugin and event handler systems.
-6. Inspect the database integration and configuration.
-7. Identify how WhatsApp authentication and sessions work.
-8. Examine message handling, interactive buttons, and command execution.
-9. Identify background tasks, scheduled jobs, and persistent processes.
-10. Inspect existing error handling and logging mechanisms.
+1. Open the "roccky_bot" directory.
+2. Read "DOCS_BAILEYS.md".
+3. Read the documentation inside "docs/".
+4. Read "docs/PLUGINS.md".
+5. Read "docs/ARCHITECTURE.md".
+6. Read "docs/STRUCTURE.md".
+7. Inspect "package.json".
+8. Analyze the existing plugin architecture.
+9. Identify how commands are registered and executed.
+10. Inspect existing message handlers and utility functions.
+11. Understand how interactive messages and quoted messages are implemented.
+12. Identify existing API integrations.
 
-Do not assume the architecture based on filenames alone. Read the actual implementation.
+Pay particular attention to existing conventions.
 
-Important:
+Do not introduce a separate plugin architecture if the project already has one.
 
-- Respect the existing architecture whenever possible.
-- Identify dependencies between modules before changing them.
-- Avoid unnecessary rewrites.
-- Do not remove existing features simply because they are difficult to maintain.
-- Preserve existing user data, authentication sessions, and configurations.
+Preserve the existing coding style and module structure.
 
 ---
 
-PHASE 2 — FULL SYSTEM AUDIT
+PHASE 2 — SIPUTZX API EXPLORATION
 
-Perform a comprehensive audit of the entire bot.
+Visit:
 
-Pay special attention to the following areas.
+https://app.siputzx.my.id/playground
 
-2.1 Runtime Stability
+This website contains multiple API endpoints that may be useful for expanding ROCCKY.
 
-Investigate why the bot sometimes restarts or crashes while actively being used.
+Access procedure
 
-Look for:
+1. Open the playground URL.
+2. Inspect the available API categories.
+3. Explore every available endpoint.
+4. Read the endpoint descriptions.
+5. Identify required parameters.
+6. Identify request methods.
+7. Identify response formats.
+8. Identify authentication requirements.
+9. Identify rate limits and restrictions.
+10. Identify potential use cases for WhatsApp bot features.
 
-- Unhandled promise rejections.
-- Uncaught exceptions.
-- Memory leaks.
-- Excessive memory allocation.
-- Event listener accumulation.
-- Infinite loops.
-- Uncontrolled background processes.
-- Improper resource cleanup.
-- Race conditions.
-- Recursive event execution.
-- Incorrect asynchronous operations.
-- Unhandled errors inside plugins.
-- Processes that remain active after their tasks finish.
+If direct HTTP fetching fails, use an ordinary browser-based approach to inspect the publicly accessible playground.
 
-Determine the actual causes instead of applying superficial fixes.
+Do not attempt to bypass authentication, access controls, or security protections.
 
-Implement appropriate error handling, resource management, and recovery mechanisms.
+If an endpoint cannot be accessed, document the limitation and continue with other available endpoints.
 
-2.2 WhatsApp Connection Stability
+API Testing
 
-Investigate the Baileys integration.
+Test each publicly accessible and appropriate endpoint where practical.
 
-Check:
+For each endpoint, determine:
 
-- Connection lifecycle management.
-- Connection update handlers.
-- Reconnection logic.
-- Authentication state handling.
-- Session persistence.
-- Socket initialization.
-- Duplicate socket instances.
-- Message event listeners.
-- Connection timeout handling.
-- Network interruption recovery.
-- Logout and reconnect behavior.
+- Does it work?
+- What parameters does it require?
+- What does its response look like?
+- Does it return JSON, text, binary data, or media?
+- Does it require an API key?
+- Is it suitable for integration into ROCCKY?
+- Does it have usage restrictions?
+- Does it have timeout or reliability issues?
 
-Ensure that:
+Use reasonable request timeouts and avoid excessive requests.
 
-- Only the intended active socket is maintained.
-- Reconnection attempts do not create duplicate listeners.
-- Temporary network failures do not unnecessarily destroy sessions.
-- Connection recovery does not trigger an uncontrolled restart loop.
-- Authentication data is handled safely.
+Do not repeatedly call endpoints that are failing or rate-limited.
 
-Use "DOCS_BAILEYS.md" as the primary reference for Baileys implementation.
+API Classification
 
-Do not use outdated Baileys APIs when the documentation specifies a newer implementation.
+Organize discovered endpoints into categories such as:
 
-2.3 Interactive Buttons & Message Handling
+- AI & Chatbot
+- Image Generation
+- Image Processing
+- Anime & Manga
+- Downloader
+- Search Engine
+- Information & Knowledge
+- Text Processing
+- Utilities
+- Entertainment
+- Games
+- Media
+- Other useful categories
 
-Investigate why buttons sometimes fail to appear or respond.
+Adapt these categories based on the actual playground.
 
-Audit:
+Do not invent endpoints or assume their functionality from their names.
 
-- Interactive message generation.
-- Button payload structure.
-- Message serialization.
-- Message sending functions.
-- Context information.
-- Message type compatibility.
-- Button callback handling.
-- Command routing.
-- Response handling.
-- Error handling during message delivery.
+API Compatibility
 
-Ensure interactive messages follow the correct Baileys implementation.
+Before integration, verify that the endpoint:
 
-Avoid unnecessary changes to message formats that could break existing features.
+- Is publicly accessible or properly authorized.
+- Is compatible with the intended use.
+- Does not require prohibited credentials or unauthorized access.
+- Can operate reliably under reasonable usage.
+- Does not expose sensitive information.
 
-Where a message type is unsupported or unreliable, implement an appropriate fallback.
-
-2.4 Cloud Database Reliability
-
-Investigate all database-related issues.
-
-Check:
-
-- Database connection initialization.
-- Connection pooling.
-- Connection timeout.
-- Network interruption handling.
-- Reconnection behavior.
-- Query execution.
-- Concurrent database operations.
-- Duplicate writes.
-- Database disconnection.
-- Data consistency.
-- Improper connection cleanup.
-
-Implement:
-
-- Reliable connection management.
-- Controlled retry mechanisms.
-- Connection health checks where appropriate.
-- Proper error handling.
-- Safe database initialization.
-- Efficient query execution.
-- Graceful degradation when the database is temporarily unavailable.
-
-Avoid retry storms and infinite retry loops.
-
-Do not silently ignore database errors.
-
-If the existing architecture supports a local JSON fallback, evaluate and improve it without introducing unnecessary complexity.
-
-2.5 Plugin & Event System
-
-Inspect every plugin and event handler.
-
-Look for:
-
-- Duplicate event registrations.
-- Broken imports.
-- Circular dependencies.
-- Inconsistent plugin interfaces.
-- Missing error boundaries.
-- Unnecessary module loading.
-- Blocking operations.
-- Memory-intensive operations.
-- Improper command registration.
-- Conflicts between plugins.
-
-Ensure plugins operate independently where possible.
-
-A failure in one non-critical plugin should not crash the entire bot.
+Skip inappropriate, unsafe, or restricted endpoints.
 
 ---
 
-PHASE 3 — IMPLEMENTATION & REPAIR
+PHASE 3 — API INTEGRATION ARCHITECTURE
 
-After completing the audit, implement the necessary fixes.
+After exploring the playground, design a clean integration architecture.
 
-Prioritize problems based on their impact:
+Avoid placing raw HTTP requests directly inside every plugin.
 
-1. Critical crashes and unexpected restarts.
-2. WhatsApp connection instability.
-3. Database connectivity problems.
-4. Interactive buttons and message delivery.
-5. Plugin and event handling bugs.
-6. Memory and CPU inefficiencies.
-7. General code quality improvements.
+Where appropriate, create a reusable API service layer.
 
-Engineering requirements
+Example architecture (adapt to the existing project):
 
-- Write maintainable and modular code.
-- Prefer native Node.js APIs when appropriate.
+roccky_bot/
+├── plugins/
+│   ├── ai/
+│   ├── downloader/
+│   ├── search/
+│   ├── tools/
+│   ├── anime/
+│   ├── image/
+│   └── entertainment/
+│
+├── lib/
+│   └── siputzx/
+│       ├── client.js
+│       ├── endpoints.js
+│       ├── errors.js
+│       └── utils.js
+│
+└── docs/
+
+This is only a conceptual example.
+
+Do not blindly create these directories if equivalent modules already exist.
+
+API Client Requirements
+
+Implement a reusable client with:
+
+- Centralized base URL configuration.
+- Endpoint definitions.
+- Request parameter handling.
+- Request timeout.
+- Response validation.
+- Error normalization.
+- Controlled retries.
+- AbortController support.
+- Proper handling of JSON and media responses.
+- Optional API key configuration when genuinely required.
+
+Avoid unnecessary dependencies.
+
+Do not hardcode credentials.
+
+Do not expose API keys in logs or WhatsApp messages.
+
+---
+
+PHASE 4 — PLUGIN DEVELOPMENT
+
+Develop useful WhatsApp plugins based on the APIs actually discovered.
+
+Do not limit yourself to one or two plugins.
+
+Prioritize endpoints that provide meaningful functionality for ROCCKY users.
+
+Plugin requirements
+
+Every plugin must:
+
+1. Follow the existing plugin architecture.
+2. Have a clear command or invocation method.
+3. Validate user input.
+4. Handle missing parameters.
+5. Handle API failures gracefully.
+6. Have reasonable execution timeouts.
+7. Avoid blocking the main event loop.
+8. Use consistent response formatting.
+9. Support quoted messages where appropriate.
+10. Provide useful usage examples.
+
+Organize plugins into logical categories.
+
+Avoid creating duplicate features that already exist.
+
+If an existing plugin already provides the same functionality, improve it instead of creating another implementation.
+
+Suggested feature categories
+
+Explore the available APIs and implement suitable features from these categories:
+
+1. AI & Intelligence
+
+- AI-assisted tools.
+- Text generation.
+- Text summarization.
+- Translation.
+- Other useful AI utilities.
+
+2. Downloader
+
+- Supported social media downloads.
+- Media information.
+- Metadata extraction.
+- Other publicly available media utilities.
+
+3. Search & Information
+
+- Web search.
+- Image search.
+- Information lookup.
+- Other useful search capabilities.
+
+4. Anime & Manga
+
+- Anime information.
+- Character information.
+- Recommendations.
+- Search utilities.
+- Other available anime-related features.
+
+5. Image & Media
+
+- Image transformations.
+- Image utilities.
+- Media processing.
+- Other available visual features.
+
+6. Entertainment
+
+- Random content.
+- Interactive games.
+- Fun utilities.
+- Other entertainment features.
+
+7. General Utilities
+
+- Text tools.
+- Data conversion.
+- Information utilities.
+- Other practical features.
+
+These are suggestions, not guaranteed API capabilities.
+
+Only implement features supported by verified endpoints.
+
+---
+
+PHASE 5 — INTERACTIVE WHATSAPP EXPERIENCE
+
+This is an important part of the task.
+
+ROCCKY should not feel like a basic command-response bot.
+
+Improve the user experience using the interactive capabilities supported by the existing Baileys version.
+
+Read "DOCS_BAILEYS.md" before implementing interactive messages.
+
+5.1 Interactive Buttons
+
+Where supported and appropriate, add interactive buttons.
+
+Examples:
+
+- Download results: Download / Details.
+- Search results: Next / Previous.
+- Anime information: Details / Recommendations.
+- AI responses: Continue / Summarize.
+- Games: Play Again / Exit.
+- Menus: Select Category / Back.
+
+Requirements:
+
+- Buttons must have meaningful labels.
+- Buttons must trigger the correct actions.
+- Handle invalid selections.
+- Avoid duplicate button handlers.
+- Handle expired or unavailable interactions.
+- Provide a fallback when interactive buttons are unsupported.
+
+Do not use deprecated or incompatible Baileys message structures.
+
+5.2 Quoted Messages
+
+Improve message context handling.
+
+Where appropriate:
+
+- Quote the original user message.
+- Quote the command that initiated the operation.
+- Reply to the correct message.
+- Preserve relevant context.
+- Avoid quoting unrelated messages.
+
+Ensure quoted messages work consistently across plugins.
+
+5.3 Rich Responses
+
+Make responses more readable and attractive.
+
+Use appropriate:
+
+- Headers.
+- Sections.
+- Descriptive text.
+- Unicode symbols.
+- Lists.
+- Metadata.
+- Captions.
+- Media previews.
+
+For example, a search result should display useful information rather than dumping raw API JSON.
+
+Do not overuse emojis or excessively long messages.
+
+5.4 Interactive Menus
+
+Where appropriate, create category-based menus.
+
+Users should be able to discover available features without memorizing every command.
+
+Make menus consistent with the existing ROCCKY design.
+
+---
+
+PHASE 6 — UPDATE EXISTING FEATURES
+
+Do not focus exclusively on adding new plugins.
+
+Inspect the existing plugins and identify outdated, broken, duplicated, or unreliable functionality.
+
+Required actions:
+
+1. Identify plugins using deprecated APIs.
+2. Find endpoints that are no longer accessible.
+3. Identify broken request parameters.
+4. Check incorrect response parsing.
+5. Fix outdated Baileys implementations.
+6. Repair broken button interactions.
+7. Fix quoted message handling.
+8. Improve error messages.
+9. Improve timeout management.
+10. Remove genuinely unnecessary duplicate implementations.
+
+For each broken feature:
+
+- Identify its root cause.
+- Determine whether the original API still works.
+- Look for an appropriate verified replacement if necessary.
+- Update the implementation.
+- Test the updated functionality.
+
+Preserve existing commands whenever reasonably possible.
+
+Avoid breaking backward compatibility.
+
+Do not silently remove features that cannot be repaired. Document them instead.
+
+---
+
+PHASE 7 — PERFORMANCE & RELIABILITY
+
+ROCCKY must remain lightweight.
+
+The bot is expected to run on low-spec servers with limited CPU, RAM, and network resources.
+
+Performance rules
+
 - Avoid unnecessary dependencies.
-- Avoid excessive abstraction.
-- Use asynchronous operations correctly.
-- Prevent unhandled promise rejections.
-- Avoid blocking the event loop.
-- Implement proper resource cleanup.
-- Use consistent error handling.
-- Keep existing functionality compatible.
-- Avoid introducing breaking changes.
+- Reuse HTTP connections where appropriate.
+- Implement reasonable request timeouts.
+- Limit concurrent API requests.
+- Avoid excessive retries.
+- Avoid unnecessary API polling.
+- Prevent duplicate operations.
+- Avoid storing large media files unnecessarily.
+- Clean up temporary files.
+- Avoid loading unused modules.
+- Keep API responses memory-efficient.
+- Avoid blocking operations.
 
-Do not replace entire modules unless there is a clear technical reason.
+Reliability
 
-Whenever possible, make targeted modifications.
+Implement appropriate:
 
----
+- Error handling.
+- Request cancellation.
+- Retry limits.
+- API failure handling.
+- Rate-limit handling.
+- Temporary failure recovery.
 
-PHASE 4 — LOW-END SERVER OPTIMIZATION
+If an API is unavailable, return a clear error message instead of crashing the bot.
 
-ROCCKY must remain lightweight and reliable on low-quality servers.
-
-This is a critical requirement.
-
-Optimize the bot for environments with limited CPU, RAM, and network performance.
-
-Performance requirements
-
-1. Minimize unnecessary memory allocations.
-2. Avoid loading unused modules.
-3. Prevent duplicate event listeners.
-4. Avoid unnecessary database queries.
-5. Optimize repeated operations.
-6. Prevent excessive logging.
-7. Avoid unnecessary background workers.
-8. Use streaming for large data when appropriate.
-9. Clean up temporary files and resources.
-10. Avoid unnecessary dependencies.
-11. Prevent memory leaks in long-running processes.
-12. Avoid CPU-intensive operations on the main event loop.
-
-Resource management
-
-Inspect expensive operations such as:
-
-- Image processing.
-- Video processing.
-- File downloads.
-- HTTP requests.
-- Database operations.
-- Large message processing.
-- Plugin initialization.
-
-Use reasonable timeouts, concurrency limits, and resource cleanup.
-
-Do not introduce Redis, message queues, additional databases, or other infrastructure unless genuinely necessary.
-
-Important principle
-
-Prioritize:
-
-Stability > Reliability > Resource Efficiency > Additional Features
-
-Do not sacrifice stability for unnecessary performance tricks.
+Do not let one plugin's failure affect unrelated plugins.
 
 ---
 
-PHASE 5 — TESTING & VERIFICATION
+PHASE 8 — DOCUMENTATION UPDATE
 
-After implementing the fixes, perform a thorough verification process.
+Update the existing documentation inside "docs/".
 
-Required checks
+Do not create duplicate documentation unnecessarily.
 
-- Validate package imports.
-- Check syntax errors.
-- Check module compatibility.
-- Check event registration.
-- Check database initialization.
-- Check error handling.
-- Check reconnection logic.
-- Check message handling.
-- Check interactive message generation.
-- Check plugin loading.
-- Check resource cleanup.
+Create or update the following:
 
-Run the available project tests and create additional tests where appropriate.
+docs/API_INTEGRATIONS.md
 
-If the project does not have a testing framework, consider implementing lightweight tests without introducing excessive dependencies.
-
-Runtime verification
-
-Where possible, simulate:
-
-- Temporary database disconnections.
-- Network interruptions.
-- Reconnection attempts.
-- Failed message delivery.
-- Plugin execution errors.
-- Concurrent message processing.
-
-Verify that these situations do not unnecessarily crash the entire bot.
-
-Do not claim that a feature has been tested if it has not actually been tested.
-
-If real WhatsApp or cloud database credentials are unavailable, clearly document which tests require a live environment.
-
----
-
-PHASE 6 — CREATE COMPLETE DOCUMENTATION
-
-Create a new directory:
-
-"docs/"
-
-This directory must contain comprehensive technical documentation for the entire ROCCKY bot.
-
-The documentation should help future developers and AI agents understand, maintain, debug, and extend the project without repeatedly analyzing the entire codebase.
-
-Documentation must describe the actual implementation, not an assumed architecture.
-
-Required documentation structure
-
-Create the following files, adjusting the structure when necessary:
-
-docs/README.md
-
-Main documentation index.
+Document all explored and integrated APIs.
 
 Include:
 
-- Project overview.
-- Main capabilities.
-- Technology stack.
-- Documentation navigation.
-- Quick links to important documents.
-
-docs/ARCHITECTURE.md
-
-Explain the complete bot architecture.
-
-Include:
-
-- Application architecture.
-- Main execution flow.
-- Initialization lifecycle.
-- Module relationships.
-- Plugin architecture.
-- Event-driven architecture.
-- WhatsApp connection lifecycle.
-- Database integration.
-
-Include Mermaid diagrams where useful.
-
-docs/STRUCTURE.md
-
-Complete project directory structure.
-
-Explain:
-
-- Main directories.
-- Important files.
-- Responsibilities of each module.
-- Entry points.
-- Configuration files.
-- Plugin locations.
-- Utility modules.
-- Database-related files.
-
-Avoid listing irrelevant dependencies or generated files.
-
-docs/INSTALLATION.md
-
-Installation and setup guide.
-
-Include:
-
-- Requirements.
-- Node.js and runtime requirements.
-- Dependency installation.
-- Environment configuration.
-- Authentication setup.
-- Database configuration.
-- Starting the bot.
-- Production deployment.
-
-docs/CONFIGURATION.md
-
-Complete configuration reference.
-
-Document:
-
-- Environment variables.
-- Configuration files.
-- Default values.
-- Required and optional settings.
-- Database settings.
-- WhatsApp settings.
-- Plugin settings.
-- Runtime settings.
-
-Never expose real API keys, passwords, tokens, or session credentials.
-
-docs/FEATURES.md
-
-Complete feature documentation.
-
-For every existing feature, explain:
-
-- Feature name.
-- Description.
-- How it works.
-- Relevant files.
-- Dependencies.
-- Commands or usage.
-- Configuration requirements.
+- API name.
+- Category.
+- Endpoint.
+- HTTP method.
+- Required parameters.
+- Authentication requirements.
+- Example request.
+- Example response structure.
+- Integration status.
+- Related plugin.
 - Known limitations.
+
+Clearly distinguish tested endpoints from untested endpoints.
 
 docs/PLUGINS.md
 
-Plugin development guide.
-
-Explain:
-
-- How plugins are discovered.
-- How plugins are loaded.
-- Plugin structure.
-- Plugin interfaces.
-- Event handling.
-- Command registration.
-- Utility usage.
-- Error handling.
-- How to create a new plugin.
-- How to safely modify existing plugins.
-
-Provide practical code examples based on the actual project architecture.
-
-docs/EVENTS.md
-
-Document the event system.
+Update the complete plugin inventory.
 
 Include:
 
-- Available events.
-- Event registration.
-- Message lifecycle.
-- Connection events.
-- Event handlers.
-- Execution order.
-- Error handling.
+- Plugin name.
+- Command.
+- Description.
+- Category.
+- API dependencies.
+- Main source file.
+- Usage examples.
+- Current status.
 
-docs/DATABASE.md
+docs/FEATURES.md
 
-Complete database documentation.
+Update the user-facing feature list.
 
-Include:
-
-- Database architecture.
-- Connection initialization.
-- Connection lifecycle.
-- Data models or collections.
-- Query operations.
-- Data persistence.
-- Retry mechanisms.
-- Error handling.
-- Fallback mechanisms.
-- Database troubleshooting.
-
-docs/BAILEYS.md
-
-Document the Baileys integration.
-
-Include:
-
-- Baileys version.
-- Socket initialization.
-- Authentication state.
-- Connection lifecycle.
-- Message processing.
-- Interactive messages.
-- Reconnection behavior.
-- Relevant APIs.
-- Important implementation notes.
-
-Use "DOCS_BAILEYS.md" as the primary technical reference.
-
-docs/ERROR_HANDLING.md
-
-Explain the bot's error management system.
-
-Include:
-
-- Error categories.
-- Logging.
-- Exception handling.
-- Promise rejection handling.
-- Recovery mechanisms.
-- Database failures.
-- Connection failures.
-- Plugin failures.
-- Debugging procedures.
-
-docs/PERFORMANCE.md
-
-Explain performance optimization.
-
-Include:
-
-- Memory management.
-- CPU optimization.
-- Event loop considerations.
-- Concurrency management.
-- Database efficiency.
-- Resource cleanup.
-- Recommendations for low-end servers.
+Include all new and repaired features.
 
 docs/DEVELOPMENT.md
 
-Guide for developers and AI coding agents.
+Document how to:
 
-Include:
-
-- Development workflow.
-- Coding conventions.
-- Project architecture rules.
-- How to add features.
-- How to modify existing modules.
-- Testing procedures.
-- Debugging workflow.
-- Compatibility requirements.
-- Important files to inspect before making changes.
-
-docs/TROUBLESHOOTING.md
-
-Common problems and their solutions.
-
-Include:
-
-- Bot unexpectedly restarting.
-- WhatsApp disconnection.
-- Authentication problems.
-- Buttons not appearing.
-- Messages failing to send.
-- Database connection failures.
-- Plugin errors.
-- High memory usage.
-- High CPU usage.
+- Create a new plugin.
+- Integrate a new API.
+- Use the shared API client.
+- Add interactive buttons.
+- Handle quoted messages.
+- Test new features.
+- Maintain compatibility.
 
 docs/CHANGELOG.md
 
-Record important modifications.
-
-Include:
-
-- Bug fixes.
-- Performance improvements.
-- Architecture changes.
-- Updated dependencies.
-- New features.
-- Breaking changes, if any.
+Record all modifications made during this task.
 
 ---
 
-PHASE 7 — FINAL REVIEW
+PHASE 9 — TESTING
+
+Test every newly implemented plugin.
+
+Required tests
+
+- Command registration.
+- Parameter validation.
+- API connectivity.
+- Response parsing.
+- Error handling.
+- Timeout handling.
+- Message formatting.
+- Quoted messages.
+- Interactive buttons.
+- Media delivery.
+- Compatibility with existing plugins.
+
+Also test existing features that were modified.
+
+Use mocked responses when live API access is unavailable.
+
+Do not claim successful live integration based solely on mocked tests.
+
+Do not claim that buttons work on real WhatsApp unless that behavior has been verified.
+
+---
+
+PHASE 10 — FINAL REVIEW
 
 Before finishing:
 
-1. Review all modified files.
-2. Verify that existing features remain functional.
-3. Check for accidental configuration changes.
-4. Verify that no credentials were exposed.
-5. Ensure all documentation matches the actual implementation.
-6. Check that no unnecessary dependencies were added.
-7. Ensure the project remains lightweight.
-8. Verify that the bot can still start using its existing startup procedure.
+1. Review all new plugins.
+2. Review all modified plugins.
+3. Check for duplicate command registrations.
+4. Check for duplicate event listeners.
+5. Verify API parameter handling.
+6. Check compatibility with the installed Baileys version.
+7. Verify that no credentials are exposed.
+8. Check that no unnecessary dependencies were added.
+9. Verify documentation accuracy.
+10. Confirm that existing features remain intact.
 
-Update existing documentation if it becomes outdated.
+Do not modify unrelated bot components.
 
-Do not delete "DOCS_BAILEYS.md". Keep it as the original Baileys reference unless there is a clear reason to update it.
-
----
-
-IMPORTANT RULES
-
-- Work directly inside "roccky_bot".
-- Do not stop after analyzing the code.
-- Actually implement the identified fixes.
-- Do not ask for confirmation for every individual modification.
-- Do not rewrite the entire project unnecessarily.
-- Do not remove existing bot features.
-- Do not delete authentication sessions or user data.
-- Do not expose secrets in documentation or logs.
-- Do not introduce unnecessary infrastructure.
-- Do not make unsupported claims about successful tests.
-- Prioritize compatibility with the existing runtime.
-- Keep resource consumption as low as reasonably possible.
-
-If you discover a problem that cannot be safely fixed because external credentials, infrastructure, or information are unavailable, document it clearly and explain what is required.
+Do not delete existing user data or authentication sessions.
 
 ---
 
 FINAL REPORT
 
-After completing the work, provide a detailed but concise report containing:
+Provide a report containing:
 
-1. Project Analysis
-   
-   - Original architecture.
-   - Main problems discovered.
+1. API Exploration
 
-2. Bug Fixes
-   
-   - Problems fixed.
-   - Root causes.
-   - Files modified.
+- Number of endpoints discovered.
+- Number of endpoints tested.
+- Number of endpoints successfully tested.
+- Categories explored.
+- APIs requiring authentication.
+- APIs that could not be tested.
 
-3. Stability Improvements
-   
-   - Crash prevention.
-   - Connection recovery.
-   - Database reliability.
-   - Button and message handling.
+2. New Plugins
 
-4. Performance Improvements
-   
-   - Memory optimization.
-   - CPU optimization.
-   - Improvements for low-end servers.
+For each new plugin:
+
+- Name.
+- Command.
+- Description.
+- API used.
+- Source file.
+
+3. Updated Plugins
+
+List all repaired or improved existing plugins.
+
+4. Interactive Improvements
+
+Explain:
+
+- New buttons.
+- Quoted message improvements.
+- Interactive menus.
+- Rich response formatting.
+- Fallback mechanisms.
 
 5. Testing Results
-   
-   - Tests executed.
-   - Passed tests.
-   - Failed tests.
-   - Tests requiring a live environment.
+
+- Successful tests.
+- Failed tests.
+- Mocked tests.
+- Tests requiring live WhatsApp.
 
 6. Documentation
-   
-   - All files created inside "docs/".
-   - Brief explanation of each document.
+
+List all created or updated documentation files.
 
 7. Remaining Issues
-   
-   - Unresolved bugs.
-   - External dependencies.
-   - Recommended future improvements.
+
+Explain anything that could not be implemented and why.
 
 8. Final Status
-   
-   - Overall project condition.
-   - Whether the bot is ready for deployment.
-   - Any important deployment considerations.
 
-Your goal is to transform ROCCKY from an unstable WhatsApp bot into a reliable, maintainable, well-documented, and lightweight application suitable for long-running operation on low-spec servers.
+Summarize the project's condition and deployment readiness.
+
+---
+
+FINAL OBJECTIVE
+
+Transform ROCCKY into a feature-rich, interactive, and reliable WhatsApp bot powered by useful Siputzx APIs.
+
+The result should have:
+
+- More useful features.
+- Well-organized plugins.
+- Reliable API integrations.
+- Interactive WhatsApp experiences.
+- Updated legacy features.
+- Consistent response formatting.
+- Complete developer documentation.
+- Low resource consumption.
+- Long-running stability.
+
+Do not just explore and report. Actually integrate, implement, repair, test, and document the features.
+
+Prioritize quality and reliability over the number of plugins.

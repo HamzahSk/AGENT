@@ -11,7 +11,7 @@ export default {
              return m.reply(`👉🏻 *Example*: ${isPrefix + command} https://tiktok.com/xxx\n👉🏻 *Custom Format*: ${isPrefix + command} https://tiktok.com/xxx -t mp3`)
          }
 
-         m.react('🕒')
+         await m.react('🕒')
 
          // Cari flag -t untuk format
          const typeIndex = args.indexOf('-t')
@@ -109,7 +109,7 @@ export default {
 
       } catch (error) {
          console.error(error)
-         m.reply('❌ Error: ' + error.message)
+         await m.reply('❌ Error: ' + error.message)
       }
    },
    limit: 1

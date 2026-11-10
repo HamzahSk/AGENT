@@ -35,7 +35,7 @@ export default {
          if (setting.partner.includes(userId))
             return m.reply('💭 User already as partner.')
          setting.partner.push(userId)
-         m.reply(`✅ Successfully add @${userId.split('@')[0]} as partner.`)
+         await m.reply(`✅ Successfully add @${userId.split('@')[0]} as partner.`)
       }
       else if (command === '-partner') {
          if (!setting.partner.includes(userId))
@@ -44,31 +44,31 @@ export default {
             if (data === userId)
                setting.partner.splice(index, 1)
          })
-         m.reply(`✅ Successfully removed @${userId.split('@')[0]} from partner.`)
+         await m.reply(`✅ Successfully removed @${userId.split('@')[0]} from partner.`)
       }
       else if (command === '-user') {
          db.deleteUser(user.jid)
-         m.reply('✅ Successfully remove user from database.')
+         await m.reply('✅ Successfully remove user from database.')
       }
       else if (command === 'ban') {
          if (user.banned)
             return m.reply('❌ User already banned.')
          user.banned = true
-         m.reply('✅ Successfully ban user.')
+         await m.reply('✅ Successfully ban user.')
       }
       else if (command === 'block') {
          await sock.updateBlockStatus(userId, 'block')
-         m.reply('✅ Successfully block user.')
+         await m.reply('✅ Successfully block user.')
       }
       else if (command === 'unban') {
          if (!user.banned)
             return m.reply('❌ User already unbanned.')
          user.banned = false
-         m.reply('✅ Successfully unban user.')
+         await m.reply('✅ Successfully unban user.')
       }
       else if (command === 'unblock') {
          await sock.updateBlockStatus(userId, 'unblock')
-         m.reply('✅ Successfully unblock user.')
+         await m.reply('✅ Successfully unblock user.')
       }
    },
    owner: true

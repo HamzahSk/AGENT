@@ -10,7 +10,7 @@ export default {
       const [a, b] = shuffleArray(
          groupMetadata.participants.map(participant => participant.phoneNumber)
       )
-      m.reply(`🎲 *Random Best Couple*: @${a.split('@')[0]} 💞 @${b.split('@')[0]}`)
+      await m.reply(`🎲 *Random Best Couple*: @${a.split('@')[0]} 💞 @${b.split('@')[0]}`)
    },
    group: true
 }

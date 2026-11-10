@@ -39,10 +39,10 @@ export default {
          options.audio = isMimeAudio(mimetype)
          options.ptt = q.ptt
          options.sticker = isMimeWebP(mimetype)
-         sock.sendMedia(m.chat, media, printBody, null, options)
+         await sock.sendMedia(m.chat, media, printBody, null, options)
       }
       else
-         sock.sendText(m.chat, printBody, null, options)
+         await sock.sendText(m.chat, printBody, null, options)
    },
    group: true,
    admin: true

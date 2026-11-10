@@ -22,6 +22,6 @@ export default {
             (CATEGORY_EMOJIS[category] ?? '📁') + ' ' + toTitleCase(category) + ': ' + grouped[category].length
          )
       const print = frame('COMMANDS', sortedGroups, '📏')
-      sock.sendText(m.chat, print, m)
+      await sock.sendText(m.chat, print, m)
    }
 }

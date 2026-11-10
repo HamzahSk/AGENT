@@ -1,3 +1,5 @@
+import { downloadLimit } from './Http.js'
+import { positiveInt } from './Runtime.js'
 
 import { downloadContentFromMessage, getContentType, normalizeMessageContent } from 'baileys'
 import fs from 'fs'
@@ -9,18 +11,33 @@ import { Func } from '#func'
 export const downloadAsBuffer = async (m, type) => {
    if (!m || !(m.url || m.directPath)) return Buffer.alloc(0)
 
+   const signal = AbortSignal.timeout(positiveInt(global.requestTimeout, 30000))
+   let stream, abort
+   const deadline = new Promise((_resolve, reject) => {
+      abort = () => {
+         const error = Object.assign(new Error('Media download timed out'), { code: 'DOWNLOAD_TIMEOUT' })
+         stream?.destroy(error)
+         reject(error)
+      }
+      signal.addEventListener('abort', abort, { once: true })
+   })
+   const download = downloadContentFromMessage(m, type, { options: { signal } }).then(value => {
+      // The fork's transport may ignore the acquisition signal. Dispose a late
+      // result instead of retaining its socket after our caller has timed out.
+      if (signal.aborted) { value.destroy(); throw new Error('Media download timed out') }
+      return value
+   })
+   const chunks = []; let size = 0
    try {
-      const stream = await downloadContentFromMessage(m, type)
-
-      const chunks = []
-      for await (const chunk of stream)
+      stream = await Promise.race([download, deadline])
+      for await (const chunk of stream) {
+         size += chunk.length
+         if (size > downloadLimit()) throw Object.assign(new Error('Media exceeds configured limit'), { code: 'DOWNLOAD_LIMIT' })
          chunks.push(chunk)
+      }
+      return Buffer.concat(chunks, size)
+   } finally { signal.removeEventListener('abort', abort); stream?.destroy() }
 
-      return Buffer.concat(chunks)
-   }
-   catch {
-      return Buffer.alloc(0)
-   }
 }
 
 export const extractMessageBody = (msg) => {

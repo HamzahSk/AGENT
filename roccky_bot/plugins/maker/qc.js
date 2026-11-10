@@ -16,7 +16,7 @@ export default {
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} hello`)
          if (text.length > 150)
             return m.reply('❌ Maximum 150 characters.')
-         m.react('🕒')
+         await m.react('🕒')
          const profilePicture = await sock.profilePicture(m.sender)
          const upload = await uguu(
             await fetchAsBuffer(profilePicture)
@@ -29,13 +29,13 @@ export default {
          })
          if (!Buffer.isBuffer(data))
             return m.reply('❌ Failed to get data.')
-         sock.sendMedia(m.chat, data, '', m, {
+         await sock.sendMedia(m.chat, data, '', m, {
             sticker: true
          })
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

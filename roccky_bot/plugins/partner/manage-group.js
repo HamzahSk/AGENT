@@ -61,12 +61,12 @@ export default {
             return m.reply('❌ Bot is not an admin in that group.')
          await sock.groupSettingUpdate(group.id, 'announcement')
          await m.reply('✅ Successfully closing the grup.')
-         sock.sendText(group.id, '📣 Group closed by bot staff.', FAKE_QUOTE)
+         await sock.sendText(group.id, '📣 Group closed by bot staff.', FAKE_QUOTE)
       }
       else if (option === 'leave') {
          await sock.sendText(group.id, '👋🏻 Good bye!', FAKE_QUOTE, { mentionAll: true })
          await sock.groupLeave(group.id)
-         m.reply('✅ Bot successfully leave the group.')
+         await m.reply('✅ Bot successfully leave the group.')
       }
       else if (option === 'link') {
          if (!isBotAdmin)
@@ -75,30 +75,30 @@ export default {
          const print = frame('GROUP LINK', [
             'https://chat.whatsapp.com/' + code
          ], '🏷️')
-         m.reply(print)
+         await m.reply(print)
       }
       else if (option === 'mute') {
          group.mute = true
          await m.reply('✅ Bot successfully muted.')
-         sock.sendText(group.id, '📣 Bot muted in this group by bot staff.', FAKE_QUOTE)
+         await sock.sendText(group.id, '📣 Bot muted in this group by bot staff.', FAKE_QUOTE)
       }
       else if (option === 'open') {
          if (!isBotAdmin)
             return m.reply('❌ Bot is not an admin in that group.')
          await sock.groupSettingUpdate(m.chat, 'not_announcement')
          await m.reply('✅ Successfully open the grup.')
-         sock.sendText(group.id, '📣 Group opened by bot staff.', FAKE_QUOTE)
+         await sock.sendText(group.id, '📣 Group opened by bot staff.', FAKE_QUOTE)
       }
       else if (option === 'reset') {
          group.rentExpiry = 0
          group._notifiedRent = false
          await m.reply('✅ Bot duration has been reset.')
-         sock.sendText(group.id, '📣 Bot duration in this group has been reset and will stay forever.', FAKE_QUOTE)
+         await sock.sendText(group.id, '📣 Bot duration in this group has been reset and will stay forever.', FAKE_QUOTE)
       }
       else if (option === 'unmute') {
          group.mute = false
          await m.reply('✅ Bot successfully activated.')
-         sock.sendText(group.id, '📣 Bot unmuted in this group by bot staff.', FAKE_QUOTE)
+         await sock.sendText(group.id, '📣 Bot unmuted in this group by bot staff.', FAKE_QUOTE)
       }
       else if (option?.endsWith('d')) {
          const days = parseInt(option)
@@ -110,10 +110,10 @@ export default {
          group._notifiedRent = false
          const expiredAt = formatTime(undefined, group.rentExpiry)
          await m.reply(`✅ Successfully add bot access for ${group.name} group and will expired at ${expiredAt}.`)
-         sock.sendText(group.id, `📣 Bot access in this group is valid until ${expiredAt}.`, FAKE_QUOTE)
+         await sock.sendText(group.id, `📣 Bot access in this group is valid until ${expiredAt}.`, FAKE_QUOTE)
       }
       else
-         m.reply(printHowTo(isPrefix, command))
+         await m.reply(printHowTo(isPrefix, command))
    },
    partner: true
 }

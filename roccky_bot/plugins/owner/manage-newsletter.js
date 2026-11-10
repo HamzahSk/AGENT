@@ -29,27 +29,27 @@ export default {
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} Starseed`)
          if (text.length > 100)
             return m.reply('❌ Maximum 100 characters.')
-         m.react('🕒')
+         await m.react('🕒')
          await sock.newsletterUpdateName(setting.newsletterId, text)
-         m.reply('✅ Successfully change the newsletter name.')
+         await m.reply('✅ Successfully change the newsletter name.')
       }
       else if (command === 'setchdesc') {
          if (!text)
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} Weekly fresh updates`)
          if (text.length > 1000)
             return m.reply('❌ Maximum 1000 characters.')
-         m.react('🕒')
+         await m.react('🕒')
          await sock.newsletterUpdateDescription(setting.newsletterId, text)
-         m.reply('✅ Successfully change the newsletter description.')
+         await m.reply('✅ Successfully change the newsletter description.')
       }
       else if (command === 'setchpp') {
          const q = m.quoted?.url ? m.quoted : m
          const mimetype = (q.msg || q).mimetype
          if (!isMimeImage(mimetype))
             return m.reply('💭 Provide an image to change newsletter picture.')
-         m.react('🕒')
+         await m.react('🕒')
          await sock.newsletterUpdatePicture(setting.newsletterId, await q.download())
-         m.reply('✅ Successfully changed.')
+         await m.reply('✅ Successfully changed.')
       }
    },
    owner: true

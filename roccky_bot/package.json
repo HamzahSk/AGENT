@@ -14,10 +14,11 @@
       "start:node": "NODE_ENV=production MALLOC_ARENA_MAX=2 node --max-old-space-size=300 --expose-gc index.js",
       "start:api": "node AI-SEERVER/api/index.js",
       "start:api:bun": "bun AI-SEERVER/api/index.js",
-      "dev": "bun --watch index.js"
+      "dev": "bun --watch index.js",
+      "test": "node --test test/*.test.js agent/test/*.test.js ro-lang/test/*.test.js AI-SEERVER/test/*.test.js"
    },
    "engines": {
-      "node": ">=20.18.1"
+      "node": ">=22.12.0"
    },
    "repository": {
       "type": "git",
@@ -43,7 +44,7 @@
       "@napi-rs/image": "^1.12.0",
       "awesome-phonenumber": "~2.59.0",
       "axios": "^1.13.5",
-      "baileys": "npm:@rexxhayanasi/elaina-baileys",
+      "baileys": "npm:@rexxhayanasi/elaina-baileys@1.4.7",
       "chalk": "^5.6.2",
       "cheerio": "^1.2.0",
       "fflate": "^0.8.3",
@@ -58,7 +59,11 @@
       "pino": "^9.6.0",
       "qrcode": "~1.5.4",
       "sharp": "^0.33.5",
-      "yt-search": "^2.13.1"
+      "yt-search": "^2.13.1",
+      "lru-cache": "^11.5.3",
+      "p-queue": "^9.3.5",
+      "undici": "^7.30.2",
+      "ws": "^8.22.1"
    },
-   "packageManager": "bun@latest"
+   "packageManager": "bun@1.4.4"
 }

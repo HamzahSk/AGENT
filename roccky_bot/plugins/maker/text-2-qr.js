@@ -12,17 +12,17 @@ export default {
       try {
          if (!text)
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} I love you, big brother.`)
-         m.react('🕒')
+         await m.react('🕒')
          const data = await faa('qr-create', {
             text
          })
          if (!Buffer.isBuffer(data))
             return m.reply('❌ Failed to get data.')
-         sock.sendMedia(m.chat, data, '', m)
+         await sock.sendMedia(m.chat, data, '', m)
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

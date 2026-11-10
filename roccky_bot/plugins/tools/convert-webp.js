@@ -15,7 +15,7 @@ export default {
          const mimetype = (q.msg || q).mimetype
          if (!isMimeWebP(mimetype))
             return m.reply('💭 Reply sticker.')
-         m.react('🕒')
+         await m.react('🕒')
          const buffer = await q.download()
          let data
          const isNeedVideoConvert = command === 'tovid' || command === 'tovideo'
@@ -33,11 +33,11 @@ export default {
                await q.download(),
                512
             )
-         sock.sendMedia(m.chat, data?.result || data, '', m)
+         await sock.sendMedia(m.chat, data?.result || data, '', m)
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

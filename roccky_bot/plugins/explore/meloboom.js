@@ -21,15 +21,15 @@ export default {
             const result = userPreviousResult[Number(text) - 1]
             if (!result)
                return m.reply(`❌ Invalid input.`)
-            m.react('🕒')
-            sock.sendMedia(m.chat, result.audio, '', m, {
+            await m.react('🕒')
+            await sock.sendMedia(m.chat, result.audio, '', m, {
                audio: true
             })
          }
          else {
             if (!text)
                return m.reply(`👉🏻 *Example*: ${isPrefix + command} samsung`)
-            m.react('🕒')
+            await m.react('🕒')
             const data = await meloboom(text)
             const flattedResult = data.flatMap((result, index, array) => {
                const lines = [
@@ -45,13 +45,13 @@ export default {
             ], '📄')
             const printList = frame('MELOBOOM', flattedResult, '📢')
             ExploreSession.set(keyCache, data)
-            m.reply(printHowTo + '\n\n' +
+            await m.reply(printHowTo + '\n\n' +
                printList)
          }
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

@@ -21,12 +21,11 @@ install_node_nvm() {
 }
 
 install_common_tools() {
-   echo "📦 Enabling Corepack..."
-   corepack enable
-   corepack prepare yarn@1.22.22 --activate
+   echo "📦 Installing the pinned Bun package manager..."
+   npm install -g bun@1.4.4
 
    echo "📥 Installing dependencies..."
-   yarn install --production --frozen-lockfile 2>/dev/null
+   bun install --production --frozen-lockfile
 
    echo "🚀 Installing PM2 globally..."
    npm install -g pm2

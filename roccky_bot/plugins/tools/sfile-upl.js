@@ -17,7 +17,7 @@ export default {
          if (!mimetype)
             return m.reply('💭 Reply media to upload.')
 
-         m.react('🕒')
+         await m.react('🕒')
 
          const buffer = await q.download()
          const desc = text || 'ROCCKYREC'
@@ -30,27 +30,27 @@ export default {
          const result = await scrap.SfileMobi.upload(filename, buffer, desc)
 
          if (result.status === 'success') {
-            m.react('✅')
+            await m.react('✅')
             const print = func.frame('TO URL (Sfile.co)', [result.share_url], '💾')
-            m.reply(utils.isURL(result.share_url) ? print : result.share_url)
+            await m.reply(utils.isURL(result.share_url) ? print : result.share_url)
          } else if (result.chunk_received) {
-            m.react('✅')
-            m.reply('✅ Upload successful (chunk received)\n⚠️ Please wait for processing...')
+            await m.react('✅')
+            await m.reply('✅ Upload successful (chunk received)\n⚠️ Please wait for processing...')
          } else {
-            m.react('❌')
+            await m.react('❌')
             let errorMsg = result.message || 'Upload failed'
             if (result.reason === 'duplicate_hash') {
                errorMsg = 'File already exists on your account'
             } else if (result.reason === 'daily_limit_reached') {
                errorMsg = 'Daily upload limit reached'
             }
-            m.reply('❌ ' + errorMsg)
+            await m.reply('❌ ' + errorMsg)
          }
       }
       catch (error) {
          console.error(error)
-         m.react('❌')
-         m.reply('❌ ' + error.message)
+         await m.react('❌')
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

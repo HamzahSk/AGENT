@@ -12,7 +12,7 @@ export default {
             return m.reply('💭 Reply view once message.')
          if (!q.url && !q.download)
             return m.reply('❌ Media URL not found.')
-         sock.sendMedia(m.chat, await q.download(), q.caption || '', m, {
+         await sock.sendMedia(m.chat, await q.download(), q.caption || '', m, {
             sticker: isMimeWebP(q.mimetype),
             audio: isMimeAudio(q.mimetype),
             ptt: q.ptt,
@@ -24,7 +24,7 @@ export default {
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ Failed to get view once message.')
+         await m.reply('❌ Failed to get view once message.')
       }
    },
    group: true,

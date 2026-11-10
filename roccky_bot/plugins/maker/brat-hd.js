@@ -16,7 +16,7 @@ export default {
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} i'm here`)
          if (text.length > 150)
             return m.reply('❌ Maximum 150 characters.')
-         m.react('🕒')
+         await m.react('🕒')
          const isImage = command === 'brathd'
          const filePath = await (
             isImage ?
@@ -35,13 +35,13 @@ export default {
          const data = await endpoint(path, {
             url: upload
          })
-         sock.sendMedia(m.chat, data.result?.download_url || data, '', m, {
+         await sock.sendMedia(m.chat, data.result?.download_url || data, '', m, {
             sticker: true
          })
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    premium: true,

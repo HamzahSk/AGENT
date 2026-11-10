@@ -16,16 +16,16 @@ export default {
             if (!users.length)
                return m.reply('❌ No users have been banned at this time.')
             const printList = frame('BANNED LIST', users.map(user => '@ ' + user.jid.split('@')[0]), '🚫')
-            m.reply(printList)
+            await m.reply(printList)
          }
          else if (command === 'listtoxic') {
             const printList = frame('TOXIC LIST', setting.forbiddenWords.map(word => word), '🗣️')
-            m.reply(printList)
+            await m.reply(printList)
          }
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    }
 }

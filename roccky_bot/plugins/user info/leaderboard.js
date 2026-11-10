@@ -43,7 +43,7 @@ export default {
       if (command === 'limit')
          return m.reply(printMyLeaderboard)
       const printLeaderboard = frame('LEADERBOARD', leaderboard, '📊')
-      m.reply(printMyLeaderboard + '\n\n' +
+      await m.reply(printMyLeaderboard + '\n\n' +
          printLeaderboard)
    }
 }

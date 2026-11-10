@@ -14,7 +14,7 @@ export default {
       try {
          if (!text)
             return m.reply(`👉🏻 *Example*: ${isPrefix + command} mayonaka`)
-         m.react('🕒')
+         await m.react('🕒')
          const data = await ytsearch(text)
          if (!data.all?.length)
             return m.reply('❌ Failed to get data.')
@@ -26,13 +26,13 @@ export default {
          })
          if (!videoData.status)
             return m.reply('❌ Failed to get data.')
-         sock.sendMedia(m.chat, videoData.result.url, firstVideo.title, m, {
+         await sock.sendMedia(m.chat, videoData.result.url, firstVideo.title, m, {
             ptv: command === 'ptv'
          })
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

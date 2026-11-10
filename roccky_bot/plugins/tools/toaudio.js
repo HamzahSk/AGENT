@@ -13,15 +13,15 @@ export default {
          const mimetype = (q.msg || q).mimetype
          if (!isMimeAudio(mimetype) && !isMimeVideo(mimetype))
             return m.reply('💭 Reply media to make it as audio.')
-         m.react('🕒')
-         sock.sendMedia(m.chat, await q.download(), '', m, {
+         await m.react('🕒')
+         await sock.sendMedia(m.chat, await q.download(), '', m, {
             audio: true,
             ptt: command === 'tovn'
          })
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

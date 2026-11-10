@@ -15,7 +15,7 @@ export default {
          const mimetype = (q.msg || q).mimetype
          if (!isMimeImage(mimetype))
             return m.reply('💭 Provide an image to blur face.')
-         m.react('🕒')
+         await m.react('🕒')
          const upload = await uguu(
             await q.download()
          )
@@ -24,11 +24,11 @@ export default {
          })
          if (!Buffer.isBuffer(data))
             return m.reply('❌ Failed to get data.')
-         sock.sendMedia(m.chat, data, '', m)
+         await sock.sendMedia(m.chat, data, '', m)
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

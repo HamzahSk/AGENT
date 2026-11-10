@@ -37,7 +37,7 @@ export default {
          `*Premium*: ${userData.premiumExpiry > 0 ? '✅' : '❌'}`,
          `*Banned*: ${userData.banned ? '✅' : '❌'}`
       ], '📊')
-      m.reply(printUserInfo + '\n\n' +
+      await m.reply(printUserInfo + '\n\n' +
          printUserStats, {
          externalAdReply: {
             title: botName,

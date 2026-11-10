@@ -30,13 +30,13 @@ export default {
             text: stickerText,
             args: stickerArgs
          }
-         m.reply('✅ Successfully updating sticker command.')
+         await m.reply('✅ Successfully updating sticker command.')
       }
       else if (command === '-cmdstic') {
          if (!(base64Hash in setting.stickerCommand))
             return m.reply('❌ No sticker command found in database.')
          delete setting.stickerCommand[base64Hash]
-         m.reply('✅ Successfully delete sticker command.')
+         await m.reply('✅ Successfully delete sticker command.')
       }
    },
    partner: true

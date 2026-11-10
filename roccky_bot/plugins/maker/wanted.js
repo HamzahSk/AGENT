@@ -15,7 +15,7 @@ export default {
          const mimetype = (q.msg || q).mimetype
          if (!isMimeImage(mimetype))
             return m.reply('💭 Provide an image.')
-         m.react('🕒')
+         await m.react('🕒')
          const buffer = await resizeImage(
             await q.download(),
             720, null
@@ -26,13 +26,13 @@ export default {
          })
          if (!Buffer.isBuffer(data))
             return m.reply('❌ Failed to get data.')
-         sock.sendMedia(m.chat, data, '', m, {
+         await sock.sendMedia(m.chat, data, '', m, {
             sticker: true
          })
       }
       catch (error) {
          console.error(error)
-         m.reply('❌ ' + error.message)
+         await m.reply('❌ ' + error.message)
       }
    },
    limit: 1

@@ -38,3 +38,6 @@ python -m unittest discover -s tests -v
 The validation workflow also checks GitHub Actions syntax with Actionlint. All
 third-party actions are pinned by commit; the Codex CLI/proxy version is pinned
 in `.github/workflows/codex-remote.yml`.
+
+The standalone [SnapYT scraper](snapyt/README.md) includes its usage instructions,
+local checks, and current live-access limitations.

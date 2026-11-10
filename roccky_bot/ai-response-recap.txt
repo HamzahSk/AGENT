@@ -50,7 +50,7 @@ drwxr-xr-x 13 runner runner    4096 Aug 13 22:51 plugins
    },
    "repository": {
       "type": "git",
-      "url": "git+https://github.com/itsliaaa/starseed.git"
+      "url": "git+https://github.com/HamzahSk/roccky_bot.git"
    },
    "keywords": [
       "automation",
@@ -63,7 +63,7 @@ drwxr-xr-x 13 runner runner    4096 Aug 13 22:51 plugins
       "whatsapp",
       "whatsapp-bot"
    ],
-   "homepage": "https://github.com/itsliaaa/starseed#readme",
+   "homepage": "https://github.com/HamzahSk/roccky_bot#readme",
    "author": "Lia Wynn",
    "license": "Apache-2.0",
    "dependencies": {
@@ -99,7 +99,7 @@ no changes added to commit (use "git add" and/or "git commit -a")
       "whatsapp",
       "whatsapp-bot"
    ],
-   "homepage": "https://github.com/itsliaaa/starseed#readme",
+   "homepage": "https://github.com/HamzahSk/roccky_bot#readme",
    "author": "Lia Wynn",
    "license": "Apache-2.0",
    "dependencies": {
@@ -292,7 +292,7 @@ const Banner = () => {
       '█▀▄ █▄█ █▄▄ █▄▀  █ '
    ]
 
-   const footer = 'GitHub: https://github.com/itsliaaa/starseed'
+   const footer = 'GitHub: https://github.com/HamzahSk/roccky_bot'
    const terminalWidth = process.stdout?.columns || 80
 
    const toCenter = (text) => {

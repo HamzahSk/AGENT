@@ -203,7 +203,7 @@ index 33e493919c536dc2c80606786220b2d231bfb68f..c50d4a45ee5466f604ea12e0547504e3
 +Use Node.js 24 LTS (minimum 22.12), Bun 1.4.4 for the committed lockfile, and FFmpeg/ffprobe for media conversion.
  
 -> [!CAUTION]
--This project is a direct implementation of [`@itsliaaa/baileys`](https://github.com/itsliaaa/baileys#readme). If you choose to replace it with any other fork, all resulting issues or bugs are entirely your responsibility.
+-This project is a direct implementation of [`@itsliaaa/baileys`](https://github.com/HamzahSk/roccky_bot#readme). If you choose to replace it with any other fork, all resulting issues or bugs are entirely your responsibility.
 -
 -### ⚙️ Architecture Overview
 -
@@ -268,7 +268,7 @@ index 33e493919c536dc2c80606786220b2d231bfb68f..c50d4a45ee5466f604ea12e0547504e3
  
 -### 🔧 Configuration
 -
--Edit [config.json](https://github.com/itsliaaa/starseed/blob/main/config.js) to customize the bot:
+-Edit [config.json](https://github.com/HamzahSk/roccky_bot/blob/main/config.js) to customize the bot:
 -
 -```javascript
 -Object.assign(global, {
@@ -343,13 +343,13 @@ index 33e493919c536dc2c80606786220b2d231bfb68f..c50d4a45ee5466f604ea12e0547504e3
 -}
 -```
 -
--See the documentation in [`@itsliaaa/baileys`](https://github.com/itsliaaa/baileys#-sending-interactive-messages) for details about sending interactive messages.
+-See the documentation in [`@itsliaaa/baileys`](https://github.com/HamzahSk/roccky_bot#-sending-interactive-messages) for details about sending interactive messages.
 -
 -### 👤 Credits
 -
 -Starseed is an independent project built and maintained by:
 -
--- [itsliaaa](https://github.com/itsliaaa) — Project Maintainer & Creator
+-- [itsliaaa](https://github.com/HamzahSk/roccky_bot) — Project Maintainer & Creator
 -
 -Support this project:
 -
@@ -3188,7 +3188,7 @@ index 136195da909945ab246cb498ad27bd95d15e1891..cef980e3030ca79c42deb595317a91f3
 -      '█▀▄ █▄█ █▄▄ █▄▀  █ '
 -   ]
 -
--   const footer = 'GitHub: https://github.com/itsliaaa/starseed'
+-   const footer = 'GitHub: https://github.com/HamzahSk/roccky_bot'
 -   const terminalWidth = process.stdout?.columns || 80
 -
 -   const toCenter = (text) => {
@@ -10874,7 +10874,7 @@ index 9137b025265bc0eb474e2741cd2ca15754590d9f..44bd1c145a9e82de0018f2534853b8be
 +++ b/roccky_bot/plugins/other/credits.js
 @@ -22,7 +22,7 @@ export default {
        const printSourceCode = frame('SOURCE CODE', [
-          'https://github.com/itsliaaa/starseed#readme'
+          'https://github.com/HamzahSk/roccky_bot#readme'
        ], '🧩')
 -      m.reply(printCredits + '\n\n' +
 +      await m.reply(printCredits + '\n\n' +

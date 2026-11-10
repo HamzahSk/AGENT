@@ -23,7 +23,7 @@ export default {
                buttons: [
                   { type: 'reply', displayText: '✅ Ya', id: 'yes' },
                   { type: 'reply', displayText: '❌ Tidak', id: 'no' },
-                  { type: 'url', displayText: '🌐 Kunjungi', url: 'https://github.com/itsliaaa/starseed' },
+                  { type: 'url', displayText: '🌐 Kunjungi', url: 'https://github.com/HamzahSk/roccky_bot' },
                   { type: 'call', displayText: '📞 Telepon', phoneNumber: '6281234567890' }
                ],
                quoted: m

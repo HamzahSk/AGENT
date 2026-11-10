@@ -258,8 +258,8 @@ Func.createSticker = async (media, options = {}) => {
       'sticker-pack-id': 'rocky',
       'sticker-pack-name': options.stickerPackName ?? stickerPackName,
       'sticker-pack-publisher': options.stickerPackPublisher,
-      'android-app-store-link': 'https://github.com/itsliaaa',
-      'ios-app-store-link': 'https://github.com/itsliaaa',
+      'android-app-store-link': 'https://github.com/HamzahSk/roccky_bot',
+      'ios-app-store-link': 'https://github.com/HamzahSk/roccky_bot',
       emojis: ['✨'],
       'accessibility-text': botName
    })

@@ -6263,7 +6263,7 @@ Terima kasih kepada semua pihak yang telah memberikan dukungan, inspirasi, dan k
       <sub>MBuilder · Pemilik</sub>
     </td>
     <td align="center" width="180">
-      <a href="https://github.com/itsliaaa">
+      <a href="https://github.com/HamzahSk/roccky_bot">
         <img
           src="https://avatars.githubusercontent.com/u/88979678?v=4"
           width="90"

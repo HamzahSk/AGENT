@@ -10,7 +10,7 @@ import { AVAILABLE_MODELS } from '../../lib/Constants.js'
 import { createFileName, isMimeAudio, isMimeImage, persistToFile, resizeImage, toArray } from '../../lib/Utilities.js'
 import { ModuleCache } from '../../lib/Watcher.js'
 
-const TOP_PATH = 'starseed-main/'
+const TOP_PATH = 'roccky_bot-main/'
 
 const HIGHLIGHT_LABEL = { highlight_label: 'Subscription Only' }
 
@@ -135,7 +135,7 @@ const wrapScript = async () => {
 }
 
 const updateScript = async () => {
-   const zipPath = await persistToFile('https://github.com/itsliaaa/starseed/archive/refs/heads/main.zip')
+   const zipPath = await persistToFile('https://github.com/HamzahSk/roccky_bot/archive/refs/heads/main.zip')
 
    const files = await unzipAsync(
       new Uint8Array(await readFile(zipPath))

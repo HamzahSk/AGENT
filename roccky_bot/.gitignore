@@ -146,3 +146,4 @@ sessions/
 *.temp
 database.json
 store.json
+config.js

@@ -22,7 +22,7 @@
    },
    "repository": {
       "type": "git",
-      "url": "git+https://github.com/itsliaaa/starseed.git"
+      "url": "git+https://github.com/HamzahSk/roccky_bot.git"
    },
    "keywords": [
       "automation",
@@ -35,7 +35,7 @@
       "whatsapp",
       "whatsapp-bot"
    ],
-   "homepage": "https://github.com/itsliaaa/starseed#readme",
+   "homepage": "https://github.com/HamzahSk/roccky_bot#readme",
    "author": "Lia Wynn",
    "license": "Apache-2.0",
    "dependencies": {

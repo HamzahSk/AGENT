@@ -75,7 +75,7 @@ Object.assign(globalThis, {
    
  //  supabaseKey: "Rocky",
    databaseName: "rocky",
-   databaseUrl: "mongodb+srv://hamzahhaz740_db_user:aIvi3PZZOdEIB37W@newdb.ukpkhdb.mongodb.net/?appName=NEWDB",
+   databaseUrl: process.env.DATABASE_URL,
    
    proxyUrl: "",
   

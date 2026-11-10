@@ -1,0 +1,14 @@
+{
+  "name": "snapyt-scraper",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": "./index.mjs",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "test:live": "node scripts/check-live.mjs"
+  }
+}

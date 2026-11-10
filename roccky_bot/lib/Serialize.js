@@ -467,7 +467,7 @@ m.reply = async (text, options = {}, extra = {}) => {
             largeThumbnail: true,
             mediaType: 1,
             renderLargerThumbnail: true,
-            sourceUrl: 'https://github.com/itsliaaa/Roccky'
+            sourceUrl: 'https://github.com/HamzahSk/roccky_bot'
          },
          ...options
       }, { quoted: m, ...extra })

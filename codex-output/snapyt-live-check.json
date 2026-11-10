@@ -1,0 +1,23 @@
+{
+  "checkedAt": "2026-11-10T05:45:13.047Z",
+  "sourceUrl": "https://www.youtube.com/watch?v=PqtggjVAi8M",
+  "status": "blocked",
+  "checks": [
+    {
+      "type": "video",
+      "status": "blocked",
+      "code": "ACCESS_RESTRICTED",
+      "message": "SnapYT denied access or requires a browser challenge; the request was stopped.",
+      "httpStatus": 403,
+      "stage": "landing"
+    },
+    {
+      "type": "audio",
+      "status": "blocked",
+      "code": "ACCESS_RESTRICTED",
+      "message": "SnapYT denied access or requires a browser challenge; the request was stopped.",
+      "httpStatus": 403,
+      "stage": "resolve"
+    }
+  ]
+}

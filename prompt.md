@@ -1,28 +1,13 @@
-Build SnapYT Scraper
+Set up GitHub Actions workflows to run my WhatsApp bot inside the "roccky_bot/" directory.
 
-Scrape and analyze the website https://www.snapyt.app/id/ to understand how its video and audio download functionality works.
+Requirements:
 
-Requirements
+- Analyze the project structure inside "roccky_bot/" and identify the correct startup command.
+- Create a GitHub Actions workflow to install dependencies and run the bot.
+- Use GitHub Secrets to securely store WhatsApp session credentials and other sensitive environment variables.
+- Restore and manage the WhatsApp session from GitHub Secrets so the bot doesn't require QR scanning on every restart.
+- Ensure the workflow can automatically restart the bot if it crashes.
+- Optimize the workflow for GitHub Actions Ubuntu runners.
+- Do not hardcode credentials or modify unrelated project files.
 
-1. Inspect the website, its HTML, JavaScript, network requests, and API endpoints.
-2. Implement a working scraper using Node.js (ESM).
-3. Use lightweight libraries, preferably native "fetch". Avoid unnecessary dependencies.
-4. Support:
-   - Video downloads.
-   - Audio downloads (MP3).
-5. Use this YouTube URL for testing:
-   "https://youtu.be/PqtggjVAi8M"
-6. Test both video and audio functionality using content you're authorized to download.
-7. Ensure the scraper actually works, not just returns mocked responses.
-8. Handle errors, timeouts, invalid URLs, and unavailable formats.
-9. Save downloaded files locally with appropriate filenames and extensions.
-
-Important
-
-- Prioritize native "fetch", "URL", and other built-in Node.js APIs.
-- Use ESM ("import" / "export").
-- Do not use browser automation or heavy libraries unless absolutely necessary.
-- Do not bypass DRM, authentication, or access restrictions.
-- Keep the implementation simple, clean, and reusable.
-
-Deliverable: A fully working Node.js ESM scraper with clear usage instructions. Test everything before considering it complete.
+Read the existing source code and configuration files first. Ensure everything is compatible with the bot's current runtime and dependencies.

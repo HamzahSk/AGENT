@@ -1,0 +1,1910 @@
+{
+  "files": 158,
+  "commands": 487,
+  "collisions": [],
+  "plugins": [
+    {
+      "source": "plugins/_quiz-registry.js",
+      "commands": [
+        "brainout",
+        "cluebrain",
+        "skipbrain",
+        "caklontong",
+        "cluecak",
+        "skipcak",
+        "heroff",
+        "tebakff",
+        "clueff",
+        "skipff",
+        "heroml",
+        "tebakml",
+        "clueml",
+        "skipml",
+        "jkt48",
+        "cluejkt",
+        "skipjkt",
+        "drakor",
+        "cluedrakor",
+        "skipdrakor",
+        "riddle",
+        "tekateki",
+        "clueriddle",
+        "skipriddle",
+        "whatanimal",
+        "tebakhewan",
+        "clueanimal",
+        "skipanimal",
+        "whatchemistry",
+        "tebakkimia",
+        "cluechemistry",
+        "skipchemistry",
+        "whatcountry",
+        "tebaknegara",
+        "cluecountry",
+        "skipcountry",
+        "whatfilm",
+        "tebakfilm",
+        "cluefilm",
+        "skipfilm",
+        "whatflag",
+        "tebakbendera",
+        "clueflag",
+        "skipflag",
+        "whatfood",
+        "tebakmakanan",
+        "cluefood",
+        "skipfood",
+        "whatlyric",
+        "tebaklirik",
+        "cluelyric",
+        "skiplyric",
+        "whatpicture",
+        "tebakgambar",
+        "cluepicture",
+        "skippicture",
+        "whatprofession",
+        "tebakprofesi",
+        "clueprofession",
+        "skipprofession",
+        "whatword",
+        "tebakkata",
+        "clueword",
+        "skipword",
+        "whoami",
+        "siapaaku",
+        "cluewho",
+        "skipwho"
+      ],
+      "category": "games, event",
+      "description": "_quiz registry",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/admin tools/activation.js",
+      "commands": [
+        "mute",
+        "unmute"
+      ],
+      "category": "admin tools",
+      "description": "activation",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/admin tools/manage-group.js",
+      "commands": [
+        "closegc",
+        "opengc",
+        "delete",
+        "setgcdesc",
+        "setgcname",
+        "setgcpp",
+        "setleft",
+        "setwelcome",
+        "upgcsw",
+        "del"
+      ],
+      "category": "admin tools",
+      "description": "manage group",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/admin tools/manage-member.js",
+      "commands": [
+        "+warn",
+        "-warn",
+        "add",
+        "kick",
+        "promote",
+        "demote",
+        "sider"
+      ],
+      "category": "admin tools",
+      "description": "manage member",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/admin tools/mentions.js",
+      "commands": [
+        "everyone",
+        "hidetag",
+        "tagall",
+        "totag"
+      ],
+      "category": "admin tools",
+      "description": "mentions",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/admin tools/moderation.js",
+      "commands": [
+        "adminonly",
+        "antibot",
+        "antidelete",
+        "antiporn",
+        "antigroupstatus",
+        "antilink",
+        "antirejoin",
+        "antispam",
+        "antitagall",
+        "antitagstatus",
+        "antitoxic",
+        "antiwalink",
+        "autosticker",
+        "labelupdate",
+        "sholatreminder",
+        "left",
+        "welcome"
+      ],
+      "category": "admin tools",
+      "description": "moderation",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/ai/_chatbot-agent.js",
+      "commands": [
+        "agent",
+        "devagent",
+        "owneragent"
+      ],
+      "category": "owner, event",
+      "description": "_chatbot agent",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/ai/_chatbot.js",
+      "commands": [],
+      "category": "event",
+      "description": "_chatbot",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/ai/_rocky-learning.js",
+      "commands": [
+        "rockylearn"
+      ],
+      "category": "ai, event",
+      "description": "_rocky learning",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/ai/gpt-image.js",
+      "commands": [
+        "aiimg",
+        "openaiimg"
+      ],
+      "category": "ai",
+      "description": "gpt image",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/ai/image-generation.js",
+      "commands": [
+        "animagine",
+        "cartoony",
+        "dreamshaper",
+        "newreality"
+      ],
+      "category": "ai",
+      "description": "image generation",
+      "dependencies": "nekolabs",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/ai/music-generation.js",
+      "commands": [
+        "suno"
+      ],
+      "category": "ai",
+      "description": "music generation",
+      "dependencies": "zenzxz",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/ai/nano-banana.js",
+      "commands": [
+        "nanobanana"
+      ],
+      "category": "ai",
+      "description": "nano banana",
+      "dependencies": "faa",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/ai/summarize.js",
+      "commands": [
+        "summarize",
+        "ringkas"
+      ],
+      "category": "ai",
+      "description": "Ringkas teks atau pesan yang dibalas dengan Phi-2.",
+      "dependencies": "Siputzx V2",
+      "usage": "Node.js menjalankan JavaScript di server.",
+      "status": "New; mocked tests pass; live status in API_INTEGRATIONS"
+    },
+    {
+      "source": "plugins/ai/text-generation.js",
+      "commands": [
+        "ai",
+        "claude",
+        "copilot",
+        "deepsearch",
+        "deepseek",
+        "dgaf",
+        "dolphin",
+        "dreamanalyze",
+        "gita",
+        "glm",
+        "hammer",
+        "nexray",
+        "perplexity"
+      ],
+      "category": "ai",
+      "description": "text generation",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/download/_auto-download.js",
+      "commands": [],
+      "category": "event",
+      "description": "_auto download",
+      "dependencies": "nexray, nekolabs",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/download/aio.js",
+      "commands": [
+        "aio",
+        "alldl",
+        "anydl"
+      ],
+      "category": "download",
+      "description": "aio",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/download/capcut.js",
+      "commands": [
+        "capcut",
+        "cc"
+      ],
+      "category": "download",
+      "description": "capcut",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/download/douyin.js",
+      "commands": [
+        "douyin",
+        "doump3",
+        "douvn"
+      ],
+      "category": "download",
+      "description": "douyin",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/download/facebook.js",
+      "commands": [
+        "facebook",
+        "fbmp3",
+        "fbvn",
+        "fb"
+      ],
+      "category": "download",
+      "description": "facebook",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/download/github.js",
+      "commands": [
+        "gitrepo"
+      ],
+      "category": "download",
+      "description": "Informasi repositori GitHub publik dan tautan arsip ZIP.",
+      "dependencies": "Siputzx V2",
+      "usage": "https://github.com/nodejs/node",
+      "status": "New; mocked tests pass; live status in API_INTEGRATIONS"
+    },
+    {
+      "source": "plugins/download/google-drive.js",
+      "commands": [
+        "gdrive"
+      ],
+      "category": "download",
+      "description": "google drive",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/download/instagram.js",
+      "commands": [
+        "instagram",
+        "ig"
+      ],
+      "category": "download",
+      "description": "instagram",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/download/mediafire.js",
+      "commands": [
+        "mediafire",
+        "mf"
+      ],
+      "category": "download",
+      "description": "mediafire",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/download/pin.js",
+      "commands": [
+        "pin"
+      ],
+      "category": "download",
+      "description": "pin",
+      "dependencies": "nekolabs",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/download/spotify.js",
+      "commands": [
+        "spotify"
+      ],
+      "category": "download",
+      "description": "spotify",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/download/terabox.js",
+      "commands": [
+        "terabox",
+        "tb"
+      ],
+      "category": "download",
+      "description": "terabox",
+      "dependencies": "zenzxz",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/download/tiktok.js",
+      "commands": [
+        "tiktok",
+        "tikwm",
+        "ttmp3",
+        "ttvn",
+        "tt",
+        "ttmp4",
+        "ttwm"
+      ],
+      "category": "download",
+      "description": "tiktok",
+      "dependencies": "existing TikTok Vercel provider",
+      "status": "Updated; regression tests pass"
+    },
+    {
+      "source": "plugins/download/twitter.js",
+      "commands": [
+        "twitter",
+        "tw"
+      ],
+      "category": "download",
+      "description": "twitter",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/download/videy.js",
+      "commands": [
+        "videy"
+      ],
+      "category": "download",
+      "description": "videy",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/download/youtube.js",
+      "commands": [
+        "ytmp3",
+        "ytmp4",
+        "yta",
+        "ytv"
+      ],
+      "category": "download",
+      "description": "youtube",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/explore/anime-search.js",
+      "commands": [
+        "animesearch"
+      ],
+      "category": "explore",
+      "description": "Cari anime, karakter, dan artikel di Otakotaku.",
+      "dependencies": "Siputzx V2",
+      "usage": "mahiru",
+      "status": "New; mocked tests pass; live status in API_INTEGRATIONS"
+    },
+    {
+      "source": "plugins/explore/image-search.js",
+      "commands": [
+        "imgsearch"
+      ],
+      "category": "explore",
+      "description": "Cari gambar Bing dan tampilkan satu pratinjau per halaman.",
+      "dependencies": "Siputzx V2",
+      "usage": "kucing",
+      "status": "New; mocked tests pass; live status in API_INTEGRATIONS"
+    },
+    {
+      "source": "plugins/explore/lyric.js",
+      "commands": [
+        "lyric",
+        "lirik"
+      ],
+      "category": "explore",
+      "description": "lyric",
+      "dependencies": "deline",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/explore/meloboom.js",
+      "commands": [
+        "meloboom"
+      ],
+      "category": "explore",
+      "description": "meloboom",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/explore/pinterest.js",
+      "commands": [
+        "pinimg",
+        "pins"
+      ],
+      "category": "explore",
+      "description": "pinterest",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/explore/spotify-play.js",
+      "commands": [
+        "spotplay"
+      ],
+      "category": "explore",
+      "description": "spotify play",
+      "dependencies": "zenzxz",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/explore/spotify-search.js",
+      "commands": [
+        "spotsearch"
+      ],
+      "category": "explore",
+      "description": "spotify search",
+      "dependencies": "zenzxz",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/explore/sticker-pack.js",
+      "commands": [
+        "stickerpack",
+        "skpack"
+      ],
+      "category": "explore",
+      "description": "sticker pack",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/explore/stickerly.js",
+      "commands": [
+        "stickerly"
+      ],
+      "category": "explore",
+      "description": "stickerly",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/explore/tiktok-photo.js",
+      "commands": [
+        "ttphoto"
+      ],
+      "category": "explore",
+      "description": "tiktok photo",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/explore/wallcraft.js",
+      "commands": [
+        "wallcraft"
+      ],
+      "category": "explore",
+      "description": "wallcraft",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/explore/web-search.js",
+      "commands": [
+        "websearch"
+      ],
+      "category": "explore",
+      "description": "Cari halaman web melalui DuckDuckGo.",
+      "dependencies": "Siputzx V2",
+      "usage": "Node.js documentation",
+      "status": "New; mocked tests pass; live status in API_INTEGRATIONS"
+    },
+    {
+      "source": "plugins/explore/youtube-play.js",
+      "commands": [
+        "play"
+      ],
+      "category": "explore",
+      "description": "youtube play",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/explore/youtube-search.js",
+      "commands": [
+        "ytsearch",
+        "yts",
+        "ytsa",
+        "ytsv"
+      ],
+      "category": "explore",
+      "description": "youtube search",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/explore/youtube-video.js",
+      "commands": [
+        "playvideo",
+        "ptv"
+      ],
+      "category": "explore",
+      "description": "youtube video",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/group/_afk-notifier.js",
+      "commands": [],
+      "category": "event",
+      "description": "_afk notifier",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/group/_anti-bot.js",
+      "commands": [],
+      "category": "event",
+      "description": "_anti bot",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/group/_anti-delete.js",
+      "commands": [],
+      "category": "event",
+      "description": "_anti delete",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/group/_anti-group-status.js",
+      "commands": [],
+      "category": "event",
+      "description": "_anti group status",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/group/_anti-link.js",
+      "commands": [],
+      "category": "event",
+      "description": "_anti link",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/group/_anti-porn.js",
+      "commands": [],
+      "category": "event",
+      "description": "_anti porn",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/group/_anti-spam.js",
+      "commands": [],
+      "category": "event",
+      "description": "_anti spam",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/group/_anti-tag-all.js",
+      "commands": [],
+      "category": "event",
+      "description": "_anti tag all",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/group/_anti-tag-status.js",
+      "commands": [],
+      "category": "event",
+      "description": "_anti tag status",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/group/_anti-toxic.js",
+      "commands": [],
+      "category": "event",
+      "description": "_anti toxic",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/group/_auto-sticker.js",
+      "commands": [],
+      "category": "event",
+      "description": "_auto sticker",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/group/_label-update.js",
+      "commands": [],
+      "category": "event",
+      "description": "_label update",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/group/_view-once.js",
+      "commands": [],
+      "category": "event",
+      "description": "_view once",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/group/addmode.js",
+      "commands": [
+        "addmode",
+        "addmember"
+      ],
+      "category": "group",
+      "description": "addmode",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/group/couple.js",
+      "commands": [
+        "couple",
+        "cp"
+      ],
+      "category": "group",
+      "description": "couple",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/group/ephemeral.js",
+      "commands": [
+        "ephemeral",
+        "disappearing"
+      ],
+      "category": "group",
+      "description": "ephemeral",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/group/getgcsw.js",
+      "commands": [
+        "getgcsw"
+      ],
+      "category": "group",
+      "description": "getgcsw",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/group/getpp.js",
+      "commands": [
+        "getpp"
+      ],
+      "category": "group",
+      "description": "getpp",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/group/group-info.js",
+      "commands": [
+        "gcinfo",
+        "idgc"
+      ],
+      "category": "group",
+      "description": "group info",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/group/group-link.js",
+      "commands": [
+        "gclink"
+      ],
+      "category": "group",
+      "description": "group link",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/group/joinreq.js",
+      "commands": [
+        "joinreq",
+        "accjoin",
+        "rejjoin",
+        "pendingjoin",
+        "approvejoin",
+        "rejectjoin"
+      ],
+      "category": "group",
+      "description": "joinreq",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/group/pinmsg.js",
+      "commands": [
+        "pinmsg"
+      ],
+      "category": "group",
+      "description": "pinmsg",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/group/poll.js",
+      "commands": [
+        "poll",
+        "buatpoll"
+      ],
+      "category": "group",
+      "description": "poll",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/group/quoted-message.js",
+      "commands": [
+        "quoted"
+      ],
+      "category": "group",
+      "description": "quoted message",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/group/read-once.js",
+      "commands": [
+        "rvo"
+      ],
+      "category": "group",
+      "description": "read once",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/group/revokelink.js",
+      "commands": [
+        "revokelink",
+        "revoke"
+      ],
+      "category": "group",
+      "description": "revokelink",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/group/total-chat.js",
+      "commands": [
+        "totalchat"
+      ],
+      "category": "group",
+      "description": "total chat",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/maker/attp.js",
+      "commands": [
+        "attp",
+        "ttp"
+      ],
+      "category": "maker",
+      "description": "attp",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/maker/balogo.js",
+      "commands": [
+        "balogo"
+      ],
+      "category": "maker",
+      "description": "balogo",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/maker/brat-hd.js",
+      "commands": [
+        "brathd",
+        "bratvidhd"
+      ],
+      "category": "maker",
+      "description": "brat hd",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/maker/brat-variant.js",
+      "commands": [
+        "bratanime",
+        "bratgirl"
+      ],
+      "category": "maker",
+      "description": "brat variant",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/maker/brat.js",
+      "commands": [
+        "brat",
+        "bratvid"
+      ],
+      "category": "maker",
+      "description": "brat",
+      "dependencies": "Siputzx V2",
+      "status": "Updated; regression tests pass"
+    },
+    {
+      "source": "plugins/maker/carbonify.js",
+      "commands": [
+        "carbonify"
+      ],
+      "category": "maker",
+      "description": "carbonify",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/maker/fake-call.js",
+      "commands": [
+        "fakecall"
+      ],
+      "category": "maker",
+      "description": "fake call",
+      "dependencies": "zenzxz",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/maker/fake-dana.js",
+      "commands": [
+        "fakedana"
+      ],
+      "category": "maker",
+      "description": "fake dana",
+      "dependencies": "zenzxz",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/maker/fake-fbcomment.js",
+      "commands": [
+        "fakefbcomment"
+      ],
+      "category": "maker",
+      "description": "fake fbcomment",
+      "dependencies": "zenzxz",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/maker/fake-ff.js",
+      "commands": [
+        "fakeff"
+      ],
+      "category": "maker",
+      "description": "fake ff",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/maker/fake-ml.js",
+      "commands": [
+        "fakeml"
+      ],
+      "category": "maker",
+      "description": "fake ml",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/maker/fake-story.js",
+      "commands": [
+        "fakestory"
+      ],
+      "category": "maker",
+      "description": "fake story",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/maker/fake-threads.js",
+      "commands": [
+        "fakethreads"
+      ],
+      "category": "maker",
+      "description": "fake threads",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/maker/fake-ttcomment.js",
+      "commands": [
+        "fakettcomment"
+      ],
+      "category": "maker",
+      "description": "fake ttcomment",
+      "dependencies": "zenzxz",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/maker/fake-ttprofile.js",
+      "commands": [
+        "fakettprofile"
+      ],
+      "category": "maker",
+      "description": "fake ttprofile",
+      "dependencies": "zenzxz",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/maker/fake-wachannel.js",
+      "commands": [
+        "fakewachannel"
+      ],
+      "category": "maker",
+      "description": "fake wachannel",
+      "dependencies": "zenzxz",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/maker/fake-wagroup.js",
+      "commands": [
+        "fakewagroup"
+      ],
+      "category": "maker",
+      "description": "fake wagroup",
+      "dependencies": "zenzxz",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/maker/fake-xnxx.js",
+      "commands": [
+        "fakexnxx"
+      ],
+      "category": "maker",
+      "description": "fake xnxx",
+      "dependencies": "deline",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/maker/fake-ytcomment.js",
+      "commands": [
+        "fakeytcomment"
+      ],
+      "category": "maker",
+      "description": "fake ytcomment",
+      "dependencies": "deline",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/maker/iqc.js",
+      "commands": [
+        "iqc"
+      ],
+      "category": "maker",
+      "description": "iqc",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/maker/msg.js",
+      "commands": [
+        "msg"
+      ],
+      "category": "maker",
+      "description": "msg",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/maker/qc.js",
+      "commands": [
+        "qc"
+      ],
+      "category": "maker",
+      "description": "qc",
+      "dependencies": "nekolabs",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/maker/reaction.js",
+      "commands": [
+        "kiss",
+        "cry",
+        "wave",
+        "poke",
+        "waifu",
+        "neko",
+        "shinobu",
+        "megumin",
+        "bully",
+        "cuddle",
+        "hug",
+        "awoo",
+        "kicked",
+        "pat",
+        "smug",
+        "bonk",
+        "yeet",
+        "blush",
+        "smile",
+        "highfive",
+        "handhold",
+        "nom",
+        "bite",
+        "glomp",
+        "slap",
+        "kill",
+        "happy",
+        "wink",
+        "dance",
+        "cringe"
+      ],
+      "category": "reaction",
+      "description": "reaction",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/maker/smeme.js",
+      "commands": [
+        "smeme"
+      ],
+      "category": "maker",
+      "description": "smeme",
+      "dependencies": "deline",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/maker/sticker.js",
+      "commands": [
+        "sticker",
+        "s",
+        "stiker",
+        "svid"
+      ],
+      "category": "maker",
+      "description": "sticker",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/maker/text-2-qr.js",
+      "commands": [
+        "text2qr"
+      ],
+      "category": "maker",
+      "description": "text 2 qr",
+      "dependencies": "faa",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/maker/wanted.js",
+      "commands": [
+        "wanted"
+      ],
+      "category": "maker",
+      "description": "wanted",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/maker/wasted.js",
+      "commands": [
+        "wasted"
+      ],
+      "category": "maker",
+      "description": "wasted",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/menu.js",
+      "commands": [
+        "menu",
+        "command",
+        "help",
+        "allmenu"
+      ],
+      "category": "event",
+      "description": "menu",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/other/api-menu.js",
+      "commands": [
+        "siputzx"
+      ],
+      "category": "other",
+      "description": "Menu fitur Siputzx dengan contoh yang dapat dipilih.",
+      "dependencies": "local menu",
+      "usage": "",
+      "status": "New; mocked tests pass; live status in API_INTEGRATIONS"
+    },
+    {
+      "source": "plugins/other/commands.js",
+      "commands": [
+        "commands"
+      ],
+      "category": "other",
+      "description": "commands",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/other/credits.js",
+      "commands": [
+        "credits",
+        "script",
+        "thanksto",
+        "sc"
+      ],
+      "category": "other",
+      "description": "credits",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/other/list-data.js",
+      "commands": [
+        "listbanned",
+        "listtoxic"
+      ],
+      "category": "other",
+      "description": "list data",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/other/owner.js",
+      "commands": [
+        "owner"
+      ],
+      "category": "other",
+      "description": "owner",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/other/pricing.js",
+      "commands": [
+        "premium",
+        "rental",
+        "prem",
+        "rent"
+      ],
+      "category": "other",
+      "description": "pricing",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/other/test.js",
+      "commands": [
+        "disk",
+        "ping",
+        "ram",
+        "run",
+        "server",
+        "statistic"
+      ],
+      "category": "other",
+      "description": "test",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/owner/_evaluate.js",
+      "commands": [],
+      "category": "event",
+      "description": "_evaluate",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/owner/broadcast.js",
+      "commands": [
+        "broadcast",
+        "broadcastgc",
+        "broadcastgcsw",
+        "bc",
+        "bcgc",
+        "bcgcsw",
+        "jpm"
+      ],
+      "category": "owner",
+      "description": "broadcast",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/owner/buatgc.js",
+      "commands": [
+        "buatgc",
+        "creategc"
+      ],
+      "category": "owner",
+      "description": "buatgc",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/owner/manage-bot.js",
+      "commands": [
+        "afknotifier",
+        "autodownload",
+        "backup",
+        "backupsc",
+        "chatbot",
+        "commandsuggestion",
+        "disable",
+        "enable",
+        "gconly",
+        "menumusic",
+        "noprefix",
+        "notifier",
+        "public",
+        "reactstatus",
+        "readmessage",
+        "rejectcall",
+        "resetlimit",
+        "restart",
+        "restore",
+        "securelabel",
+        "setbroadcastcd",
+        "setinstruction",
+        "setmenu",
+        "setmenumusic",
+        "setmenumessage",
+        "setmodel",
+        "setname",
+        "setbio",
+        "setpp",
+        "setcover",
+        "setchid",
+        "setreply",
+        "slowmode",
+        "self",
+        "typingpresence",
+        "updatesc",
+        "+prefix",
+        "-prefix"
+      ],
+      "category": "owner",
+      "description": "manage bot",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/owner/manage-label.js",
+      "commands": [
+        "setlabel",
+        "dellabel"
+      ],
+      "category": "owner",
+      "description": "manage label",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/owner/manage-newsletter.js",
+      "commands": [
+        "setchname",
+        "setchdesc",
+        "setchpp"
+      ],
+      "category": "owner",
+      "description": "manage newsletter",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/owner/manage-plugin.js",
+      "commands": [
+        "delplugin",
+        "getplugin",
+        "saveplugin",
+        "dp",
+        "gp",
+        "sp"
+      ],
+      "category": "owner",
+      "description": "manage plugin",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/owner/manage-user.js",
+      "commands": [
+        "+partner",
+        "-partner",
+        "-user",
+        "ban",
+        "block",
+        "unban",
+        "unblock"
+      ],
+      "category": "owner",
+      "description": "manage user",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/owner/upload-status.js",
+      "commands": [
+        "upsw"
+      ],
+      "category": "owner",
+      "description": "upload status",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/partner/manage-group.js",
+      "commands": [
+        "groups",
+        "gc"
+      ],
+      "category": "partner",
+      "description": "manage group",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/partner/manage-limit.js",
+      "commands": [
+        "+limit",
+        "-limit"
+      ],
+      "category": "partner",
+      "description": "manage limit",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/partner/manage-premium.js",
+      "commands": [
+        "+premium",
+        "-premium",
+        "+prem",
+        "-prem"
+      ],
+      "category": "partner",
+      "description": "manage premium",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/partner/manage-word.js",
+      "commands": [
+        "+word",
+        "-word"
+      ],
+      "category": "partner",
+      "description": "manage word",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/partner/sticker-command.js",
+      "commands": [
+        "+cmdstic",
+        "-cmdstic"
+      ],
+      "category": "partner",
+      "description": "sticker command",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/partner/upload-newsletter.js",
+      "commands": [
+        "playch",
+        "playvidch",
+        "ptvch",
+        "upch"
+      ],
+      "category": "partner",
+      "description": "upload newsletter",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/tools/blur-face.js",
+      "commands": [
+        "blurface"
+      ],
+      "category": "tools",
+      "description": "blur face",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/tools/calculator.js",
+      "commands": [
+        "calculator",
+        "cal"
+      ],
+      "category": "tools",
+      "description": "calculator",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/tools/cekstatus.js",
+      "commands": [
+        "cekstatus",
+        "about"
+      ],
+      "category": "tools",
+      "description": "cekstatus",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/tools/cekwa.js",
+      "commands": [
+        "cekwa",
+        "onwa"
+      ],
+      "category": "tools",
+      "description": "cekwa",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/tools/character-recognition.js",
+      "commands": [
+        "ocr"
+      ],
+      "category": "tools",
+      "description": "character recognition",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/tools/colorize.js",
+      "commands": [
+        "colorize"
+      ],
+      "category": "tools",
+      "description": "colorize",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/tools/convert-webp.js",
+      "commands": [
+        "toimage",
+        "tovideo",
+        "toimg",
+        "tovid"
+      ],
+      "category": "tools",
+      "description": "convert webp",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/tools/country.js",
+      "commands": [
+        "country"
+      ],
+      "category": "tools",
+      "description": "Informasi negara, ibu kota, mata uang, dan bahasa.",
+      "dependencies": "Siputzx V2",
+      "usage": "Indonesia",
+      "status": "New; mocked tests pass; live status in API_INTEGRATIONS"
+    },
+    {
+      "source": "plugins/tools/emoji-gif.js",
+      "commands": [
+        "emojito",
+        "emogif"
+      ],
+      "category": "tools",
+      "description": "emoji gif",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/tools/emoji-mix.js",
+      "commands": [
+        "emojimix",
+        "mix"
+      ],
+      "category": "tools",
+      "description": "emoji mix",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/tools/enhance.js",
+      "commands": [
+        "hd",
+        "enhance"
+      ],
+      "category": "tools",
+      "description": "enhance",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/tools/interactive-demo.js",
+      "commands": [
+        "button",
+        "interactive",
+        "demo"
+      ],
+      "category": "tools",
+      "description": "interactive demo",
+      "dependencies": "local menu",
+      "status": "Updated; regression tests pass"
+    },
+    {
+      "source": "plugins/tools/inviteinfo.js",
+      "commands": [
+        "inviteinfo",
+        "ceklink"
+      ],
+      "category": "tools",
+      "description": "inviteinfo",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/tools/morse.js",
+      "commands": [
+        "morse",
+        "dmorse"
+      ],
+      "category": "tools",
+      "description": "morse",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/tools/newsletter-id.js",
+      "commands": [
+        "channelid",
+        "idch",
+        "cekidch"
+      ],
+      "category": "tools",
+      "description": "newsletter id",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/tools/no-background.js",
+      "commands": [
+        "removebg",
+        "nobackground"
+      ],
+      "category": "tools",
+      "description": "no background",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/tools/no-watermark.js",
+      "commands": [
+        "removewm",
+        "nowatermark"
+      ],
+      "category": "tools",
+      "description": "no watermark",
+      "dependencies": "nexray",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/tools/postal-code.js",
+      "commands": [
+        "kodepos"
+      ],
+      "category": "tools",
+      "description": "Cari kode pos Indonesia berdasarkan nama daerah.",
+      "dependencies": "Siputzx V2",
+      "usage": "pasiran jaya",
+      "status": "New; mocked tests pass; live status in API_INTEGRATIONS"
+    },
+    {
+      "source": "plugins/tools/qr-2-text.js",
+      "commands": [
+        "qr2text"
+      ],
+      "category": "tools",
+      "description": "qr 2 text",
+      "dependencies": "faa",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/tools/screenshot-web.js",
+      "commands": [
+        "ssweb"
+      ],
+      "category": "tools",
+      "description": "screenshot web",
+      "dependencies": "zenzxz",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/tools/sfile-upl.js",
+      "commands": [
+        "sfileupl"
+      ],
+      "category": "tools",
+      "description": "sfile upl",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/tools/sound-effect.js",
+      "commands": [
+        "bass",
+        "blown",
+        "chipmunk",
+        "deep",
+        "earrape",
+        "fast",
+        "fat",
+        "nightcore",
+        "reverse",
+        "robot",
+        "slow",
+        "smooth",
+        "vibrato",
+        "echo",
+        "tremolo",
+        "cave",
+        "haunted",
+        "underwater",
+        "cursed",
+        "dizzy",
+        "demonic",
+        "alien",
+        "ghost",
+        "glitch",
+        "vintage",
+        "telephone",
+        "8d",
+        "drunk",
+        "helium",
+        "muted",
+        "underworld",
+        "squirrel",
+        "boostbass",
+        "boosttreble",
+        "whisper",
+        "darthvader",
+        "chipdemon",
+        "megaphone",
+        "immersive",
+        "reverb"
+      ],
+      "category": "sound effect",
+      "description": "sound effect",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/tools/stalk.js",
+      "commands": [
+        "dcstalk",
+        "ffstalk",
+        "igstalk",
+        "robloxstalk",
+        "ttstalk"
+      ],
+      "category": "tools",
+      "description": "stalk",
+      "dependencies": "zenzxz",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/tools/sticker-watermark.js",
+      "commands": [
+        "swm"
+      ],
+      "category": "tools",
+      "description": "sticker watermark",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/tools/toaudio.js",
+      "commands": [
+        "toaudio",
+        "tovn",
+        "tomp3"
+      ],
+      "category": "tools",
+      "description": "toaudio",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/tools/tourl.js",
+      "commands": [
+        "tourl"
+      ],
+      "category": "tools",
+      "description": "tourl",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/tools/translate.js",
+      "commands": [
+        "translate",
+        "tr"
+      ],
+      "category": "tools",
+      "description": "Terjemahkan teks atau pesan yang dibalas.",
+      "dependencies": "Siputzx V2",
+      "usage": "id Good morning",
+      "status": "New; mocked tests pass; live status in API_INTEGRATIONS"
+    },
+    {
+      "source": "plugins/tools/weather.js",
+      "commands": [
+        "cuaca"
+      ],
+      "category": "tools",
+      "description": "Prakiraan cuaca BMKG untuk desa atau kelurahan Indonesia.",
+      "dependencies": "Siputzx V2",
+      "usage": "pasiran jaya",
+      "status": "New; mocked tests pass; live status in API_INTEGRATIONS"
+    },
+    {
+      "source": "plugins/user info/afk.js",
+      "commands": [
+        "afk"
+      ],
+      "category": "user info",
+      "description": "afk",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/user info/charge-energy.js",
+      "commands": [
+        "chargeenergy",
+        "charge"
+      ],
+      "category": "user info",
+      "description": "charge energy",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/user info/claim.js",
+      "commands": [
+        "claim"
+      ],
+      "category": "user info",
+      "description": "claim",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/user info/leaderboard.js",
+      "commands": [
+        "limit",
+        "leaderboard"
+      ],
+      "category": "user info",
+      "description": "leaderboard",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/user info/profile.js",
+      "commands": [
+        "profile",
+        "me"
+      ],
+      "category": "user info",
+      "description": "profile",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    },
+    {
+      "source": "plugins/user info/wa-me.js",
+      "commands": [
+        "wame"
+      ],
+      "category": "user info",
+      "description": "wa me",
+      "dependencies": "Existing helpers / WhatsApp; see FEATURES",
+      "status": "Existing; import checked; remote behavior unverified"
+    }
+  ]
+}

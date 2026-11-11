@@ -1,77 +1,78 @@
-Buat sebuah aplikasi Android bernama Ro-Lang, yaitu aplikasi belajar bahasa melalui cerita interaktif (story-based language learning).
+Build an Android application called Ro-Lang, a story-based language learning app that helps users learn new languages by reading interactive stories.
 
-Gunakan Kotlin, Jetpack Compose, dan Gradle Kotlin DSL. Buat aplikasi dengan desain modern, clean, intuitif, dan nyaman digunakan.
+Use Kotlin, Jetpack Compose, and Gradle Kotlin DSL. Create a modern, clean, intuitive, and user-friendly interface.
 
-Fitur Utama
+Core Features
 
 1. Story-Based Learning
-   
-   - Belajar bahasa melalui cerita pendek dan menarik.
-   - Sediakan berbagai kategori cerita.
-   - Setiap cerita memiliki tingkat kesulitan: Beginner (A1–A2), Intermediate (B1–B2), dan Advanced (C1–C2).
-   - Tingkat kesulitan disesuaikan dengan kemampuan pengguna.
+
+- Learn languages through interesting short stories.
+- Provide multiple story categories and genres.
+- Each story must have difficulty levels: Beginner (A1–A2), Intermediate (B1–B2), and Advanced (C1–C2).
+- Allow users to choose stories based on their proficiency level.
 
 2. Word Translation
-   
-   - Setiap kata dalam cerita bisa ditekan untuk melihat terjemahannya.
-   - Tampilkan arti kata, jenis kata, contoh penggunaan, dan penjelasan singkat.
-   - Sediakan terjemahan per kalimat dan per kata.
+
+- Make every word in a story clickable.
+- When tapped, display its translation, meaning, part of speech, example usage, and a brief explanation.
+- Support both word-by-word and sentence translation.
 
 3. Multilingual Support
-   Sediakan tiga bahasa utama:
-   
-   - English
-   - Indonesian
-   - Filipino (Tagalog)
-   
-   Pengguna bisa memilih bahasa yang ingin dipelajari dan bahasa yang digunakan sebagai terjemahan.
+
+Support three languages:
+
+- English
+- Indonesian
+- Filipino (Tagalog)
+
+Allow users to choose their target language and native/reference language independently.
 
 4. Vocabulary Collection
-   
-   - Simpan kata baru ke daftar vocabulary.
-   - Tampilkan arti dan contoh penggunaannya.
-   - Kelompokkan berdasarkan cerita atau kategori.
-   - Tandai kata yang sudah dikuasai.
+
+- Save unfamiliar words to a personal vocabulary list.
+- Store meanings, translations, and example sentences.
+- Organize vocabulary by story or category.
+- Allow users to mark words as mastered.
 
 5. Learning Review
-   
-   - Sistem pengulangan vocabulary menggunakan spaced repetition.
-   - Quiz sederhana untuk menguji pemahaman.
-   - Review kata-kata yang pernah dipelajari.
-   - Statistik progres pembelajaran.
+
+- Implement a spaced repetition system (SRS) for vocabulary revision.
+- Provide interactive quizzes and exercises.
+- Review previously learned words.
+- Track learning progress and statistics.
 
 6. Offline Mode
-   
-   - Cerita dan vocabulary yang sudah tersedia bisa diakses tanpa internet.
-   - Simpan data pembelajaran secara lokal.
-   - Pastikan fitur utama tetap berfungsi tanpa koneksi internet.
 
-Teknologi
+- Allow users to access downloaded or built-in stories without an internet connection.
+- Store stories, translations, and vocabulary locally.
+- Ensure core learning features work completely offline.
+
+Technology Stack
 
 - Kotlin
 - Jetpack Compose
 - Material 3
-- Room Database untuk penyimpanan lokal.
-- DataStore untuk preferensi pengguna.
+- Room Database for local storage.
+- DataStore for user preferences.
 - Navigation Compose.
 
-UI/UX
+UI/UX Requirements
 
-- Buat desain modern dengan navigasi yang sederhana.
-- Gunakan bottom navigation.
-- Sediakan halaman Home, Stories, Vocabulary, Review, dan Profile.
-- Buat reading experience yang nyaman dengan typography yang bagus.
-- Tambahkan progress indicator dan animasi ringan.
-- Pastikan tampilannya responsif dan konsisten.
+- Create a modern and visually appealing interface.
+- Use bottom navigation.
+- Include Home, Stories, Vocabulary, Review, and Profile screens.
+- Provide a comfortable reading experience with proper typography and spacing.
+- Add subtle animations and learning progress indicators.
+- Maintain consistent design across all screens.
 
-Instruksi Pengembangan
+Development Instructions
 
-- Periksa struktur project terlebih dahulu sebelum mulai mengembangkan.
-- Buat arsitektur kode yang modular dan mudah dikembangkan.
-- Jangan hanya membuat UI atau mockup. Implementasikan fitur agar benar-benar berfungsi.
-- Sediakan beberapa cerita bawaan beserta terjemahan dan vocabulary-nya.
-- Pastikan database lokal dan offline mode berfungsi.
-- Hindari penggunaan API berbayar untuk fitur inti.
-- Uji dan perbaiki error hingga project berhasil di-build.
+- Inspect the existing project structure before making changes.
+- Use a clean, modular, and maintainable architecture.
+- Do not create UI mockups only. Implement fully functional features.
+- Include built-in sample stories with translations and vocabulary.
+- Ensure the local database and offline functionality work correctly.
+- Avoid paid APIs for core features.
+- Test the application and fix build errors before completing the project.
 
-Fokus pada aplikasi belajar bahasa yang benar-benar bisa digunakan, bukan sekadar tampilan demonstrasi.
+Important: Focus on building a fully functional language-learning application, not just a visual prototype.

@@ -4,4 +4,5 @@ gh workflow run codex-remote.yml \
   
 gh workflow run codex-remote.yml \
   --repo HamzahSk/AGENT \
-  -f prompt='Read prompt.md and execute all phases sequentially'
+  -f prompt='Read prompt.md and execute all phases sequentially' \
+  -f model='gpt-6.1-sol'

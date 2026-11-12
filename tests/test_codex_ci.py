@@ -169,8 +169,22 @@ assert "OPENAI_API_KEY" not in os.environ
 assert "CODEX_API_KEY" not in os.environ
 assert sys.argv[sys.argv.index("--model") + 1] == "provider/custom-model-v2"
 assert os.environ["SERVICE_API_TOKEN"] == "service-secret-canary"
-assert "operator input $(no-shell-expansion)" in sys.stdin.read()
 assert "--sandbox" in sys.argv and "workspace-write" in sys.argv
+attempt_file = Path(os.environ["RUNNER_TEMP"]) / "codex-attempt"
+attempt = int(attempt_file.read_text()) + 1 if attempt_file.exists() else 1
+attempt_file.write_text(str(attempt))
+prompt = sys.stdin.read()
+if attempt == 1:
+    assert "resume" not in sys.argv
+    assert "operator input $(no-shell-expansion)" in prompt
+    Path("partial.txt").write_text("completed once")
+    print("stream disconnected before completion")
+    raise SystemExit(1)
+assert attempt == 2
+assert "resume" in sys.argv and "--last" in sys.argv
+assert "operator input $(no-shell-expansion)" not in prompt
+assert "Preserve completed work" in prompt and "do not" in prompt
+assert Path("partial.txt").read_text() == "completed once"
 Path("generated.txt").write_text("generated result")
 Path(sys.argv[sys.argv.index("-o") + 1]).write_text("Done service-secret-canary")
 print("never publish raw output service-secret-canary")
@@ -182,7 +196,7 @@ print("never publish raw output service-secret-canary")
                "TASK_MODEL": "provider/custom-model-v2", "TASK_PROMPT": "operator input $(no-shell-expansion)",
                "CODEX_INTEGRATION_ENV_JSON": '{"SERVICE_API_TOKEN":"service-secret-canary"}',
                "PATH": str(bin_dir) + os.pathsep + os.environ["PATH"]}
-        with patch.dict(os.environ, env), contextlib.redirect_stdout(io.StringIO()):
+        with patch.dict(os.environ, env), patch("runtime.time.sleep"), contextlib.redirect_stdout(io.StringIO()):
             runtime.init()
             state = runner_temp / "codex-ci"
             (state / "proxy").mkdir()
@@ -191,7 +205,8 @@ print("never publish raw output service-secret-canary")
             self.assertEqual((state / "artifacts/final.md").read_text(), "Done [REDACTED]")
             self.assertIn("has_changes=true", output.read_text())
             self.assertIn(b"generated result", (state / "artifacts/changes.patch").read_bytes())
-            self.assertFalse((state / "artifacts/transcript.log").exists())
+            self.assertEqual((runner_temp / "codex-attempt").read_text(), "2")
+            self.assertFalse((state / "artifacts/transcript-1.log").exists())
             runtime.cleanup()
             self.assertFalse((state / "home").exists())
             self.assertFalse((state / "private").exists())

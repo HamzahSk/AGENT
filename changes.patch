@@ -1,2708 +1,446 @@
-diff --git a/codex-output/rolang/READING_ROOM_VALIDATION.md b/codex-output/rolang/READING_ROOM_VALIDATION.md
+diff --git a/codex-output/roccky-bot/REPORT.md b/codex-output/roccky-bot/REPORT.md
 new file mode 100644
-index 0000000000000000000000000000000000000000..8fa75a75bbd83bfa4b630daf10aa08fcef8a19f9
+index 0000000000000000000000000000000000000000..c0f8d014d151f8291f0acbffc82693a2c6958224
 --- /dev/null
-+++ b/codex-output/rolang/READING_ROOM_VALIDATION.md
-@@ -0,0 +1,70 @@
-+# Ro-Lang reading and vocabulary validation
++++ b/codex-output/roccky-bot/REPORT.md
+@@ -0,0 +1,80 @@
++# Operator task result
 +
-+Completed the tasks in prompt.md; changes are left in the working tree.
++The authorized preparation and validation are complete. Deployment and automatic
++cross-run session-secret updates are not implemented because the task's parent
++instruction explicitly says: "Do not change CI credential handling or GitHub
++workflow files." The conflicting requirements in `prompt.md` were handled as a
++proposal under `codex-output/`, without editing active workflows or credentials.
 +
-+## Changes
++## Phases performed in order
 +
-+- Continuous, scrollable story paragraphs with comfortable serif typography,
-+  bounded reading width, saved paragraph positions, persistent reading progress,
-+  per-paragraph translations, and explicit story completion.
-+- All words remain interactive. Shared blue/green/yellow/no-highlight styles
-+  represent New, Learning, Almost Mastered, and Known. Both reader and vocabulary
-+  details support manual changes; vocabulary filters include all four statuses.
-+- Quiz ratings update status and spaced repetition together. Correct reviews
-+  progress toward Known; struggling words return to Learning and earlier review.
-+  Manual Known pauses review, and stale quizzes cannot overwrite manual edits.
-+- Room version 3 preserves prior vocabulary, schedules, reading, review history,
-+  and pending operations. Status fields synchronize through the existing queue;
-+  the server validates consistency and handles older records and retries.
-+- Six backend guides live in rolang-server/docs/, with a complete uploadable
-+  multilingual story example and links from the server README. Android usage
-+  documentation describes the new reading and learning behavior.
++1. **Inspect source and configuration.** No applicable `AGENTS.md` was found.
++   Reviewed package metadata, launcher, supervisor, connection manager, auth
++   lifecycle, deployment configuration, and project documentation. Sensitive
++   configuration was inspected for names/structure only; credential values were
++   not reproduced. Startup is `npm run start:node` from `roccky_bot/`:
++   `NODE_ENV=production MALLOC_ARENA_MAX=2 node --max-old-space-size=300 --expose-gc index.js`.
++   `bun start` is the existing alternative. Node must be at least 22.12;
++   project deployment documentation uses Node 24 and Bun 1.4.4.
++2. **Prepare workflow.** `WORKFLOW_DRAFT.md` contains validated YAML with a
++   manual default-branch trigger, Ubuntu 24.04, pinned actions, read-only GitHub
++   permissions, session concurrency, Bun frozen installation, and FFmpeg.
++   GitHub discovers workflows at the root `.github/workflows/`, not the nested
++   directory inside `roccky_bot/`.
++3. **Specify private configuration and session restoration.** The draft consumes
++   GitHub environment secrets only after dependency installation, restores a
++   complete paired multifile session into a private directory, checks secret
++   format and filenames, and includes cleanup. It never uploads authentication
++   files or exports them as step outputs. No restore code was executed against
++   real authentication data and no secrets were created or updated.
++4. **Implement and check restart behavior.** `run-bot.sh` runs the existing Node
++   startup script, adds launcher retries with 1–60 second backoff, forwards
++   shutdown to the process group, and cleans up surviving children before a
++   replacement. Exit 0 stops normally; exit 78 preserves the existing terminal
++   authentication behavior. The draft bounds runtime to 200 minutes, with room
++   for graceful shutdown before the runner deadline.
++5. **Validate and leave deliverables in the working tree.** Checks below passed.
++   No commits were created. Changes are confined to this output directory;
++   source files, dependency metadata, GitHub workflows, and CI credential
++   handling are unchanged.
 +
 +## Validation
 +
-+- Android: 26 tests passed, zero failures/errors/skips, including the actual
-+  Android HTTP client exchanging all four statuses between two Room databases
-+  through the Node API and disposable PostgreSQL 16 database.
-+- Regression coverage: continuous reading, translation, saving, completion,
-+  manual statuses, quiz progression and lapses, database reopen, versions 1/2
-+  upgrading to version 3, legacy records, in-flight manual changes, and word links
-+  after switching reference language.
-+- Android lint passed with no errors; 16 existing configuration warnings remain
-+  (target API, available dependency updates, and data extraction rules).
-+- Debug application APK and instrumentation test APK assembled successfully.
-+- Backend: all 9 PostgreSQL API tests passed. The documentation story was used
-+  for the create/edit/publish/unpublish/delete contract test.
-+- Backend syntax checks passed; production dependency audit found zero
-+  vulnerabilities.
-+- Bundled corpus: 9 variants, 691 dictionary entries, complete coverage in all
-+  three languages.
-+- Documentation: complete example passed story coverage validation; all 11 JSON
-+  blocks and 30 local links validated.
-+- git diff --check passed.
-+
-+Android validation command (JDK 17, SDK 35; writable caches provisioned under /tmp):
-+
-+```sh
-+bash gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleDebugAndroidTest -ProlangIntegrationUrl=http://127.0.0.1:3001
-+```
-+
-+Backend checks used a dedicated disposable local database:
-+
-+```sh
-+npm test
-+npm run check
-+npm audit --omit=dev
-+```
-+
-+## Limits and deployment notes
-+
-+- No physical Android device/emulator run or Vercel deployment was performed.
-+  Instrumentation tests were compiled; UI tests ran with Robolectric.
-+- Deploy the updated server before distributing the updated Android build.
-+  Older server versions reject the new status fields. Later uploads by old app
-+  versions can derive status from their older mastery fields.
-+- Existing architecture remains: vocabulary is scoped by story and language
-+  pair, and concurrent device schedules use server arrival order per record.
-+  Review events retain separate identities; schedules are not merged.
-+- Example sentences come from translated story paragraphs. The content contract
-+  does not have a separate dictionary examples field.
-diff --git a/rolang-app/README.md b/rolang-app/README.md
-index 5b3f7e4a35a28a2022d674d976c36d24fdce3b92..24c01ed3c6e168dee04dddef44790582aef111d8 100644
---- a/rolang-app/README.md
-+++ b/rolang-app/README.md
-@@ -26,18 +26,24 @@ Online features are optional and disabled in the default configuration.
-    and light or dark appearance. Preferences survive restart.
- 2. Browse **Stories** by genre, level, or search. Each of the three story families
-    has Beginner (A1–A2), Intermediate (B1–B2), and Advanced (C1–C2) versions.
--3. Read a passage at a time. Tap any word to see its offline translation,
-+3. Scroll through the entire story as continuous paragraphs in the Reading room.
-+   Tap any word to see its offline translation,
-    contextual meaning, part of speech, explanation, and example in both languages.
--   **Translate passage** reveals the complete sentence translation. Your reading
--   position is saved; **Finish story** records completion.
-+   **Translate story** shows reference-language text beneath each paragraph. Your
-+   paragraph position is saved; **Finish story** records completion.
- 4. Save words and find them in **Vocabulary**, grouped by story or category.
--   Search, filter, inspect examples, mark as mastered, or return words to learning.
-+   New words are blue, Learning words green, Almost Mastered words yellow, and
-+   Known words have no highlight. Every word remains tappable. Change any of the
-+   four statuses in word details, or filter the collection by status.
-    Removing a word asks for confirmation and removes its schedule.
- 5. In **Review**, answer multiple-choice questions or type translations. Incorrect
-    answers return in ten minutes. Correct answers can be rated Again, Hard, Good,
-    or Easy; Good starts at one day, then six days, then increasing intervals.
--   Five successful repetitions and an interval of at least 21 days confer mastery.
--   Manual mastery pauses reviews until the word is returned to learning.
-+   Three successful repetitions reach Almost Mastered. Five successful repetitions
-+   and an interval of at least 21 days confer Known status. Missed answers return
-+   words to Learning. Manual Known status pauses reviews; New/Learning resets the
-+   consecutive streak and makes the word due. Manual Almost Mastered is preserved
-+   through Good/Easy reviews. An open quiz cannot overwrite a later manual edit.
- 6. **Home** and **Profile** show collected words, completion, due reviews,
-    mastery, review accuracy, and a calendar-day review streak.
- 
-@@ -90,8 +96,10 @@ Published stories and per-story dictionaries cache in Room, so word lookup and
- reading remain local after download. A failed or partial catalog refresh retains
- cached content. A complete successful refresh hides removed/unpublished remote
- stories without deleting learning history. Bundled stories remain available.
--The existing version-1 database upgrades with an explicit migration preserving
--vocabulary, reading, and reviews; new installs also work entirely offline.
-+The existing version-1 database upgrades through versions 2 and 3 with explicit
-+migrations preserving vocabulary, reading, reviews, schedules, and pending edits;
-+new installs also work entirely offline. Legacy mastery fields map to the new
-+statuses. Deploy the updated backend before distributing this app build.
- 
- Each local library remains bound to the first account that signs in. Reconnecting
- the same account preserves its pending edits; signing into another account is
-diff --git a/rolang-app/app/schemas/com.rolang.app.data.LearningDatabase/3.json b/rolang-app/app/schemas/com.rolang.app.data.LearningDatabase/3.json
-new file mode 100644
-index 0000000000000000000000000000000000000000..19c52874ab0474843bbb87a4d397a3c7b2a11b49
---- /dev/null
-+++ b/rolang-app/app/schemas/com.rolang.app.data.LearningDatabase/3.json
-@@ -0,0 +1,514 @@
-+{
-+  "formatVersion": 1,
-+  "database": {
-+    "version": 3,
-+    "identityHash": "119c35aa8ec760b1c11efea770cff787",
-+    "entities": [
-+      {
-+        "tableName": "stories",
-+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `family` TEXT NOT NULL, `category` TEXT NOT NULL, `level` TEXT NOT NULL, `content` TEXT NOT NULL, `remote` INTEGER NOT NULL DEFAULT 0, `available` INTEGER NOT NULL DEFAULT 1, PRIMARY KEY(`id`))",
-+        "fields": [
-+          {
-+            "fieldPath": "id",
-+            "columnName": "id",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "family",
-+            "columnName": "family",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "category",
-+            "columnName": "category",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "level",
-+            "columnName": "level",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "content",
-+            "columnName": "content",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "remote",
-+            "columnName": "remote",
-+            "affinity": "INTEGER",
-+            "notNull": true,
-+            "defaultValue": "0"
-+          },
-+          {
-+            "fieldPath": "available",
-+            "columnName": "available",
-+            "affinity": "INTEGER",
-+            "notNull": true,
-+            "defaultValue": "1"
-+          }
-+        ],
-+        "primaryKey": {
-+          "autoGenerate": false,
-+          "columnNames": [
-+            "id"
-+          ]
-+        },
-+        "indices": [],
-+        "foreignKeys": []
-+      },
-+      {
-+        "tableName": "lexicon",
-+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`language` TEXT NOT NULL, `word` TEXT NOT NULL, `content` TEXT NOT NULL, PRIMARY KEY(`language`, `word`))",
-+        "fields": [
-+          {
-+            "fieldPath": "language",
-+            "columnName": "language",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "word",
-+            "columnName": "word",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "content",
-+            "columnName": "content",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          }
-+        ],
-+        "primaryKey": {
-+          "autoGenerate": false,
-+          "columnNames": [
-+            "language",
-+            "word"
-+          ]
-+        },
-+        "indices": [],
-+        "foreignKeys": []
-+      },
-+      {
-+        "tableName": "story_lexicon",
-+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`storyId` TEXT NOT NULL, `language` TEXT NOT NULL, `word` TEXT NOT NULL, `content` TEXT NOT NULL, PRIMARY KEY(`storyId`, `language`, `word`))",
-+        "fields": [
-+          {
-+            "fieldPath": "storyId",
-+            "columnName": "storyId",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "language",
-+            "columnName": "language",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "word",
-+            "columnName": "word",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "content",
-+            "columnName": "content",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          }
-+        ],
-+        "primaryKey": {
-+          "autoGenerate": false,
-+          "columnNames": [
-+            "storyId",
-+            "language",
-+            "word"
-+          ]
-+        },
-+        "indices": [],
-+        "foreignKeys": []
-+      },
-+      {
-+        "tableName": "vocabulary",
-+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `language` TEXT NOT NULL, `reference` TEXT NOT NULL, `word` TEXT NOT NULL, `translation` TEXT NOT NULL, `meaning` TEXT NOT NULL, `partOfSpeech` TEXT NOT NULL, `explanation` TEXT NOT NULL, `example` TEXT NOT NULL, `exampleTranslation` TEXT NOT NULL, `storyId` TEXT NOT NULL, `storyTitle` TEXT NOT NULL, `category` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `dueAt` INTEGER NOT NULL, `repetitions` INTEGER NOT NULL, `intervalDays` INTEGER NOT NULL, `ease` REAL NOT NULL, `lapses` INTEGER NOT NULL, `mastered` INTEGER NOT NULL, `lastReviewedAt` INTEGER NOT NULL, `status` TEXT NOT NULL DEFAULT 'LEARNING', `statusChangedAt` INTEGER NOT NULL DEFAULT 0)",
-+        "fields": [
-+          {
-+            "fieldPath": "id",
-+            "columnName": "id",
-+            "affinity": "INTEGER",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "language",
-+            "columnName": "language",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "reference",
-+            "columnName": "reference",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "word",
-+            "columnName": "word",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "translation",
-+            "columnName": "translation",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "meaning",
-+            "columnName": "meaning",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "partOfSpeech",
-+            "columnName": "partOfSpeech",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "explanation",
-+            "columnName": "explanation",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "example",
-+            "columnName": "example",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "exampleTranslation",
-+            "columnName": "exampleTranslation",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "storyId",
-+            "columnName": "storyId",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "storyTitle",
-+            "columnName": "storyTitle",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "category",
-+            "columnName": "category",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "createdAt",
-+            "columnName": "createdAt",
-+            "affinity": "INTEGER",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "dueAt",
-+            "columnName": "dueAt",
-+            "affinity": "INTEGER",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "repetitions",
-+            "columnName": "repetitions",
-+            "affinity": "INTEGER",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "intervalDays",
-+            "columnName": "intervalDays",
-+            "affinity": "INTEGER",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "ease",
-+            "columnName": "ease",
-+            "affinity": "REAL",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "lapses",
-+            "columnName": "lapses",
-+            "affinity": "INTEGER",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "mastered",
-+            "columnName": "mastered",
-+            "affinity": "INTEGER",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "lastReviewedAt",
-+            "columnName": "lastReviewedAt",
-+            "affinity": "INTEGER",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "status",
-+            "columnName": "status",
-+            "affinity": "TEXT",
-+            "notNull": true,
-+            "defaultValue": "'LEARNING'"
-+          },
-+          {
-+            "fieldPath": "statusChangedAt",
-+            "columnName": "statusChangedAt",
-+            "affinity": "INTEGER",
-+            "notNull": true,
-+            "defaultValue": "0"
-+          }
-+        ],
-+        "primaryKey": {
-+          "autoGenerate": true,
-+          "columnNames": [
-+            "id"
-+          ]
-+        },
-+        "indices": [
-+          {
-+            "name": "index_vocabulary_language_reference_word_storyId",
-+            "unique": true,
-+            "columnNames": [
-+              "language",
-+              "reference",
-+              "word",
-+              "storyId"
-+            ],
-+            "orders": [],
-+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_vocabulary_language_reference_word_storyId` ON `${TABLE_NAME}` (`language`, `reference`, `word`, `storyId`)"
-+          }
-+        ],
-+        "foreignKeys": []
-+      },
-+      {
-+        "tableName": "reading",
-+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`storyId` TEXT NOT NULL, `language` TEXT NOT NULL, `sentence` INTEGER NOT NULL, `completed` INTEGER NOT NULL, PRIMARY KEY(`storyId`, `language`))",
-+        "fields": [
-+          {
-+            "fieldPath": "storyId",
-+            "columnName": "storyId",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "language",
-+            "columnName": "language",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "sentence",
-+            "columnName": "sentence",
-+            "affinity": "INTEGER",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "completed",
-+            "columnName": "completed",
-+            "affinity": "INTEGER",
-+            "notNull": true
-+          }
-+        ],
-+        "primaryKey": {
-+          "autoGenerate": false,
-+          "columnNames": [
-+            "storyId",
-+            "language"
-+          ]
-+        },
-+        "indices": [],
-+        "foreignKeys": []
-+      },
-+      {
-+        "tableName": "reviews",
-+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `vocabularyId` INTEGER NOT NULL, `language` TEXT NOT NULL, `reference` TEXT NOT NULL, `reviewedAt` INTEGER NOT NULL, `correct` INTEGER NOT NULL, `rating` TEXT NOT NULL, `syncKey` TEXT NOT NULL DEFAULT '', `vocabularyKey` TEXT NOT NULL DEFAULT '')",
-+        "fields": [
-+          {
-+            "fieldPath": "id",
-+            "columnName": "id",
-+            "affinity": "INTEGER",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "vocabularyId",
-+            "columnName": "vocabularyId",
-+            "affinity": "INTEGER",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "language",
-+            "columnName": "language",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "reference",
-+            "columnName": "reference",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "reviewedAt",
-+            "columnName": "reviewedAt",
-+            "affinity": "INTEGER",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "correct",
-+            "columnName": "correct",
-+            "affinity": "INTEGER",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "rating",
-+            "columnName": "rating",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "syncKey",
-+            "columnName": "syncKey",
-+            "affinity": "TEXT",
-+            "notNull": true,
-+            "defaultValue": "''"
-+          },
-+          {
-+            "fieldPath": "vocabularyKey",
-+            "columnName": "vocabularyKey",
-+            "affinity": "TEXT",
-+            "notNull": true,
-+            "defaultValue": "''"
-+          }
-+        ],
-+        "primaryKey": {
-+          "autoGenerate": true,
-+          "columnNames": [
-+            "id"
-+          ]
-+        },
-+        "indices": [
-+          {
-+            "name": "index_reviews_syncKey",
-+            "unique": true,
-+            "columnNames": [
-+              "syncKey"
-+            ],
-+            "orders": [],
-+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_reviews_syncKey` ON `${TABLE_NAME}` (`syncKey`)"
-+          }
-+        ],
-+        "foreignKeys": []
-+      },
-+      {
-+        "tableName": "pending_changes",
-+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`kind` TEXT NOT NULL, `key` TEXT NOT NULL, `operationId` TEXT NOT NULL, `data` TEXT, `deleted` INTEGER NOT NULL, PRIMARY KEY(`kind`, `key`))",
-+        "fields": [
-+          {
-+            "fieldPath": "kind",
-+            "columnName": "kind",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "key",
-+            "columnName": "key",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "operationId",
-+            "columnName": "operationId",
-+            "affinity": "TEXT",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "data",
-+            "columnName": "data",
-+            "affinity": "TEXT",
-+            "notNull": false
-+          },
-+          {
-+            "fieldPath": "deleted",
-+            "columnName": "deleted",
-+            "affinity": "INTEGER",
-+            "notNull": true
-+          }
-+        ],
-+        "primaryKey": {
-+          "autoGenerate": false,
-+          "columnNames": [
-+            "kind",
-+            "key"
-+          ]
-+        },
-+        "indices": [],
-+        "foreignKeys": []
-+      },
-+      {
-+        "tableName": "sync_state",
-+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `owner` TEXT, `cursor` INTEGER NOT NULL, `bootstrapped` INTEGER NOT NULL, PRIMARY KEY(`id`))",
-+        "fields": [
-+          {
-+            "fieldPath": "id",
-+            "columnName": "id",
-+            "affinity": "INTEGER",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "owner",
-+            "columnName": "owner",
-+            "affinity": "TEXT",
-+            "notNull": false
-+          },
-+          {
-+            "fieldPath": "cursor",
-+            "columnName": "cursor",
-+            "affinity": "INTEGER",
-+            "notNull": true
-+          },
-+          {
-+            "fieldPath": "bootstrapped",
-+            "columnName": "bootstrapped",
-+            "affinity": "INTEGER",
-+            "notNull": true
-+          }
-+        ],
-+        "primaryKey": {
-+          "autoGenerate": false,
-+          "columnNames": [
-+            "id"
-+          ]
-+        },
-+        "indices": [],
-+        "foreignKeys": []
-+      }
-+    ],
-+    "views": [],
-+    "setupQueries": [
-+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '119c35aa8ec760b1c11efea770cff787')"
-+    ]
-+  }
-+}
-\ No newline at end of file
-diff --git a/rolang-app/app/src/main/java/com/rolang/app/LearningViewModel.kt b/rolang-app/app/src/main/java/com/rolang/app/LearningViewModel.kt
-index b8d4534e5fce2f65aa206debea394f45499d66b4..e88ea4eb39555b6444c75963a190c95c5b9e6fe3 100644
---- a/rolang-app/app/src/main/java/com/rolang/app/LearningViewModel.kt
-+++ b/rolang-app/app/src/main/java/com/rolang/app/LearningViewModel.kt
-@@ -26,6 +26,9 @@ data class LearningState(
-     val courseReviews get() = reviews.filter {
-         it.language == preferences.target.code && it.reference == preferences.native.code
-     }
-+    fun wordStatus(storyId: String, word: String) = courseWords.firstOrNull {
-+        it.storyId == storyId && it.word == Words.key(word)
-+    }?.learningStatus() ?: VocabularyStatus.NEW
-     fun due(now: Long) = courseWords.filter { !it.mastered && it.dueAt <= now }.sortedBy { it.dueAt }
- }
- 
-@@ -117,6 +120,14 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
-         repository.mastery(word.id, !word.mastered, System.currentTimeMillis())
-         _now.value = System.currentTimeMillis()
-     } }
-+    fun status(word: VocabularyEntity, status: VocabularyStatus) { work {
-+        repository.status(word.id, status, System.currentTimeMillis())
-+        _now.value = System.currentTimeMillis()
-+    } }
-+    fun status(story: Story, word: WordDetail, prefs: LearningPreferences, status: VocabularyStatus) { work {
-+        repository.status(story, word, prefs.target, prefs.native, status, System.currentTimeMillis())
-+        _now.value = System.currentTimeMillis()
-+    } }
-     fun delete(word: VocabularyEntity) { work { repository.delete(word.id); _message.value = "Word removed" } }
-     fun reading(story: Story, language: Language, index: Int, completed: Boolean) { work {
-         repository.reading(story, language, index, completed)
-diff --git a/rolang-app/app/src/main/java/com/rolang/app/data/Database.kt b/rolang-app/app/src/main/java/com/rolang/app/data/Database.kt
-index c1d86cd66345e6d7370731528777617a0016ee3e..ebca7bc87a86652d653cc5e638578f3065ce2c5f 100644
---- a/rolang-app/app/src/main/java/com/rolang/app/data/Database.kt
-+++ b/rolang-app/app/src/main/java/com/rolang/app/data/Database.kt
-@@ -4,6 +4,7 @@ import androidx.room.*
- import androidx.room.migration.Migration
- import androidx.sqlite.db.SupportSQLiteDatabase
- import com.rolang.app.domain.Schedule
-+import com.rolang.app.domain.VocabularyStatus
- import kotlinx.coroutines.flow.Flow
- import java.util.UUID
- 
-@@ -47,7 +48,10 @@ data class VocabularyEntity(
-     val lapses: Int = 0,
-     val mastered: Boolean = false,
-     val lastReviewedAt: Long = 0,
-+    @ColumnInfo(defaultValue = "'LEARNING'") val status: String = VocabularyStatus.LEARNING.name,
-+    @ColumnInfo(defaultValue = "0") val statusChangedAt: Long = 0,
- ) {
-+    fun learningStatus() = if (mastered) VocabularyStatus.KNOWN else VocabularyStatus.valueOf(status)
-     fun schedule() = Schedule(repetitions, intervalDays, ease, dueAt, lapses, mastered)
-     fun scheduled(schedule: Schedule, now: Long) = copy(
-         dueAt = schedule.dueAt, repetitions = schedule.repetitions, intervalDays = schedule.intervalDays,
-@@ -152,10 +156,17 @@ interface LearningDao {
- }
- 
- @Database(entities = [StoryEntity::class, LexemeEntity::class, StoryLexemeEntity::class, VocabularyEntity::class,
--    ReadingEntity::class, ReviewEntity::class, PendingChange::class, SyncState::class], version = 2, exportSchema = true)
-+    ReadingEntity::class, ReviewEntity::class, PendingChange::class, SyncState::class], version = 3, exportSchema = true)
- abstract class LearningDatabase : RoomDatabase() {
-     abstract fun dao(): LearningDao
-     companion object {
-+        val MIGRATION_2_3 = object : Migration(2, 3) {
-+            override fun migrate(db: SupportSQLiteDatabase) {
-+                db.execSQL("ALTER TABLE vocabulary ADD COLUMN status TEXT NOT NULL DEFAULT 'LEARNING'")
-+                db.execSQL("ALTER TABLE vocabulary ADD COLUMN statusChangedAt INTEGER NOT NULL DEFAULT 0")
-+                db.execSQL("UPDATE vocabulary SET status=CASE WHEN mastered=1 THEN 'KNOWN' WHEN repetitions>=3 THEN 'ALMOST_MASTERED' ELSE 'LEARNING' END")
-+            }
-+        }
-         val MIGRATION_1_2 = object : Migration(1, 2) {
-             override fun migrate(db: SupportSQLiteDatabase) {
-                 db.execSQL("ALTER TABLE stories ADD COLUMN remote INTEGER NOT NULL DEFAULT 0")
-diff --git a/rolang-app/app/src/main/java/com/rolang/app/data/LearningRepository.kt b/rolang-app/app/src/main/java/com/rolang/app/data/LearningRepository.kt
-index 59550d12013fc4a20f4d832db0330c8b4b67c3a9..f221ee8536711852bf7320e720a8dda03f945af0 100644
---- a/rolang-app/app/src/main/java/com/rolang/app/data/LearningRepository.kt
-+++ b/rolang-app/app/src/main/java/com/rolang/app/data/LearningRepository.kt
-@@ -39,10 +39,13 @@ class LearningRepository(private val database: LearningDatabase) {
-     suspend fun review(snapshot: VocabularyEntity, rating: Rating, correct: Boolean, now: Long): Boolean =
-         database.withTransaction {
-             val current = dao.vocabularyById(snapshot.id) ?: return@withTransaction false
--            if (current.lastReviewedAt != snapshot.lastReviewedAt || current.dueAt != snapshot.dueAt ||
-+            if (current != snapshot ||
-                 current.mastered || current.dueAt > now) return@withTransaction false
-             val effective = if (correct) rating else Rating.AGAIN
--            val updated = current.scheduled(SpacedRepetition.next(current.schedule(), effective, now), now)
-+            val next = SpacedRepetition.next(current.schedule(), effective, now)
-+            val updated = current.scheduled(next, now).copy(
-+                status = SpacedRepetition.statusAfterReview(current.learningStatus(), next, effective).name,
-+                statusChangedAt = maxOf(now, current.statusChangedAt + 1))
-             dao.updateWord(updated)
-             dao.enqueue(SyncCodec.vocabulary(updated))
-             val review = ReviewEntity(vocabularyId = current.id, language = current.language,
-@@ -52,14 +55,24 @@ class LearningRepository(private val database: LearningDatabase) {
-             dao.enqueue(SyncCodec.review(review, SyncCodec.key(current)))
-             true
-         }
--    suspend fun mastery(id: Long, mastered: Boolean, now: Long) = database.withTransaction {
-+    suspend fun status(id: Long, status: VocabularyStatus, now: Long) = database.withTransaction {
-         val current = dao.vocabularyById(id) ?: return@withTransaction
--        val updated = current.copy(mastered = mastered, dueAt = now,
--            repetitions = if (mastered) current.repetitions else 0,
--            intervalDays = if (mastered) current.intervalDays else 0)
-+        val reset = status == VocabularyStatus.NEW || status == VocabularyStatus.LEARNING
-+        val updated = current.copy(status = status.name, mastered = status == VocabularyStatus.KNOWN, dueAt = now,
-+            repetitions = if (reset) 0 else current.repetitions,
-+            intervalDays = if (reset) 0 else current.intervalDays,
-+            statusChangedAt = maxOf(now, current.statusChangedAt + 1))
-         dao.updateWord(updated)
-         dao.enqueue(SyncCodec.vocabulary(updated))
-     }
-+    suspend fun mastery(id: Long, mastered: Boolean, now: Long) =
-+        status(id, if (mastered) VocabularyStatus.KNOWN else VocabularyStatus.LEARNING, now)
-+    suspend fun status(story: Story, detail: WordDetail, target: Language, native: Language,
-+                       status: VocabularyStatus, now: Long) = database.withTransaction {
-+        save(story, detail, target, native, now)
-+        val current = checkNotNull(dao.vocabularyByKey(target.code, native.code, story.id, Words.key(detail.word)))
-+        status(current.id, status, now)
-+    }
-     suspend fun delete(id: Long) = database.withTransaction {
-         val current = dao.vocabularyById(id) ?: return@withTransaction
-         dao.deleteWord(id)
-diff --git a/rolang-app/app/src/main/java/com/rolang/app/data/SyncCodec.kt b/rolang-app/app/src/main/java/com/rolang/app/data/SyncCodec.kt
-index 4853e16d7d3d0de3b8ec3914f98b5f6510ea583d..05c176b4b50081896beb305f7a74bf7cddc396f2 100644
---- a/rolang-app/app/src/main/java/com/rolang/app/data/SyncCodec.kt
-+++ b/rolang-app/app/src/main/java/com/rolang/app/data/SyncCodec.kt
-@@ -1,5 +1,6 @@
- package com.rolang.app.data
- 
-+import com.rolang.app.domain.VocabularyStatus
- import org.json.JSONObject
- 
- /** Stable natural keys let another device assign its own Room row IDs. */
-@@ -15,7 +16,8 @@ object SyncCodec {
-         .put("storyId", word.storyId).put("storyTitle", word.storyTitle).put("category", word.category)
-         .put("createdAt", word.createdAt).put("dueAt", word.dueAt).put("repetitions", word.repetitions)
-         .put("intervalDays", word.intervalDays).put("ease", word.ease).put("lapses", word.lapses)
--        .put("mastered", word.mastered).put("lastReviewedAt", word.lastReviewedAt).toString())
-+        .put("mastered", word.mastered).put("lastReviewedAt", word.lastReviewedAt)
-+        .put("status", word.learningStatus().name).put("statusChangedAt", word.statusChangedAt).toString())
-     fun review(review: ReviewEntity, vocabularyKey: String) = PendingChange("review", review.syncKey, data = JSONObject()
-         .put("vocabularyKey", vocabularyKey).put("language", review.language).put("reference", review.reference)
-         .put("reviewedAt", review.reviewedAt).put("correct", review.correct).put("rating", review.rating).toString())
-@@ -29,5 +31,7 @@ object SyncCodec {
-         storyId = json.getString("storyId"), storyTitle = json.getString("storyTitle"), category = json.getString("category"),
-         createdAt = json.getLong("createdAt"), dueAt = json.getLong("dueAt"), repetitions = json.getInt("repetitions"),
-         intervalDays = json.getInt("intervalDays"), ease = json.getDouble("ease"), lapses = json.getInt("lapses"),
--        mastered = json.getBoolean("mastered"), lastReviewedAt = json.getLong("lastReviewedAt"))
-+        mastered = json.getBoolean("mastered"), lastReviewedAt = json.getLong("lastReviewedAt"),
-+        status = json.optString("status", VocabularyStatus.fromLegacy(json.getBoolean("mastered"), json.getInt("repetitions")).name),
-+        statusChangedAt = json.optLong("statusChangedAt", 0))
- }
-diff --git a/rolang-app/app/src/main/java/com/rolang/app/domain/Learning.kt b/rolang-app/app/src/main/java/com/rolang/app/domain/Learning.kt
-index 0141e9b822506128de2624f1a73a71853771d1ea..dda07e562959ff7f44ff1575d34ed42c6b9fc563 100644
---- a/rolang-app/app/src/main/java/com/rolang/app/domain/Learning.kt
-+++ b/rolang-app/app/src/main/java/com/rolang/app/domain/Learning.kt
-@@ -32,6 +32,18 @@ object Words {
- }
- 
- enum class Rating { AGAIN, HARD, GOOD, EASY }
-+
-+enum class VocabularyStatus(val label: String) {
-+    NEW("New"), LEARNING("Learning"), ALMOST_MASTERED("Almost Mastered"), KNOWN("Known");
-+
-+    companion object {
-+        fun fromLegacy(mastered: Boolean, repetitions: Int) = when {
-+            mastered -> KNOWN
-+            repetitions >= 3 -> ALMOST_MASTERED
-+            else -> LEARNING
-+        }
-+    }
-+}
- data class Schedule(
-     val repetitions: Int = 0,
-     val intervalDays: Int = 0,
-@@ -44,6 +56,12 @@ data class Schedule(
- /** A deterministic SM-2-inspired schedule. Again returns in ten minutes. */
- object SpacedRepetition {
-     const val DAY = 86_400_000L
-+    fun statusAfterReview(old: VocabularyStatus, next: Schedule, rating: Rating): VocabularyStatus = when {
-+        next.mastered -> VocabularyStatus.KNOWN
-+        rating == Rating.AGAIN || rating == Rating.HARD -> VocabularyStatus.LEARNING
-+        next.repetitions >= 3 || old == VocabularyStatus.ALMOST_MASTERED -> VocabularyStatus.ALMOST_MASTERED
-+        else -> VocabularyStatus.LEARNING
-+    }
-     fun next(old: Schedule, rating: Rating, now: Long): Schedule {
-         if (rating == Rating.AGAIN) return old.copy(
-             repetitions = 0, intervalDays = 0, ease = max(1.3, old.ease - 0.2),
-diff --git a/rolang-app/app/src/main/java/com/rolang/app/network/AppServices.kt b/rolang-app/app/src/main/java/com/rolang/app/network/AppServices.kt
-index 60af4669e6ff7fa7f5db26d50ecb5738e6dd971a..9c71dcdc4a5d88afeec0492ff247e94ba2ee6821 100644
---- a/rolang-app/app/src/main/java/com/rolang/app/network/AppServices.kt
-+++ b/rolang-app/app/src/main/java/com/rolang/app/network/AppServices.kt
-@@ -16,7 +16,7 @@ data class OnlineState(val enabled: Boolean = false, val signedIn: Boolean = fal
- 
- class AppServices private constructor(private val context: Context) {
-     val database = Room.databaseBuilder(context, LearningDatabase::class.java, "ro-lang.db")
--        .addMigrations(LearningDatabase.MIGRATION_1_2).build()
-+        .addMigrations(LearningDatabase.MIGRATION_1_2, LearningDatabase.MIGRATION_2_3).build()
-     val repository = LearningRepository(database)
-     val preferences = PreferencesRepository(context.learningPreferences, database)
-     private val sessions = SessionStore(context)
-diff --git a/rolang-app/app/src/main/java/com/rolang/app/ui/ReaderScreen.kt b/rolang-app/app/src/main/java/com/rolang/app/ui/ReaderScreen.kt
-index 7d98b3dedc3737d0142d2ec3f32865046a7f27c6..2e89de49eed9b55c9b2137002fc0a2a91a64654c 100644
---- a/rolang-app/app/src/main/java/com/rolang/app/ui/ReaderScreen.kt
-+++ b/rolang-app/app/src/main/java/com/rolang/app/ui/ReaderScreen.kt
-@@ -1,9 +1,10 @@
- package com.rolang.app.ui
- 
- import androidx.compose.animation.AnimatedVisibility
--import androidx.compose.animation.animateContentSize
- import androidx.compose.foundation.layout.*
- import androidx.compose.foundation.lazy.LazyColumn
-+import androidx.compose.foundation.lazy.LazyListState
-+import androidx.compose.foundation.lazy.itemsIndexed
- import androidx.compose.material.icons.Icons
- import androidx.compose.material.icons.automirrored.outlined.ArrowBack
- import androidx.compose.material.icons.outlined.BookmarkAdd
-@@ -24,82 +25,99 @@ import com.rolang.app.LearningViewModel
- import com.rolang.app.data.Story
- import com.rolang.app.data.WordDetail
- import com.rolang.app.domain.Words
-+import com.rolang.app.domain.VocabularyStatus
- import kotlinx.coroutines.CancellationException
-+import kotlinx.coroutines.flow.distinctUntilChanged
-+
-+private data class SelectedWord(val text: String, val paragraph: Int)
- 
- @OptIn(ExperimentalMaterial3Api::class)
- @Composable
- fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewModel, onBack: () -> Unit) {
-     val prefs = state.preferences
-     val savedReading = state.courseReadings.firstOrNull { it.storyId == story.id }
--    var position by rememberSaveable(story.id, prefs.target.code) { mutableIntStateOf(savedReading?.sentence ?: 0) }
--    // A published story can become shorter while a device retains an older position.
--    val index = position.coerceIn(story.sentences.indices)
-+    val listState = rememberSaveable(story.id, prefs.target.code, saver = LazyListState.Saver) {
-+        val paragraph = (savedReading?.sentence ?: 0).coerceIn(story.sentences.indices)
-+        LazyListState(if (paragraph == 0) 0 else paragraph + 1)
-+    }
-+    val index by remember(story.sentences.size, listState) {
-+        derivedStateOf {
-+            ((listState.layoutInfo.visibleItemsInfo.lastOrNull { it.index in 1..story.sentences.size }?.index
-+                ?: listState.firstVisibleItemIndex) - 1).coerceIn(story.sentences.indices)
-+        }
-+    }
-     var translated by rememberSaveable(story.id, prefs.target.code) { mutableStateOf(false) }
--    var selected by remember(story.id, prefs.target, prefs.native, index) { mutableStateOf<String?>(null) }
--    var detail by remember(selected, index) { mutableStateOf<WordDetail?>(null) }
--    var lookupError by remember(selected, index) { mutableStateOf(false) }
--    val color = MaterialTheme.colorScheme.primary
--    LaunchedEffect(story.id, prefs.target, index) {
--        viewModel.reading(story, prefs.target, index, savedReading?.completed == true)
-+    var selected by remember(story.id, prefs.target, prefs.native) { mutableStateOf<SelectedWord?>(null) }
-+    var detail by remember(selected) { mutableStateOf<WordDetail?>(null) }
-+    var lookupError by remember(selected) { mutableStateOf(false) }
-+    val textColor = MaterialTheme.colorScheme.onSurface
-+    val statuses = state.courseWords.filter { it.storyId == story.id }.associate { it.word to it.learningStatus() }
-+    LaunchedEffect(story.id, prefs.target, story.sentences.size, listState) {
-+        // Clamp restored positions when a downloaded story has been shortened.
-+        if (listState.firstVisibleItemIndex > story.sentences.size) {
-+            listState.scrollToItem(story.sentences.size)
-+        }
-+        snapshotFlow { (listState.firstVisibleItemIndex - 1).coerceIn(story.sentences.indices) }
-+            .distinctUntilChanged().collect { paragraph ->
-+                viewModel.reading(story, prefs.target, paragraph, savedReading?.completed == true)
-+            }
-     }
--    LaunchedEffect(selected, prefs.target, prefs.native, index) {
-+    LaunchedEffect(selected, prefs.target, prefs.native) {
-         selected?.let { word ->
--            try { detail = viewModel.lookup(story, index, word, prefs) }
-+            try { detail = viewModel.lookup(story, word.paragraph, word.text, prefs) }
-             catch (cancelled: CancellationException) { throw cancelled }
-             catch (_: Exception) { lookupError = true }
-         }
-     }
--    val text = story.sentence(index, prefs.target)
--    val annotated = remember(text, color) {
--        buildAnnotatedString {
--            append(text)
--            Words.tokens(text).forEach { token ->
--                addLink(LinkAnnotation.Clickable(token.text,
--                    styles = TextLinkStyles(style = SpanStyle(color = color)),
--                    linkInteractionListener = { selected = token.text }), token.start, token.end)
--            }
--        }
--    }
-     Column(Modifier.fillMaxSize()) {
-         TopAppBar(title = { Text("Reading room", style = MaterialTheme.typography.titleMedium) },
-             navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Back to stories") } })
--        LazyColumn(Modifier.weight(1f).testTag("reader-content"), contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(24.dp)) {
--            item { SectionTitle(story.title(prefs.target), "${story.category} · ${story.level.label}") }
--            item {
--                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
--                    Text("Passage ${index + 1} of ${story.sentences.size}", style = MaterialTheme.typography.labelLarge)
--                    LinearProgressIndicator(progress = { (index + 1f) / story.sentences.size }, modifier = Modifier.fillMaxWidth())
-+        Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-+            Text("Paragraph ${index + 1} of ${story.sentences.size}", style = MaterialTheme.typography.labelLarge)
-+            LinearProgressIndicator(progress = { (index + 1f) / story.sentences.size }, modifier = Modifier.fillMaxWidth())
-+        }
-+        LazyColumn(Modifier.weight(1f).testTag("reader-content"), state = listState,
-+            contentPadding = PaddingValues(horizontal = 24.dp, vertical = 24.dp),
-+            verticalArrangement = Arrangement.spacedBy(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-+            item(key = "heading") {
-+                Column(Modifier.widthIn(max = 680.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-+                    SectionTitle(story.title(prefs.target), "${story.category} · ${story.level.label}")
-                     Text("Tap any word to explore its meaning.", style = MaterialTheme.typography.bodyMedium,
-                         color = MaterialTheme.colorScheme.onSurfaceVariant)
--                }
--            }
--            item {
--                Surface(color = MaterialTheme.colorScheme.surfaceContainerLow, shape = MaterialTheme.shapes.large) {
--                    Text(annotated, Modifier.fillMaxWidth().padding(24.dp).animateContentSize(),
--                        style = TextStyle(fontFamily = FontFamily.Serif, fontSize = prefs.fontSize.sp,
--                            lineHeight = (prefs.fontSize * 1.8).sp))
--                }
--            }
--            item {
--                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-+                    VocabularyLegend()
-                     OutlinedButton(onClick = { translated = !translated }) {
-                         Icon(Icons.Outlined.Translate, null, Modifier.size(18.dp))
-                         Spacer(Modifier.width(8.dp))
--                        Text(if (translated) "Hide translation" else "Translate passage")
-+                        Text(if (translated) "Hide translation" else "Translate story")
-                     }
-+                }
-+            }
-+            itemsIndexed(story.sentences, key = { paragraph, _ -> "paragraph:$paragraph" }) { paragraph, _ ->
-+                val text = story.sentence(paragraph, prefs.target)
-+                val annotated = remember(story.id, paragraph, prefs.target, prefs.native, text, textColor, statuses) {
-+                    buildAnnotatedString {
-+                        append(text)
-+                        Words.tokens(text).forEach { token ->
-+                            addLink(LinkAnnotation.Clickable(token.text,
-+                                styles = TextLinkStyles(style = vocabularyStyle(
-+                                    statuses[Words.key(token.text)] ?: VocabularyStatus.NEW, textColor)),
-+                                linkInteractionListener = { selected = SelectedWord(token.text, paragraph) }), token.start, token.end)
-+                        }
-+                    }
-+                }
-+                Column(Modifier.widthIn(max = 680.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-+                    Text(annotated, Modifier.fillMaxWidth().testTag("story-paragraph-$paragraph"),
-+                        style = TextStyle(fontFamily = FontFamily.Serif, fontSize = prefs.fontSize.sp,
-+                            lineHeight = (prefs.fontSize * 1.8).sp))
-                     AnimatedVisibility(translated) {
--                        InfoCard(prefs.native.label, story.sentence(index, prefs.native))
-+                        Text(story.sentence(paragraph, prefs.native), color = MaterialTheme.colorScheme.onSurfaceVariant,
-+                            style = MaterialTheme.typography.bodyLarge)
-                     }
-                 }
-             }
--            item {
--                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
--                    OutlinedButton(onClick = { position = index - 1; translated = false }, enabled = index > 0, modifier = Modifier.weight(1f)) { Text("Previous") }
--                    Button(onClick = {
--                        if (index < story.sentences.lastIndex) { position = index + 1; translated = false }
--                        else { viewModel.reading(story, prefs.target, index, true); onBack() }
--                    }, modifier = Modifier.weight(1f)) { Text(if (index < story.sentences.lastIndex) "Next passage" else "Finish story") }
--                }
-+            item(key = "finish") {
-+                Button(onClick = { viewModel.reading(story, prefs.target, story.sentences.lastIndex, true); onBack() },
-+                    modifier = Modifier.widthIn(max = 680.dp).fillMaxWidth()) { Text("Finish story") }
-             }
-         }
-     }
-@@ -108,7 +126,7 @@ fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewMode
-             verticalArrangement = Arrangement.spacedBy(16.dp)) {
-             item {
-                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
--                    Text(selected!!, modifier = Modifier.weight(1f), style = MaterialTheme.typography.headlineMedium)
-+                    Text(selected!!.text, modifier = Modifier.weight(1f), style = MaterialTheme.typography.headlineMedium)
-                     IconButton(onClick = { selected = null }) { Icon(Icons.Outlined.Close, "Close word details") }
-                 }
-             }
-@@ -124,6 +142,11 @@ fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewMode
-                 item { DetailSection("Meaning", word.meaning) }
-                 item { DetailSection("In context", word.explanation) }
-                 item { DetailSection("Example", word.example + "\n\n" + word.exampleTranslation) }
-+                item {
-+                    VocabularyStatusSelector(state.wordStatus(story.id, word.word)) {
-+                        viewModel.status(story, word, prefs, it)
-+                    }
-+                }
-                 item {
-                     val saved = state.courseWords.any { it.storyId == story.id && it.word == Words.key(word.word) }
-                     Button(onClick = { viewModel.save(story, word, prefs) }, enabled = !saved, modifier = Modifier.fillMaxWidth()) {
-diff --git a/rolang-app/app/src/main/java/com/rolang/app/ui/ReviewScreen.kt b/rolang-app/app/src/main/java/com/rolang/app/ui/ReviewScreen.kt
-index f237c23474f9723b2cd6c858ceb380f947b3abd4..946449575c208542e336b8283c4d755223745790 100644
---- a/rolang-app/app/src/main/java/com/rolang/app/ui/ReviewScreen.kt
-+++ b/rolang-app/app/src/main/java/com/rolang/app/ui/ReviewScreen.kt
-@@ -48,13 +48,14 @@ fun ReviewScreen(state: LearningState, now: Long, quiz: Quiz?, busy: Boolean, st
-                     }
-                 }
-             }
--            item { InfoCard("A rhythm that adapts to you", "New words are due immediately. With Good, correct answers return after 1 day, then 6 days, then longer intervals. A missed word returns in 10 minutes. You can choose Hard, Good, or Easy after a correct answer.") }
-+            item { InfoCard("A rhythm that adapts to you", "Saved words are due immediately. Correct answers move words through Learning and Almost Mastered toward Known. With Good, reviews return after 1 day, then 6 days, then longer intervals. A missed word returns to Learning in 10 minutes. Known words pause reviews until you return them to learning.") }
-         } else {
-             item {
-                 Card(modifier = Modifier.testTag("quiz-question"), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-                     Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                         Text("TRANSLATE INTO ${Language.from(quiz.word.reference).label.uppercase()}", style = MaterialTheme.typography.labelLarge)
-                         Text(quiz.word.word, style = MaterialTheme.typography.headlineLarge)
-+                        VocabularyStatusLabel(quiz.word.learningStatus())
-                         Text("${quiz.word.partOfSpeech} · ${quiz.word.storyTitle}")
-                     }
-                 }
-diff --git a/rolang-app/app/src/main/java/com/rolang/app/ui/RoLangApp.kt b/rolang-app/app/src/main/java/com/rolang/app/ui/RoLangApp.kt
-index 5227cf9165c1595b72c7a7898037da761b21f215..9b525985745eda6a01e04fd35473f6312de799ff 100644
---- a/rolang-app/app/src/main/java/com/rolang/app/ui/RoLangApp.kt
-+++ b/rolang-app/app/src/main/java/com/rolang/app/ui/RoLangApp.kt
-@@ -85,7 +85,7 @@ fun RoLangApp(viewModel: LearningViewModel) {
-                         HomeScreen(state, now, { navigate("stories") }, { navigate("review") }, { nav.navigate("reader/$it") })
-                     }
-                     composable("stories") { StoriesScreen(state, viewModel::level) { nav.navigate("reader/$it") } }
--                    composable("vocabulary") { VocabularyScreen(state, now, viewModel::mastery, viewModel::delete) { navigate("stories") } }
-+                    composable("vocabulary") { VocabularyScreen(state, now, viewModel::mastery, viewModel::delete, viewModel::status) { navigate("stories") } }
-                     composable("review") {
-                         ReviewScreen(state, now, quiz, busy, viewModel::startQuiz, viewModel::answer, viewModel::reveal,
-                             viewModel::rate, viewModel::exitQuiz) { navigate("stories") }
-diff --git a/rolang-app/app/src/main/java/com/rolang/app/ui/VocabularyScreen.kt b/rolang-app/app/src/main/java/com/rolang/app/ui/VocabularyScreen.kt
-index 721c307cd57cfca11400d55326bfeeda635d941f..f544ac8cc8ba1bb9f2e096aa5938c9e3366e43f0 100644
---- a/rolang-app/app/src/main/java/com/rolang/app/ui/VocabularyScreen.kt
-+++ b/rolang-app/app/src/main/java/com/rolang/app/ui/VocabularyScreen.kt
-@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.testTag
- import androidx.compose.ui.unit.dp
- import com.rolang.app.LearningState
- import com.rolang.app.data.VocabularyEntity
-+import com.rolang.app.domain.VocabularyStatus
- import java.time.Instant
- import java.time.ZoneId
- import java.time.format.DateTimeFormatter
-@@ -21,14 +22,15 @@ import java.time.format.DateTimeFormatter
- @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
- @Composable
- fun VocabularyScreen(state: LearningState, now: Long, mastery: (VocabularyEntity) -> Unit,
--                     delete: (VocabularyEntity) -> Unit, stories: () -> Unit) {
-+                     delete: (VocabularyEntity) -> Unit, status: (VocabularyEntity, VocabularyStatus) -> Unit,
-+                     stories: () -> Unit) {
-     var query by rememberSaveable { mutableStateOf("") }
-     var filter by rememberSaveable { mutableStateOf("All words") }
-     var group by rememberSaveable { mutableStateOf("Story") }
-     var selectedId by rememberSaveable { mutableStateOf<Long?>(null) }
-     var remove by remember { mutableStateOf<VocabularyEntity?>(null) }
-     val words = state.courseWords.filter {
--        (filter != "Mastered" || it.mastered) && (filter != "Learning" || !it.mastered) &&
-+        (filter == "All words" || it.learningStatus().label == filter) &&
-             (it.word.contains(query, true) || it.translation.contains(query, true) || it.storyTitle.contains(query, true))
-     }
-     LazyColumn(modifier = Modifier.testTag("vocabulary-list"), contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
-@@ -40,7 +42,7 @@ fun VocabularyScreen(state: LearningState, now: Long, mastery: (VocabularyEntity
-         item {
-             Column {
-                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
--                    listOf("All words", "Learning", "Mastered").forEach { item ->
-+                    (listOf("All words") + VocabularyStatus.entries.map { it.label }).forEach { item ->
-                         FilterChip(filter == item, { filter = item }, label = { Text(item) })
-                     }
-                 }
-@@ -61,6 +63,7 @@ fun VocabularyScreen(state: LearningState, now: Long, mastery: (VocabularyEntity
-                         horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                             Text(word.word, style = MaterialTheme.typography.titleLarge)
-+                            VocabularyStatusLabel(word.learningStatus())
-                             Text(word.translation)
-                             Text(if (word.mastered) "Mastered" else if (word.dueAt <= now) "Ready for review" else "Next review: ${dueDate(word.dueAt)}",
-                                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-@@ -87,6 +90,7 @@ fun VocabularyScreen(state: LearningState, now: Long, mastery: (VocabularyEntity
-             item { DetailSection("In context", selected.explanation) }
-             item { DetailSection("Example", selected.example + "\n\n" + selected.exampleTranslation) }
-             item { DetailSection("From ${selected.storyTitle}", "${selected.category} · ${selected.repetitions} successful repetitions · ${selected.lapses} lapses") }
-+            item { VocabularyStatusSelector(selected.learningStatus()) { status(selected, it) } }
-             item {
-                 Button(onClick = { mastery(selected) }, modifier = Modifier.fillMaxWidth()) {
-                     Text(if (selected.mastered) "Return to learning" else "Mark as mastered")
-diff --git a/rolang-app/app/src/main/java/com/rolang/app/ui/VocabularyStatusUi.kt b/rolang-app/app/src/main/java/com/rolang/app/ui/VocabularyStatusUi.kt
-new file mode 100644
-index 0000000000000000000000000000000000000000..7938444abe9957b289c617b8773ac3f7ab31a369
---- /dev/null
-+++ b/rolang-app/app/src/main/java/com/rolang/app/ui/VocabularyStatusUi.kt
-@@ -0,0 +1,53 @@
-+package com.rolang.app.ui
-+
-+import androidx.compose.foundation.layout.*
-+import androidx.compose.material3.*
-+import androidx.compose.runtime.Composable
-+import androidx.compose.ui.Modifier
-+import androidx.compose.ui.graphics.Color
-+import androidx.compose.ui.text.SpanStyle
-+import androidx.compose.ui.unit.dp
-+import com.rolang.app.domain.VocabularyStatus
-+
-+/** Shared, high-contrast colors for reading, vocabulary, and practice in both themes. */
-+fun vocabularyStyle(status: VocabularyStatus, textColor: Color): SpanStyle = when (status) {
-+    VocabularyStatus.NEW -> SpanStyle(color = Color(0xFF174A8B), background = Color(0xFFDCEBFF))
-+    VocabularyStatus.LEARNING -> SpanStyle(color = Color(0xFF14532D), background = Color(0xFFDCF5E2))
-+    VocabularyStatus.ALMOST_MASTERED -> SpanStyle(color = Color(0xFF654900), background = Color(0xFFFFF0AD))
-+    VocabularyStatus.KNOWN -> SpanStyle(color = textColor, background = Color.Transparent)
-+}
-+
-+@Composable
-+fun VocabularyStatusLabel(status: VocabularyStatus) {
-+    val style = vocabularyStyle(status, MaterialTheme.colorScheme.onSurface)
-+    Surface(color = style.background, contentColor = style.color, shape = MaterialTheme.shapes.small) {
-+        Text(status.label, Modifier.padding(horizontal = 8.dp, vertical = 4.dp), style = MaterialTheme.typography.labelMedium)
-+    }
-+}
-+
-+@OptIn(ExperimentalLayoutApi::class)
-+@Composable
-+fun VocabularyLegend() {
-+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-+        VocabularyStatus.entries.forEach { VocabularyStatusLabel(it) }
-+    }
-+}
-+
-+@OptIn(ExperimentalLayoutApi::class)
-+@Composable
-+fun VocabularyStatusSelector(status: VocabularyStatus, onChange: (VocabularyStatus) -> Unit) {
-+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-+        Text("Learning status: ${status.label}", style = MaterialTheme.typography.titleMedium)
-+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-+            VocabularyStatus.entries.forEach { value ->
-+                val style = vocabularyStyle(value, MaterialTheme.colorScheme.onSurface)
-+                FilterChip(selected = status == value, onClick = { onChange(value) }, label = { Text(value.label) },
-+                    colors = FilterChipDefaults.filterChipColors(containerColor = style.background, labelColor = style.color,
-+                        selectedContainerColor = style.background, selectedLabelColor = style.color))
-+            }
-+        }
-+        Text(if (status == VocabularyStatus.KNOWN) "Known words have no highlight and are paused in review."
-+            else "Saved on this device. Practice will adapt the status and next review.",
-+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-+    }
-+}
-diff --git a/rolang-app/app/src/sharedTest/java/com/rolang/app/LearningFlowTest.kt b/rolang-app/app/src/sharedTest/java/com/rolang/app/LearningFlowTest.kt
-index 82e2c020b11306f007895a40b5090e154624c349..3c1a1f58c4e68cf09d86a01a1103dd581bf2923f 100644
---- a/rolang-app/app/src/sharedTest/java/com/rolang/app/LearningFlowTest.kt
-+++ b/rolang-app/app/src/sharedTest/java/com/rolang/app/LearningFlowTest.kt
-@@ -25,16 +25,23 @@ class LearningFlowTest {
-         compose.waitUntil(10_000) { compose.onAllNodesWithTag("word-details").fetchSemanticsNodes().isNotEmpty() }
-         scrollClick("word-details", "Save word")
-         compose.waitUntil(10_000) { compose.onAllNodesWithText("Saved to vocabulary").fetchSemanticsNodes().isNotEmpty() }
-+        scrollClick("word-details", "Almost Mastered")
-+        compose.waitUntil(10_000) { compose.onAllNodesWithText("Learning status: Almost Mastered").fetchSemanticsNodes().isNotEmpty() }
-+        scrollClick("word-details", "Known")
-+        compose.waitUntil(10_000) { compose.onAllNodesWithText("Learning status: Known").fetchSemanticsNodes().isNotEmpty() }
-+        scrollClick("word-details", "Learning")
-+        compose.waitUntil(10_000) { compose.onAllNodesWithText("Learning status: Learning").fetchSemanticsNodes().isNotEmpty() }
-         compose.onNodeWithTag("word-details").performScrollToIndex(0)
-         compose.onNodeWithContentDescription("Close word details").performClick()
-         compose.waitUntil(10_000) { compose.onAllNodesWithTag("word-details").fetchSemanticsNodes().isEmpty() }
-         compose.mainClock.advanceTimeBy(1_000)
--        scrollClick("reader-content", "Translate passage")
-+        compose.onNodeWithText("Next passage").assertDoesNotExist()
-+        scrollClick("reader-content", "Translate story")
-         compose.mainClock.advanceTimeBy(1_000)
-         compose.onNodeWithText("Hide translation").assertExists()
-         compose.onNodeWithText("Maya berjalan ke pasar pada pagi hari.").performScrollTo().assertIsDisplayed()
--        scrollClick("reader-content", "Next passage")
--        scrollClick("reader-content", "Next passage")
-+        compose.onNodeWithTag("reader-content").performScrollToNode(hasTestTag("story-paragraph-2"))
-+        compose.onNodeWithTag("story-paragraph-2").assertIsDisplayed()
-         scrollClick("reader-content", "Finish story")
-         compose.onNodeWithText("Vocabulary", useUnmergedTree = true).performClick()
-         compose.onNodeWithTag("vocabulary-list").performScrollToNode(hasText("maya"))
-@@ -56,6 +63,7 @@ class LearningFlowTest {
-     private fun scrollClick(container: String, text: String) {
-         compose.onNodeWithTag(container).performScrollToNode(hasText(text))
-         // Exercise accessibility clicks after scrolling; word links above use real touch input.
--        compose.onNodeWithText(text).performSemanticsAction(SemanticsActions.OnClick) { it() }
-+        compose.onNode(hasText(text) and hasAnyAncestor(hasTestTag(container)))
-+            .performSemanticsAction(SemanticsActions.OnClick) { it() }
-     }
- }
-diff --git a/rolang-app/app/src/sharedTest/java/com/rolang/app/OfflineLearningTest.kt b/rolang-app/app/src/sharedTest/java/com/rolang/app/OfflineLearningTest.kt
-index cbf4dfed3230f8d968bafd6c7f457ebf537dbc73..03c13b75cc6dd988a2dbba9f450cf3c44dbe79c8 100644
---- a/rolang-app/app/src/sharedTest/java/com/rolang/app/OfflineLearningTest.kt
-+++ b/rolang-app/app/src/sharedTest/java/com/rolang/app/OfflineLearningTest.kt
-@@ -108,4 +108,46 @@ class OfflineLearningTest {
-             assertTrue(restored.dark)
-         } finally { secondScope.coroutineContext.job.cancelAndJoin(); file.delete() }
-     }
-+
-+    @Test fun fourStatusesPersistProgressAndRejectReviewsAfterManualEdits() = runBlocking {
-+        repository.initialize(context)
-+        val story = Corpus.story(repository.dao.stories().first().first())
-+        val detail = repository.lookup(story, 0, Words.tokens(story.sentence(0, Language.ENGLISH)).first().text,
-+            Language.ENGLISH, Language.INDONESIAN)
-+        repository.status(story, detail, Language.ENGLISH, Language.INDONESIAN, VocabularyStatus.NEW, 1000)
-+        var word = repository.dao.allVocabulary().single()
-+        assertEquals(VocabularyStatus.NEW, word.learningStatus())
-+        val expected = listOf(VocabularyStatus.LEARNING, VocabularyStatus.LEARNING,
-+            VocabularyStatus.ALMOST_MASTERED, VocabularyStatus.ALMOST_MASTERED, VocabularyStatus.KNOWN)
-+        for (status in expected) {
-+            assertTrue(repository.review(word, Rating.GOOD, true, word.dueAt))
-+            word = repository.dao.vocabularyById(word.id)!!
-+            assertEquals(status, word.learningStatus())
-+        }
-+        assertTrue(word.mastered)
-+        assertFalse(repository.review(word, Rating.GOOD, true, word.dueAt))
-+        repository.status(word.id, VocabularyStatus.ALMOST_MASTERED, word.dueAt)
-+        val beforeManualEdit = repository.dao.vocabularyById(word.id)!!
-+        repository.status(word.id, VocabularyStatus.LEARNING, word.dueAt)
-+        assertFalse(repository.review(beforeManualEdit, Rating.GOOD, true, word.dueAt))
-+        word = repository.dao.vocabularyById(word.id)!!
-+        repository.status(word.id, VocabularyStatus.ALMOST_MASTERED, word.dueAt)
-+        word = repository.dao.vocabularyById(word.id)!!
-+        assertTrue(repository.review(word, Rating.GOOD, true, word.dueAt))
-+        word = repository.dao.vocabularyById(word.id)!!
-+        assertEquals(VocabularyStatus.ALMOST_MASTERED, word.learningStatus())
-+        val failedAt = word.dueAt
-+        assertTrue(repository.review(word, Rating.EASY, false, failedAt))
-+        word = repository.dao.vocabularyById(word.id)!!
-+        assertEquals(VocabularyStatus.LEARNING, word.learningStatus())
-+        assertEquals(failedAt + 600_000, word.dueAt)
-+        assertEquals(1, word.lapses)
-+        assertEquals(7, repository.dao.allReviews().size)
-+        val pending = repository.dao.pendingFor("vocabulary", SyncCodec.key(word))!!
-+        assertEquals(word.status, org.json.JSONObject(pending.data!!).getString("status"))
-+        database.close()
-+        reopen()
-+        assertEquals(word, repository.dao.vocabularyById(word.id))
-+        assertEquals(pending, repository.dao.pendingFor("vocabulary", SyncCodec.key(word)))
-+    }
- }
-diff --git a/rolang-app/app/src/test/java/com/rolang/app/domain/LearningTest.kt b/rolang-app/app/src/test/java/com/rolang/app/domain/LearningTest.kt
-index 4cf98539fbc7f686446b477784d0368d018e47b4..602ec4faa6746d5fbaea6b08ab853049792b5d57 100644
---- a/rolang-app/app/src/test/java/com/rolang/app/domain/LearningTest.kt
-+++ b/rolang-app/app/src/test/java/com/rolang/app/domain/LearningTest.kt
-@@ -44,4 +44,16 @@ class LearningTest {
-         assertTrue(good.intervalDays > hard.intervalDays)
-         assertEquals(365, SpacedRepetition.next(Schedule(20, 365, 3.0), Rating.EASY, 0).intervalDays)
-     }
-+    @Test fun `statuses follow performance and preserve manual almost mastery until a struggle`() {
-+        assertEquals(VocabularyStatus.LEARNING,
-+            SpacedRepetition.statusAfterReview(VocabularyStatus.NEW, Schedule(1, 1), Rating.GOOD))
-+        assertEquals(VocabularyStatus.ALMOST_MASTERED,
-+            SpacedRepetition.statusAfterReview(VocabularyStatus.LEARNING, Schedule(3, 15), Rating.GOOD))
-+        assertEquals(VocabularyStatus.ALMOST_MASTERED,
-+            SpacedRepetition.statusAfterReview(VocabularyStatus.ALMOST_MASTERED, Schedule(1, 1), Rating.GOOD))
-+        for (rating in listOf(Rating.HARD, Rating.AGAIN)) assertEquals(VocabularyStatus.LEARNING,
-+            SpacedRepetition.statusAfterReview(VocabularyStatus.ALMOST_MASTERED, Schedule(1, 1), rating))
-+        assertEquals(VocabularyStatus.KNOWN,
-+            SpacedRepetition.statusAfterReview(VocabularyStatus.ALMOST_MASTERED, Schedule(5, 90, mastered = true), Rating.GOOD))
-+    }
- }
-diff --git a/rolang-app/app/src/test/java/com/rolang/app/network/DatabaseMigrationTest.kt b/rolang-app/app/src/test/java/com/rolang/app/network/DatabaseMigrationTest.kt
-index 1dccac45685650e90dcf0bb688e60e0a8c9d634e..f358090c2714d1993e56c66bccfcdecb7d954e1f 100644
---- a/rolang-app/app/src/test/java/com/rolang/app/network/DatabaseMigrationTest.kt
-+++ b/rolang-app/app/src/test/java/com/rolang/app/network/DatabaseMigrationTest.kt
-@@ -37,7 +37,7 @@ class DatabaseMigrationTest {
-             sqlite.version = 1
-         }
-         val upgraded = Room.databaseBuilder(context, LearningDatabase::class.java, name)
--            .addMigrations(LearningDatabase.MIGRATION_1_2).build()
-+            .addMigrations(LearningDatabase.MIGRATION_1_2, LearningDatabase.MIGRATION_2_3).build()
-         try {
-             assertEquals(1, upgraded.dao().storyCount())
-             assertTrue(upgraded.dao().allReadings().single().completed)
-@@ -49,4 +49,47 @@ class DatabaseMigrationTest {
-             assertTrue(upgraded.dao().pending().isEmpty())
-         } finally { upgraded.close(); context.deleteDatabase(name) }
-     }
-+
-+    @Test fun upgradingVersionTwoMapsExistingMasteryWithoutLosingPendingChanges() = runBlocking {
-+        val context = ApplicationProvider.getApplicationContext<Context>()
-+        val name = "migration-status-test.db"
-+        context.deleteDatabase(name)
-+        val schema = JSONObject(File("schemas/com.rolang.app.data.LearningDatabase/2.json").readText()).getJSONObject("database")
-+        val operationId = UUID.randomUUID().toString()
-+        context.openOrCreateDatabase(name, Context.MODE_PRIVATE, null).use { sqlite ->
-+            val entities = schema.getJSONArray("entities")
-+            for (index in 0 until entities.length()) {
-+                val entity = entities.getJSONObject(index)
-+                sqlite.execSQL(entity.getString("createSql").replace("\u0024{TABLE_NAME}", entity.getString("tableName")))
-+                val indices = entity.getJSONArray("indices")
-+                for (i in 0 until indices.length()) sqlite.execSQL(indices.getJSONObject(i).getString("createSql")
-+                    .replace("\u0024{TABLE_NAME}", entity.getString("tableName")))
-+            }
-+            val setup = schema.getJSONArray("setupQueries")
-+            for (index in 0 until setup.length()) sqlite.execSQL(setup.getString(index))
-+            for ((word, repetitions, mastered) in listOf(Triple("new", 0, 0), Triple("almost", 3, 0), Triple("known", 5, 1))) {
-+                sqlite.execSQL("""INSERT INTO vocabulary(id,language,reference,word,translation,meaning,partOfSpeech,
-+                    explanation,example,exampleTranslation,storyId,storyTitle,category,createdAt,dueAt,repetitions,
-+                    intervalDays,ease,lapses,mastered,lastReviewedAt)
-+                    VALUES(NULL,'en','id',?,'translation','meaning','noun','notes','example','translation',
-+                    'story','Story','Nature',1000,2000,?,21,2.5,0,?,1000)""", arrayOf(word, repetitions, mastered))
-+            }
-+            sqlite.execSQL("INSERT INTO pending_changes VALUES('vocabulary','en:id:story:known',?,'{}',0)", arrayOf(operationId))
-+            sqlite.execSQL("INSERT INTO reading VALUES('story','en',2,1)")
-+            sqlite.version = 2
-+        }
-+        val upgraded = Room.databaseBuilder(context, LearningDatabase::class.java, name)
-+            .addMigrations(LearningDatabase.MIGRATION_2_3).build()
-+        try {
-+            val words = upgraded.dao().allVocabulary().associateBy { it.word }
-+            assertEquals("LEARNING", words.getValue("new").status)
-+            assertEquals("ALMOST_MASTERED", words.getValue("almost").status)
-+            assertEquals("KNOWN", words.getValue("known").status)
-+            assertTrue(words.getValue("known").mastered)
-+            assertEquals(2000L, words.getValue("almost").dueAt)
-+            assertEquals(0L, words.getValue("known").statusChangedAt)
-+            assertEquals(operationId, upgraded.dao().pending().single().operationId)
-+            assertTrue(upgraded.dao().allReadings().single().completed)
-+        } finally { upgraded.close(); context.deleteDatabase(name) }
-+    }
- }
-diff --git a/rolang-app/app/src/test/java/com/rolang/app/network/HybridLearningTest.kt b/rolang-app/app/src/test/java/com/rolang/app/network/HybridLearningTest.kt
-index 325ffddae863125111e061999f0e9d7b999e9f53..ceaca6de9387d5707300394682e339c4fcc0931f 100644
---- a/rolang-app/app/src/test/java/com/rolang/app/network/HybridLearningTest.kt
-+++ b/rolang-app/app/src/test/java/com/rolang/app/network/HybridLearningTest.kt
-@@ -215,4 +215,30 @@ class HybridLearningTest {
-         assertEquals(Language.TAGALOG, preferences.preferences.first().target)
-         assertEquals(pending.operationId, database.dao().pendingFor("profile", "preferences")!!.operationId)
-     }
-+
-+    @Test fun manualVocabularyStatusSurvivesInFlightSyncAndLegacyRecordsStillLoad() = runBlocking {
-+        bind()
-+        val dao = database.dao()
-+        val story = Corpus.story(dao.stories().first().first())
-+        val detail = repository.lookup(story, 0, Words.tokens(story.sentence(0, Language.ENGLISH)).first().text,
-+            Language.ENGLISH, Language.INDONESIAN)
-+        repository.save(story, detail, Language.ENGLISH, Language.INDONESIAN, 1000)
-+        val old = dao.allVocabulary().single()
-+        val uploaded = dao.pendingFor("vocabulary", SyncCodec.key(old))!!
-+        repository.status(old.id, VocabularyStatus.KNOWN, 2000)
-+        val manual = dao.pendingFor("vocabulary", SyncCodec.key(old))!!
-+        engine.applyResponse(syncResponse(JSONArray().put(record(uploaded)), acknowledged = listOf(uploaded.operationId)), listOf(uploaded))
-+        assertEquals(VocabularyStatus.KNOWN, dao.vocabularyById(old.id)!!.learningStatus())
-+        assertEquals(manual.operationId, dao.pendingFor("vocabulary", manual.key)!!.operationId)
-+        engine.applyResponse(syncResponse(JSONArray().put(record(manual, 2)), 2, listOf(manual.operationId)), listOf(manual))
-+        assertNull(dao.pendingFor("vocabulary", manual.key))
-+        assertEquals(2000L, dao.vocabularyById(old.id)!!.statusChangedAt)
-+        val legacy = JSONObject(uploaded.data!!).put("repetitions", 3)
-+        legacy.remove("status"); legacy.remove("statusChangedAt")
-+        val legacyRecord = record(uploaded, 3).put("data", legacy)
-+        engine.applyResponse(syncResponse(JSONArray().put(legacyRecord), 3), emptyList())
-+        assertEquals(VocabularyStatus.ALMOST_MASTERED, dao.vocabularyById(old.id)!!.learningStatus())
-+        assertFalse(dao.vocabularyById(old.id)!!.mastered)
-+        assertTrue(dao.pending().isEmpty())
-+    }
- }
-diff --git a/rolang-app/app/src/test/java/com/rolang/app/network/LiveServerTest.kt b/rolang-app/app/src/test/java/com/rolang/app/network/LiveServerTest.kt
-index 9957dc8e56a87fa206b57a5342e7f9ccd0e7a5d5..8ba7ccf627ed2d7c8ae6f085d4a19189db687508 100644
---- a/rolang-app/app/src/test/java/com/rolang/app/network/LiveServerTest.kt
-+++ b/rolang-app/app/src/test/java/com/rolang/app/network/LiveServerTest.kt
-@@ -53,9 +53,21 @@ class LiveServerTest {
-             val secondWord = databases[1].dao().allVocabulary().single()
-             assertEquals(word.word, secondWord.word)
-             assertEquals(1, secondWord.repetitions)
-+            assertEquals(VocabularyStatus.LEARNING, secondWord.learningStatus())
-             assertTrue(databases[1].dao().allReadings().single().completed)
-             assertEquals(1, databases[1].dao().allReviews().size)
-             assertTrue(databases[0].dao().pending().isEmpty())
-+            for (status in VocabularyStatus.entries) {
-+                val changedAt = System.currentTimeMillis()
-+                repository.status(word.id, status, changedAt)
-+                assertTrue(engines[0].synchronize())
-+                assertTrue(engines[1].synchronize())
-+                val remote = databases[1].dao().allVocabulary().single()
-+                assertEquals(status, remote.learningStatus())
-+                assertEquals(status == VocabularyStatus.KNOWN, remote.mastered)
-+                assertTrue(remote.statusChangedAt >= changedAt)
-+                assertEquals(1, databases[1].dao().allReviews().size)
-+            }
-             repository.delete(word.id)
-             engines[0].synchronize(); engines[1].synchronize()
-             assertTrue(databases[1].dao().allVocabulary().isEmpty())
-diff --git a/rolang-app/app/src/test/java/com/rolang/app/network/RemoteReaderTest.kt b/rolang-app/app/src/test/java/com/rolang/app/network/RemoteReaderTest.kt
-index f733652694b10e8e0a00de56152c095f7fc60c2c..12dffd0c0f5dc4b10b0793c3796418ddc403cb61 100644
---- a/rolang-app/app/src/test/java/com/rolang/app/network/RemoteReaderTest.kt
-+++ b/rolang-app/app/src/test/java/com/rolang/app/network/RemoteReaderTest.kt
-@@ -4,16 +4,20 @@ import android.app.Application
- import androidx.compose.runtime.*
- import androidx.compose.ui.test.*
- import androidx.compose.ui.test.junit4.createComposeRule
-+import androidx.compose.ui.semantics.SemanticsActions
-+import androidx.compose.ui.text.TextLayoutResult
- import androidx.test.core.app.ApplicationProvider
- import androidx.test.ext.junit.runners.AndroidJUnit4
- import com.rolang.app.LearningState
- import com.rolang.app.LearningViewModel
- import com.rolang.app.data.*
-+import com.rolang.app.domain.Language
- import com.rolang.app.ui.ReaderScreen
- import com.rolang.app.ui.RoLangTheme
- import org.junit.Rule
- import org.junit.Test
- import org.junit.runner.RunWith
-+import kotlinx.coroutines.runBlocking
- 
- @RunWith(AndroidJUnit4::class)
- class RemoteReaderTest {
-@@ -26,9 +30,31 @@ class RemoteReaderTest {
-         val viewModel = LearningViewModel(application)
-         val state = LearningState(readings = listOf(ReadingEntity(initial.id, "en", 299)), ready = true)
-         compose.setContent { RoLangTheme(false) { ReaderScreen(story, state, viewModel) {} } }
--        compose.onNodeWithText("Passage ${initial.sentences.size} of ${initial.sentences.size}").assertExists()
-+        compose.onNodeWithText("Paragraph ${initial.sentences.size} of ${initial.sentences.size}").assertExists()
-         compose.runOnIdle { story = initial.copy(sentences = initial.sentences.take(1)) }
--        compose.onNodeWithText("Passage 1 of 1").assertExists()
-+        compose.onNodeWithText("Paragraph 1 of 1").assertExists()
-         compose.onNodeWithText(initial.sentences.first().getValue("en")).assertExists()
-     }
-+
-+    @Test fun changingReferenceLanguageKeepsEveryWordLinkInteractive() {
-+        val application = ApplicationProvider.getApplicationContext<Application>()
-+        runBlocking { AppServices.get(application).repository.initialize(application) }
-+        val story = Corpus.story(Corpus.load(application).first.first())
-+        val viewModel = LearningViewModel(application)
-+        var state by mutableStateOf(LearningState(ready = true))
-+        compose.setContent { RoLangTheme(false) { ReaderScreen(story, state, viewModel) {} } }
-+        fun tapFirstWord() {
-+            val layouts = mutableListOf<TextLayoutResult>()
-+            compose.onNodeWithTag("story-paragraph-0").performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
-+            compose.onNodeWithTag("story-paragraph-0").performTouchInput { click(layouts.single().getBoundingBox(1).center) }
-+            compose.waitUntil(10_000) { compose.onAllNodesWithTag("word-details").fetchSemanticsNodes().isNotEmpty() }
-+        }
-+        tapFirstWord()
-+        compose.waitUntil(10_000) { compose.onAllNodesWithText("English → Indonesian", substring = true).fetchSemanticsNodes().isNotEmpty() }
-+        compose.onNodeWithContentDescription("Close word details").performClick()
-+        compose.waitUntil(10_000) { compose.onAllNodesWithTag("word-details").fetchSemanticsNodes().isEmpty() }
-+        compose.runOnIdle { state = state.copy(preferences = state.preferences.copy(native = Language.TAGALOG)) }
-+        tapFirstWord()
-+        compose.waitUntil(10_000) { compose.onAllNodesWithText("English → Filipino (Tagalog)", substring = true).fetchSemanticsNodes().isNotEmpty() }
-+    }
- }
-diff --git a/rolang-server/README.md b/rolang-server/README.md
-index 9a02c22ce491da1794d91a28e4a7eb456d7047b0..3ac36fdbfa22ae28c9e7d26819809035b74ca787 100644
---- a/rolang-server/README.md
-+++ b/rolang-server/README.md
-@@ -1,168 +1,14 @@
- # Ro-Lang server
- 
--An independent Node.js REST API for Ro-Lang Android. Express runs locally and as a
--Vercel Node function. PostgreSQL stores published stories, complete multilingual
--dictionary data, accounts, reading positions, saved words, SRS schedules, review
--events, and preferences. No writable filesystem or in-memory state is needed in
--production. English (`en`), Indonesian (`id`), and Filipino/Tagalog (`tl`) are
--required for every published story. Each story has an exact CEFR difficulty
--`A1`–`C2`; Android maps these to its existing three difficulty bands.
--
--## Local development
--
--Requirements: Node.js 22 or newer and PostgreSQL 16 or newer. Use a dedicated
--development database and provide `DATABASE_URL` through your shell or a private
--`.env` file. The application does not automatically load `.env`; Node can load it
--with `--env-file=.env`. `.env.example` contains placeholders only.
--
--```sh
--npm ci
--node --env-file=.env scripts/migrate.js
--node --env-file=.env scripts/seed.js
--node --env-file=.env src/local.js
--```
--
--Alternatively export the database settings and use `npm run migrate`, `npm run
--seed`, and `npm run dev`. PostgreSQL's `PGHOST`, `PGPORT`, `PGDATABASE`, and `PGUSER`
--settings also work for local development when `DATABASE_URL` is absent. The
--default port is 3000. `GET /api/v1/health` checks database connectivity.
--
--Migrations run atomically under an advisory lock and are tracked in
--`schema_migrations`. Run migrations before serving a new deployment. Seeding is
--optional and idempotent; it inserts nine bundled multilingual story variants with
--complete dictionary coverage and never replaces existing stories. Samples in
--`data/sample-stories.json` are self-contained; this project does not need the
--Android directory at runtime or during deployment.
--
--## Deploy to Vercel
--
--1. Create a PostgreSQL database with Neon, Supabase, or another managed provider.
--   Use its **pooled connection URL** and the provider's TLS configuration. A direct
--   connection URL can be used separately when running migrations.
--2. Import the repository into Vercel and set **Root Directory** to
--   `rolang-server`. Use the **Other** framework preset, `npm ci` for the install
--   command, and leave build command/output directory unset. Node.js 22 or 24 is
--   supported. `vercel.json` routes requests to the default export in
--   `api/index.js` and gives it a 30-second execution budget.
--3. Set `DATABASE_URL` in the appropriate Vercel environment. Optional variables
--   are `DATABASE_POOL_SIZE` (default 3, range 1–10), `SESSION_DAYS` (default 30,
--   range 1–90), and `CORS_ORIGINS` (comma-separated browser origins). Android does
--   not require CORS. Do not put secrets into Vercel JSON or app configuration.
--4. From a trusted shell with the target database configuration, run the migration
--   command above, then optionally seed. Deploy using Vercel's dashboard or CLI.
--   Migrations are intentionally separate from requests and build steps.
--5. Check `https://YOUR-DEPLOYMENT.vercel.app/api/v1/health` and `/api/v1/stories`.
--   Set that deployment origin in `../rolang-app/config.json` and enable online
--   features. Vercel deployment protection must allow Android API access.
--6. Register a learner account, then promote the intended editor from a trusted
--   database-connected shell: `npm run admin -- editor@example.com`. Public
--   registration always creates learners. Use the normal login endpoint to obtain
--   an editor session and authorize requests with `Authorization: Bearer TOKEN`.
--
--The server reuses a small connection pool in warm functions. Provider pooling
--limits connection pressure across function instances. The database must be
--reachable from Vercel and should be geographically near the deployment. Never
--disable certificate verification to work around a connection failure.
--
--## API contract
--
--All routes use `/api/v1`. Bodies are JSON, limited to 2 MB. Success responses are
--JSON except logout/deletes (204). Errors use
--`{"error":{"code":"VALIDATION_ERROR","message":"...","fields":[]}}`.
--Validation errors are 400, authentication 401, permissions 403, missing stories
--404, conflicts 409, oversized bodies 413, auth rate limits 429, and temporary
--database failures 503. Internal SQL and connection details are never returned.
--
--| Method and path | Behavior | Access |
--| --- | --- | --- |
--| `GET /health` | Database readiness | Public |
--| `GET /stories` | Published summaries; filters `language`, `category`, `difficulty`; pagination `limit` (1–100), `after` | Public |
--| `GET /stories/:id` | Full translated story and vocabulary | Public, published only |
--| `GET /stories/:id/translations?language=id` | Title, summary, and passage translations | Public |
--| `GET /stories/:id/vocabulary?language=en` | Dictionary entries, optionally filtered | Public |
--| `POST /auth/register` | `{email,password,displayName}`; returns `{token,expiresAt,user}` | Public |
--| `POST /auth/login` | `{email,password}`; same response | Public |
--| `POST /auth/logout` | Revoke current session | Signed in |
--| `GET /me`, `PUT /me` | Account profile; update `{displayName}` | Signed in |
--| `GET /me/progress`, `GET /me/history` | Reading positions and completion | Signed in |
--| `GET /me/vocabulary`, `GET /me/reviews`, `GET /me/preferences` | Learning records | Signed in |
--| `PUT /me/{progress,vocabulary,reviews,preferences}/:key` | Replace one validated record | Signed in |
--| `DELETE /me/{progress,vocabulary,reviews,preferences}/:key` | Write a synchronization tombstone | Signed in |
--| `POST /me/sync` | Upload operations and retrieve revision changes | Signed in |
--| `GET /admin/stories` | Drafts and published content, paginated | Administrator |
--| `POST /stories` | Create a draft using the sample-story format | Administrator |
--| `PUT /stories/:id` | Replace full story, preserving publication status | Administrator |
--| `POST /stories/:id/publish` | `{published:true}` or `{published:false}` | Administrator |
--| `DELETE /stories/:id` | Delete story without deleting learner history | Administrator |
--
--Learning list endpoints return `{records,next}` and accept `after` (record key) and
--`limit` (1–500, default 100). Story lists return `{stories,next}`. Follow `next`
--until it is null. Sample story data demonstrates the authoring contract. The API
--requires nonempty translations and dictionary coverage for every word in every
--passage before accepting story creation or replacement.
--
--Passwords are 12–128 characters and hashed with salted scrypt. Bearer tokens are
--random 256-bit values; only their SHA-256 hashes are stored. Tokens expire and can
--be revoked. Database-backed 15-minute limits apply across Vercel instances (20
--attempts per email, 100 per IP). Account roles are checked on every request.
--
--### Synchronization
--
--```json
--{
--  "cursor": 0,
--  "operations": [{
--    "id": "00000000-0000-4000-8000-000000000001",
--    "kind": "progress",
--    "key": "market_beginner:en",
--    "deleted": false,
--    "data": {"storyId":"market_beginner","language":"en","sentence":1,"completed":false}
--  }]
--}
--```
--
--The response contains `acknowledged` operation IDs, `records` with revisions,
--`cursor`, and `hasMore`. Send at most 100 operations per request. Follow `hasMore`
--with the returned cursor; downloads contain up to 500 records per page. An invalid
--cursor returns `CURSOR_INVALID`; reset to zero and retry. Commit downloaded records
--and the cursor together locally. Remove acknowledged operations only if their IDs
--still match the uploaded snapshot.
--
--Keys are `storyId:language` for progress,
--`language:reference:storyId:normalizedWord` for vocabulary, a UUID for each review,
--and `preferences` for learning preferences. `src/validation.js` defines the complete
--record shapes, including SRS fields and review `vocabularyKey`. Deletions use
--`deleted:true,data:null` and are retained for offline devices.
--
--Conflicting writes use **server arrival order**, per record. A retried operation
--ID cannot overwrite a newer change; reusing its ID with different data returns
--409. Transactions serialize writes per user so committed revision cursors never
--skip a concurrent write. Android keeps pending local edits when applying downloads,
--then uploads them on the next pass. Completion is also preserved locally when
--rereading. This is record replacement rather than a merge of competing SRS
--answers: simultaneous reviews of the same word retain separate review events,
--while the last schedule accepted by the server wins. Completed reading remains
--completed across rereads and devices until an explicit progress deletion.
--
--## Validation and operations
--
--```sh
--# Against a dedicated disposable database with configuration already supplied:
--npm test
--npm run check
--npm audit --omit=dev
--```
--
--Tests exercise real PostgreSQL migrations/seeding, routes, permissions, publishing,
--translations, learning persistence, concurrent sync, idempotency, tombstones,
--pagination, and error responses. Fixtures delete only their own users/story. Do
--not point tests at a production database. No Vercel account is needed for local
--tests; deployment still requires the operator's Vercel project and database.
--
--Back up the database. Periodically remove expired `sessions` and `auth_attempts`
--rows using a database maintenance job. Retain learning tombstones and
--`sync_operations` until a device-expiration policy is implemented; pruning them
--early permits stale offline replays. Profile switching on Android is deliberately
--restricted to the original account for each local library, preventing cross-account
--uploads. Email verification, password recovery, and an editorial web UI are future
--features; administrators manage content through the documented API.
-+The Express/PostgreSQL backend for [Ro-Lang Android](../rolang-app/README.md).
-+It serves multilingual stories and synchronizes accounts, vocabulary statuses,
-+reading progress, spaced repetition schedules, review history, and preferences.
-+The Android app also works offline without an account.
-+
-+Start with the [overview and local setup](docs/README.md), then use:
-+
-+- [Stories](docs/STORIES.md): create, edit, and publish content, with a complete JSON example.
-+- [API](docs/API.md): every endpoint, request shapes, responses, and curl examples.
-+- [Database](docs/DATABASE.md): tables, relationships, migrations, and maintenance.
-+- [Learning system](docs/LEARNING_SYSTEM.md): colors, mastery, reviews, and synchronization.
-+- [Deployment](docs/DEPLOYMENT.md): environment settings, Android config, and Vercel.
-diff --git a/rolang-server/docs/API.md b/rolang-server/docs/API.md
-new file mode 100644
-index 0000000000000000000000000000000000000000..be4a304a912781285520c63f62bfe0b89cfeb3f1
---- /dev/null
-+++ b/rolang-server/docs/API.md
-@@ -0,0 +1,222 @@
-+# API reference
-+
-+All paths below start with `/api/v1`. Send JSON with `Content-Type:
-+application/json`; bodies are limited to 2 MB. Signed-in requests use
-+`Authorization: Bearer <session-token>`. Successful requests return JSON unless
-+listed as 204, which has no body.
-+
-+## Public library
-+
-+| Method and path | Parameters | Response |
-+| --- | --- | --- |
-+| `GET /health` | None | 200: `{"status":"ok","apiVersion":"v1"}` after checking PostgreSQL |
-+| `GET /stories` | Optional `language=en|id|tl`, `category`, `difficulty=A1|A2|B1|B2|C1|C2`, `limit` (1–100, default 30), `after` (story ID) | 200: `{stories:[summary],next:ID|null}`; published stories only |
-+| `GET /stories/:id` | Story ID | 200: full authoring content plus `vocabulary`, `level`, `status`, `updatedAt` |
-+| `GET /stories/:id/translations` | Required `language=en|id|tl` | 200: `{language,title,summary,sentences:[string]}` |
-+| `GET /stories/:id/vocabulary` | Optional `language=en|id|tl` | 200: `{vocabulary:[lexeme]}` |
-+
-+Story summaries include `id`, `family`, `category`, `difficulty`, all-language
-+`title` and `summary`, derived Android `level`, publication `status`, and ISO
-+`updatedAt`. They omit paragraphs and vocabulary. Full story and lexeme shapes
-+are in [Stories](STORIES.md) and the [complete JSON example](examples/story.json).
-+Public detail requests for draft or missing stories return 404.
-+
-+```sh
-+curl 'http://localhost:3000/api/v1/stories?difficulty=A1&language=en&limit=10'
-+curl http://localhost:3000/api/v1/stories/market_beginner
-+curl 'http://localhost:3000/api/v1/stories/market_beginner/translations?language=id'
-+```
-+
-+Follow `next` using `after` until `next` is null. Lists sort by ID, not update time.
-+Categories must match exactly; URL-encode category names with spaces.
-+
-+## Accounts
-+
-+| Method and path | JSON body | Response |
-+| --- | --- | --- |
-+| `POST /auth/register` | `{email,password,displayName}` | 201: `{token,expiresAt,user:{id,email,displayName,role}}` |
-+| `POST /auth/login` | `{email,password}` | 200: same session shape |
-+| `POST /auth/logout` | None; current bearer session required | 204: session revoked |
-+| `GET /me` | None; signed in | 200: `{id,email,displayName,role}` |
-+| `PUT /me` | `{displayName}`; signed in | 200: `{id,displayName}` |
-+
-+Email must be valid and at most 254 characters. Passwords are 12–128 characters;
-+display names are trimmed and 1–100 characters. Registration creates a `learner`;
-+the server rejects extra fields such as `role`. Only the administrative script
-+can promote an editor. Session expiration is an ISO timestamp, while learning
-+timestamps below are milliseconds since the Unix epoch.
-+
-+Example registration body (placeholders only):
-+
-+```json
-+{
-+  "email": "learner@example.com",
-+  "password": "<your 12–128 character password>",
-+  "displayName": "Maya"
-+}
-+```
-+
-+```sh
-+# ROLANG_TOKEN represents your session in a private shell.
-+curl http://localhost:3000/api/v1/me -H "Authorization: Bearer $ROLANG_TOKEN"
-+curl -X PUT http://localhost:3000/api/v1/me \
-+  -H "Authorization: Bearer $ROLANG_TOKEN" -H 'Content-Type: application/json' \
-+  --data '{"displayName":"Maya"}'
-+```
-+
-+Passwords use salted scrypt; the database stores only token hashes. Sessions last
-+30 days by default. Database-backed registration/login rate limits allow 20
-+attempts per email and 100 per IP in 15 minutes across server instances. Android
-+stores session tokens encrypted using Keystore and does not persist passwords.
-+Email verification and password recovery are not implemented.
-+
-+## Learner records
-+
-+All routes in this table require sign-in. Keys belong to the signed-in account;
-+clients cannot request another learner's records.
-+
-+| Resource | GET list | PUT or DELETE one | Record kind |
-+| --- | --- | --- | --- |
-+| Reading | `/me/progress` | `/me/progress/:key` | `progress` |
-+| Reading history | `/me/history` | Use progress routes | `progress` |
-+| Vocabulary | `/me/vocabulary` | `/me/vocabulary/:key` | `vocabulary` |
-+| Review events | `/me/reviews` | `/me/reviews/:key` | `review` |
-+| Learning preferences | `/me/preferences` | `/me/preferences/:key` | `profile` |
-+
-+GET lists return 200: `{"records":[record],"next":null}`. They accept optional
-+`limit` (1–500, default 100) and `after` (record key), sort by key, and omit
-+tombstones. `/me/history` returns the same saved positions/completion as
-+`/me/progress`; it is not a log of every reading visit. PUT replaces a full record
-+and returns 200 with its envelope. DELETE writes a tombstone and returns 204.
-+Use sync to download deletions.
-+
-+```json
-+{
-+  "kind": "progress",
-+  "key": "market_beginner:en",
-+  "data": {"storyId":"market_beginner","language":"en","sentence":1,"completed":false},
-+  "deleted": false,
-+  "revision": 42
-+}
-+```
-+
-+| Kind | Key | Required data |
-+| --- | --- | --- |
-+| `progress` | `storyId:language` | `storyId`, `language`, zero-based `sentence` (0–299), `completed` boolean |
-+| `vocabulary` | `language:reference:storyId:normalizedWord` | Complete vocabulary body below |
-+| `review` | UUID for this event | `vocabularyKey`, `language`, `reference`, `reviewedAt`, `correct`, `rating` |
-+| `profile` | `preferences` | `target`, `native`, `level`, `fontSize`, `dark` |
-+
-+Progress completion stays true across rereads and devices. Delete progress to
-+reset completion. Language codes are `en`, `id`, `tl`; reference is the language
-+used for translations. Vocabulary keys distinguish stories and language pairs.
-+URL-encode keys when using them in paths.
-+
-+Complete vocabulary request body:
-+
-+```json
-+{
-+  "language": "en", "reference": "id", "word": "reads",
-+  "translation": "membaca", "meaning": "Understands written words.",
-+  "partOfSpeech": "verb", "explanation": "Present tense.",
-+  "example": "Maya reads.", "exampleTranslation": "Maya membaca.",
-+  "storyId": "reader_a1", "storyTitle": "The reader", "category": "Everyday life",
-+  "createdAt": 1000, "dueAt": 2000, "lastReviewedAt": 0,
-+  "repetitions": 0, "intervalDays": 0, "ease": 2.5, "lapses": 0,
-+  "mastered": false, "status": "LEARNING", "statusChangedAt": 1000
-+}
-+```
-+
-+`status` is `NEW`, `LEARNING`, `ALMOST_MASTERED`, or `KNOWN`; `mastered` must be
-+true exactly when status is Known. `statusChangedAt` records the latest status
-+update, manual or automatic. For older clients, these two new fields are optional:
-+the server infers status from `mastered`/`repetitions` and defaults the timestamp
-+to 0. It returns normalized fields for old database rows too. Other vocabulary
-+fields are required. Counters are integers 0–1,000,000, intervals 0–365 days,
-+ease 1.3–100, and timestamps integers 0–8,640,000,000,000,000. Text values must be
-+nonempty; normalized words are at most 120 characters.
-+
-+Review example:
-+
-+```json
-+{
-+  "vocabularyKey": "en:id:reader_a1:reads", "language": "en", "reference": "id",
-+  "reviewedAt": 2000, "correct": true, "rating": "GOOD"
-+}
-+```
-+
-+Ratings are `AGAIN`, `HARD`, `GOOD`, `EASY`. Record an event and its updated
-+vocabulary schedule together in one sync request; PUT of a review alone does
-+not recalculate mastery. Android computes the schedule. Preferences use
-+`level=BEGINNER|INTERMEDIATE|ADVANCED`, `fontSize=16–28`, and a boolean `dark`:
-+
-+```json
-+{"target":"en","native":"id","level":"BEGINNER","fontSize":20,"dark":false}
-+```
-+
-+## Synchronization
-+
-+`POST /me/sync` requires sign-in. Send a nonnegative revision `cursor` and at most
-+100 operations. Each operation has a fresh UUID `id`, valid `kind`/`key`,
-+`deleted`, and complete `data`. Tombstones require `deleted:true,data:null`.
-+
-+```sh
-+curl -X POST http://localhost:3000/api/v1/me/sync \
-+  -H "Authorization: Bearer $ROLANG_TOKEN" -H 'Content-Type: application/json' \
-+  --data '{"cursor":0,"operations":[{"id":"00000000-0000-4000-8000-000000000001","kind":"progress","key":"market_beginner:en","deleted":false,"data":{"storyId":"market_beginner","language":"en","sentence":1,"completed":false}}]}'
-+```
-+
-+200 response:
-+
-+```json
-+{
-+  "acknowledged": ["00000000-0000-4000-8000-000000000001"],
-+  "records": [{
-+    "kind":"progress", "key":"market_beginner:en",
-+    "data":{"storyId":"market_beginner","language":"en","sentence":1,"completed":false},
-+    "deleted":false, "revision":42
-+  }],
-+  "cursor":42, "hasMore":false
-+}
-+```
-+
-+Records include up to 500 changes ordered by revision, including tombstones.
-+Follow `hasMore` with the returned cursor, even with no uploads. Retries must keep
-+the original operation UUID and payload; a new edit needs a new UUID. Reusing an
-+ID with changed data returns `OPERATION_CONFLICT` (409). `CURSOR_INVALID` (409)
-+means reset the cursor to zero and retry with existing queued operations. See
-+[Learning system](LEARNING_SYSTEM.md) for transaction and conflict rules.
-+
-+## Content administration
-+
-+All of these endpoints require an account with role `admin`.
-+
-+| Method and path | Body / query | Response |
-+| --- | --- | --- |
-+| `GET /admin/stories` | Optional `limit` (1–100, default 30), `after` ID | 200: `{stories:[fullStory],next:ID|null}`, including drafts |
-+| `POST /stories` | Full [authoring JSON](examples/story.json) | 201: full story, initially draft |
-+| `PUT /stories/:id` | Full authoring JSON with matching ID | 200: replaced story, publication status retained |
-+| `POST /stories/:id/publish` | `{"published":true}` or `{"published":false}` | 200: full story with new status |
-+| `DELETE /stories/:id` | None | 204; learner history remains |
-+
-+See [Stories](STORIES.md) for executable examples.
-+
-+## Errors
-+
-+```json
-+{"error":{"code":"VALIDATION_ERROR","message":"Request validation failed.","fields":[{"path":"difficulty","message":"Invalid option"}]}}
-+```
-+
-+`fields` is present for validation failures; other errors have `code` and
-+`message`. SQL, database connection details, and passwords are never included.
-+
-+| HTTP status | Meaning / typical code |
++| Check | Result |
 +| --- | --- |
-+| 400 | Invalid shape or key (`VALIDATION_ERROR`), malformed JSON (`INVALID_JSON`), mismatched story ID (`INVALID_ID`) |
-+| 401 | Missing/expired session (`UNAUTHENTICATED`) or failed login (`INVALID_CREDENTIALS`) |
-+| 403 | Administrator role required (`FORBIDDEN`) |
-+| 404 | Missing route, missing story, or unpublished public story (`NOT_FOUND`) |
-+| 409 | Duplicate account/story (`ALREADY_EXISTS`), changed retry (`OPERATION_CONFLICT`), invalid sync cursor (`CURSOR_INVALID`) |
-+| 413 | Body exceeds 2 MB (`BODY_TOO_LARGE`) |
-+| 429 | Registration/login attempt limit (`RATE_LIMITED`) |
-+| 503 | Temporary server/database error (`SERVICE_UNAVAILABLE`) |
-diff --git a/rolang-server/docs/DATABASE.md b/rolang-server/docs/DATABASE.md
-new file mode 100644
-index 0000000000000000000000000000000000000000..e94806afb60dc4a2493930a61c940bb9b488fadf
---- /dev/null
-+++ b/rolang-server/docs/DATABASE.md
-@@ -0,0 +1,87 @@
-+# Database structure
++| Bun 1.4.4 `install --production --frozen-lockfile` | Passed; 315 packages installed, lockfile unchanged. Bun blocked two dependency postinstall scripts under its existing trust policy; the test suite still passed. |
++| Existing project `node --test test/*.test.js agent/test/*.test.js ro-lang/test/*.test.js AI-SEERVER/test/*.test.js` under Node 24.22.2 with a clean process environment | 121 tests passed. Uses synthetic fixtures, including launcher startup and terminal disconnect. |
++| `node scripts/check-syntax.mjs` | 270 files checked; zero failures. |
++| `python codex-output/roccky-bot/test_run_bot.py -v` | Five synthetic wrapper tests passed: Node command selection, successful exit, terminal authentication exit, crash backoff, and process-group shutdown including a descendant. |
++| `shellcheck codex-output/roccky-bot/run-bot.sh` and `bash -n` | Passed. |
++| Actionlint 1.7.7 on YAML extracted from `WORKFLOW_DRAFT.md` through stdin | Passed, including available ShellCheck integration. |
++| Git diff check for root/nested workflows, CI scripts, `package.json`, and `bun.lock` | Unchanged. |
 +
-+The server stores data in PostgreSQL 16+. `src/db.js` creates a pool using
-+`DATABASE_URL`, or standard `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, and
-+`PGPASSWORD` settings when the URL is absent. See [Deployment](DEPLOYMENT.md)
-+for connection and TLS settings.
-+
-+## Tables and relationships
-+
-+| Table | Key and important columns | Purpose |
-+| --- | --- | --- |
-+| `users` | UUID `id`; unique `email`; `password_hash`, `display_name`, `role`, `created_at` | Learner/editor accounts; role is `learner` or `admin` |
-+| `sessions` | `token_hash`; `user_id` FK; `expires_at`, `created_at` | Revocable bearer sessions, storing hashes only |
-+| `stories` | Text `id`; `family`, `category`, `difficulty`, `status`, JSONB `content`, JSONB `vocabulary`, timestamps | Translated story variants and their dictionaries |
-+| `learning_records` | Composite `(user_id,kind,key)`; JSONB `data`, `deleted`, BIGSERIAL `revision`, `updated_at` | Progress, vocabulary, review events, preferences, and deletion tombstones |
-+| `sync_operations` | Composite `(user_id,operation_id)`; `fingerprint`, `created_at` | Deduplicates uploaded operations and rejects changed retries |
-+| `auth_attempts` | Hashed email/IP `bucket`; `attempts`, `expires_at` | Shared 15-minute authentication rate limits |
-+| `schema_migrations` | Migration filename `name`; `applied_at` | Tracks completed SQL upgrades |
-+
-+```mermaid
-+erDiagram
-+    users ||--o{ sessions : owns
-+    users ||--o{ learning_records : owns
-+    users ||--o{ sync_operations : uploads
-+```
-+
-+Deleting a user cascades to their sessions, learning records, and operation IDs.
-+Stories have no foreign key to users or learning records. A learning word retains
-+its story ID, title, category, translations, and examples even if the story is
-+removed. Review records refer to a vocabulary natural key rather than a server
-+row ID; deleting a word preserves review statistics.
-+
-+`content` stores the [story authoring fields](STORIES.md) excluding vocabulary.
-+`vocabulary` is an array of multilingual dictionary objects. Paragraph
-+translations line up by array index, and dictionary entries are identified by
-+language and normalized word. PostgreSQL enforces difficulty/publication values;
-+Zod additionally checks JSON shapes and complete dictionary coverage.
-+
-+## Learning JSON
-+
-+`learning_records.kind` is one of `progress`, `vocabulary`, `review`, `profile`.
-+Examples of natural keys:
-+
-+```json
-+{
-+  "progress": "reader_a1:en",
-+  "vocabulary": "en:id:reader_a1:reads",
-+  "review": "00000000-0000-4000-8000-000000000001",
-+  "profile": "preferences"
-+}
-+```
-+
-+Vocabulary JSON includes four-state `status`, `statusChangedAt`, the compatible
-+`mastered` flag, schedule counters, due time, and contextual word details. Review
-+JSON contains the outcome, rating, timestamp, and `vocabularyKey`. See [API](API.md)
-+for complete bodies and [Learning system](LEARNING_SYSTEM.md) for their meaning.
-+
-+Revisions come from a shared sequence but are read per user; gaps are normal.
-+Writes lock the user's row for the transaction so a sync cursor never skips an
-+earlier, still-uncommitted write. Each change replaces the record and allocates a
-+new revision. Progress preserves completed=true across non-deleted replacements.
-+
-+DELETE keeps the row with `deleted=true,data=null` and a new revision. This lets a
-+device that was offline learn about removals. Keep tombstones and operation IDs
-+until a device-expiration policy exists; early pruning can resurrect stale data.
-+
-+## Migrations and maintenance
++Reproduce the checks from the repository root:
 +
 +```sh
-+node --env-file=.env scripts/migrate.js
++python codex-output/roccky-bot/test_run_bot.py -v
++shellcheck codex-output/roccky-bot/run-bot.sh
++bash -n codex-output/roccky-bot/run-bot.sh
 +```
 +
-+`scripts/migrate.js` takes a PostgreSQL advisory lock, applies unapplied `.sql`
-+files in filename order, and records them in `schema_migrations`, all within a
-+transaction. Add new numbered migrations; do not edit previously applied SQL.
-+Run migrations before serving a release. Seeding is separate and idempotent.
++Extract the YAML fence and pipe it to `actionlint -` to validate the proposal
++without creating an active workflow file. Existing bot test/syntax commands run
++from `roccky_bot/` after installing its frozen dependencies.
 +
-+The vocabulary status upgrade adds JSON fields, so it needs no PostgreSQL schema
-+change: new writes are validated, and reads infer missing fields on old records.
-+Android's separate Room database upgrades from version 1 through 2 to 3 using
-+explicit migrations. Version 3 adds `status` and `statusChangedAt`, derives old
-+mastery levels, and preserves schedules, reviews, and queued operations.
++## Limitations
 +
-+Back up PostgreSQL before schema changes. Periodically delete expired `sessions`
-+and `auth_attempts` rows; retain learning tombstones and `sync_operations`. Indexes
-+support published catalogs, session lookup/expiry, and per-user revision scans.
-+Use the content API rather than editing story JSON directly in SQL.
-diff --git a/rolang-server/docs/DEPLOYMENT.md b/rolang-server/docs/DEPLOYMENT.md
++The workflow is not installed or live-tested on GitHub, and no real WhatsApp
++connection was attempted. Its full-session restore avoids re-pairing within a
++single job, but **does not update rotated keys back into GitHub Secrets**. A
++future fresh runner needs a current complete snapshot; an old snapshot cannot
++guarantee continued authentication. Scheduling should wait for an authorized,
++reliable encrypted writeback design. The single-secret format is unusable if the
++complete session exceeds GitHub's 48 KiB per-secret limit.
++
++GitHub-hosted jobs have a six-hour platform maximum and are not persistent
++hosting. Abrupt runner loss can skip cleanup and lose new keys. Local database,
++store, pending snapshots, and tutor/agent memory also need persistence for
++multi-run deployment. The optional cloud database covers bot records, not
++Baileys credentials. Concurrency protects this proposed workflow only; any
++other instance using the same WhatsApp session must be stopped independently.
+diff --git a/codex-output/roccky-bot/WORKFLOW_DRAFT.md b/codex-output/roccky-bot/WORKFLOW_DRAFT.md
 new file mode 100644
-index 0000000000000000000000000000000000000000..3b77e1c731bd78b01d3a984ff6be93331d5021e6
+index 0000000000000000000000000000000000000000..db621dd5fe98e6eac441f2aa41bea89e390784e6
 --- /dev/null
-+++ b/rolang-server/docs/DEPLOYMENT.md
-@@ -0,0 +1,118 @@
-+# Configuration and Vercel deployment
++++ b/codex-output/roccky-bot/WORKFLOW_DRAFT.md
+@@ -0,0 +1,180 @@
++# WhatsApp bot workflow draft
 +
-+## Server environment
++This is a reviewable proposal, not an installed workflow. The operator's current
++instruction prohibits changing GitHub workflow files and CI credential handling.
++No file under `.github/` has been changed. Installing this proposal and adding
++automatic session-secret updates require a separately authorized deployment task.
 +
-+The server reads process environment variables. It does not automatically load
-+`.env`; use Node's `--env-file=.env` locally. The tracked `.env.example` contains
-+placeholders only. Production secrets belong in the deployment environment.
++The draft restores the complete multifile session supplied by the operator and
++reuses its live keys for every restart **within a job**. It does not save rotated
++keys back to GitHub Secrets. A fresh job needs a current, privately maintained
++session secret. Scheduled launches are deliberately absent until a reliable
++session writeback mechanism is designed and authorized.
 +
-+| Variable | Default / range | Purpose |
-+| --- | --- | --- |
-+| `DATABASE_URL` | Provider connection URL | PostgreSQL connection; use a managed pooled endpoint in Vercel |
-+| `DATABASE_POOL_SIZE` | 3; clamped to 1–10 | Maximum connections per warm function instance |
-+| `SESSION_DAYS` | 30; clamped to 1–90 | Bearer session lifetime |
-+| `CORS_ORIGINS` | Empty | Comma-separated allowed browser origins; Android does not need CORS |
-+| `PORT` | 3000 | Standalone local server port; Vercel supplies its own routing |
++If installed later, the YAML below belongs at the repository root, for example
++`.github/workflows/roccky-bot.yml`. The nested `roccky_bot/.github/workflows/`
++directory is not discovered by GitHub Actions. Keep the supporting
++`codex-output/roccky-bot/run-bot.sh` file at its current path, or adjust the command.
 +
-+When `DATABASE_URL` is absent, node-postgres accepts standard `PGHOST`, `PGPORT`,
-+`PGDATABASE`, `PGUSER`, and `PGPASSWORD` settings for local development. Use a
-+dedicated database. Migrations need permission to create tables/indexes; runtime
-+needs access to application tables and sequences. Follow the provider's verified
-+TLS configuration. Do not disable certificate checks to fix connectivity.
++```yaml
++name: Run RoccKy WhatsApp bot
 +
-+`VERCEL` is supplied by Vercel itself; the API uses its edge IP header for rate
-+limiting there and the socket IP locally. Pool timeouts are 5 seconds to connect,
-+10 seconds idle, and 15 seconds per query. Put the database near the function's
-+region and use provider pooling to limit connections across function instances.
++on:
++  workflow_dispatch:
 +
-+## Deploy
++permissions:
++  contents: read
 +
-+1. Create a PostgreSQL 16+ database with Neon, Supabase, or another provider. Get
-+   its pooled URL for runtime and, if needed, a direct URL for migrations.
-+2. Import the repository in Vercel. Set **Root Directory** to `rolang-server`,
-+   **Framework Preset** to Other, **Install Command** to `npm ci`, and choose
-+   Node.js 22 or 24. Leave build command and output directory unset.
-+3. Set `DATABASE_URL` and any optional settings in the required Vercel environments
-+   (Preview/Production). The Android config only needs the public server origin.
-+4. From a trusted database-connected shell, apply migrations before enabling the
-+   deployment. Optionally seed the sample library:
++concurrency:
++  group: roccky-whatsapp-session
++  cancel-in-progress: false
 +
-+   ```sh
-+   node --env-file=.env scripts/migrate.js
-+   node --env-file=.env scripts/seed.js
-+   ```
++jobs:
++  bot:
++    # Dispatch trusted default-branch code only; no push or pull-request trigger.
++    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
++    runs-on: ubuntu-24.04
++    timeout-minutes: 240
++    environment: roccky-bot
++    defaults:
++      run:
++        shell: bash
++        working-directory: roccky_bot
++    env:
++      NODE_ENV: production
++      MALLOC_ARENA_MAX: '2'
++      ROCCKY_AI_SERVER: 'false'
 +
-+   These run separately from build steps and requests. No migration runs on cold
-+   start. Repeated seeding skips existing IDs.
-+5. Deploy using the dashboard or CLI. Existing `vercel.json` routes all paths to
-+   `api/index.js` with a 30-second function budget. Check public readiness and the
-+   catalog:
++    steps:
++      - name: Check out trusted source
++        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
++        with:
++          persist-credentials: false
 +
-+   ```sh
-+   curl https://YOUR-DEPLOYMENT.vercel.app/api/v1/health
-+   curl https://YOUR-DEPLOYMENT.vercel.app/api/v1/stories
-+   ```
++      - name: Set up Node.js
++        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
++        with:
++          node-version: '24'
 +
-+6. Register the editor account, then promote it using
-+   `node --env-file=.env scripts/admin.js editor@example.com` against the target
-+   database. Use its normal login session to publish content. Verify that Vercel
-+   deployment protection permits the Android app's API requests.
++      - name: Set up locked package manager
++        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
++        with:
++          bun-version: '1.4.4'
 +
-+The app and production function never need writable server files. Content and
-+learning data persist in PostgreSQL; deploys do not reset them. Run the updated
-+backend before distributing the status-aware Android build. See
-+[Database](DATABASE.md) for backups and expired-session maintenance.
++      - name: Install Ubuntu media tools and dependencies
++        timeout-minutes: 15
++        run: |
++          sudo apt-get update -qq
++          sudo apt-get install -y --no-install-recommends ffmpeg build-essential
++          bun install --production --frozen-lockfile
++          ffmpeg -version >/dev/null
++          ffprobe -version >/dev/null
 +
-+## Android config.json
++      - name: Restore private configuration and paired session
++        env:
++          ROCCKY_CONFIG_JS: ${{ secrets.ROCCKY_CONFIG_JS }}
++          ROCCKY_WHATSAPP_SESSION_JSON: ${{ secrets.ROCCKY_WHATSAPP_SESSION_JSON }}
++        run: |
++          python3 - <<'PY'
++          import json
++          import os
++          import sys
++          from pathlib import Path
 +
-+Edit `rolang-app/config.json`, the source Gradle copies into generated app assets:
++          try:
++              os.umask(0o077)
++              config = os.environ['ROCCKY_CONFIG_JS']
++              payload = os.environ['ROCCKY_WHATSAPP_SESSION_JSON']
++              if not config.strip() or not payload.strip():
++                  raise ValueError()
++              if len(config.encode()) > 49152 or len(payload.encode()) > 49152:
++                  raise ValueError()
++              session = json.loads(payload)
++              if not isinstance(session, dict) or not session:
++                  raise ValueError()
++              creds = session.get('creds.json')
++              if not isinstance(creds, dict) or creds.get('registered') is not True:
++                  raise ValueError()
++              for name, record in session.items():
++                  if (not isinstance(name, str) or Path(name).name != name
++                      or '/' in name or '\\' in name or '\x00' in name
++                      or name.startswith('.') or not name.endswith('.json')
++                      or not isinstance(record, dict)):
++                      raise ValueError()
++              root = Path('session')
++              if root.exists() or root.is_symlink():
++                  raise ValueError()
++              config_path = Path('config.js')
++              if config_path.is_symlink():
++                  raise ValueError()
++              root.mkdir(mode=0o700)
++              config_path.write_text(config, encoding='utf-8')
++              config_path.chmod(0o600)
++              for name, record in session.items():
++                  with (root / name).open('x', encoding='utf-8') as handle:
++                      json.dump(record, handle, separators=(',', ':'))
++          except Exception:
++              # Never print secret contents, parse errors, or authentication records.
++              print('Private configuration/session restore failed; review secret format.', file=sys.stderr)
++              sys.exit(1)
++          PY
 +
-+```json
-+{
-+  "serverBaseUrl": "https://YOUR-DEPLOYMENT.vercel.app",
-+  "apiVersion": "v1",
-+  "connectionTimeoutMs": 10000,
-+  "requestTimeoutMs": 30000,
-+  "onlineEnabled": true,
-+  "automaticSyncEnabled": true,
-+  "syncIntervalMinutes": 15,
-+  "storyPageSize": 30
-+}
++      - name: Run bot with crash recovery
++        timeout-minutes: 205
++        env:
++          ROCCKY_DATABASE_URL: ${{ secrets.ROCCKY_DATABASE_URL }}
++          RO_LANG_API_KEY: ${{ secrets.RO_LANG_API_KEY }}
++          AGENT_API_KEY: ${{ secrets.AGENT_API_KEY }}
++          DEEPSEEK_TOKEN: ${{ secrets.DEEPSEEK_TOKEN }}
++          GROQ_API_KEYS: ${{ secrets.GROQ_API_KEYS }}
++        run: |
++          status=0
++          timeout --signal=TERM --kill-after=30s 200m \
++            bash ../codex-output/roccky-bot/run-bot.sh || status=$?
++          case "$status" in
++            0|124) exit 0 ;;
++            78) echo 'WhatsApp authentication needs operator intervention.' >&2 ;;
++          esac
++          exit "$status"
++
++      - name: Remove private runner files
++        if: always()
++        run: |
++          rm -f -- config.js
++          rm -rf -- session
 +```
 +
-+| Setting | Rule |
++Create the `roccky-bot` GitHub environment separately, restrict it to the default
++branch, and store the following environment secrets there. No secret values or
++authentication files are included in these deliverables.
++
++| Secret | Required format / behavior |
 +| --- | --- |
-+| `serverBaseUrl` | HTTPS origin only; no `/api/v1`, credentials, query, or fragment |
-+| `apiVersion` | `v1` for this server; appended as `/api/v1/` |
-+| `connectionTimeoutMs`, `requestTimeoutMs` | 1000–120000 ms each; defaults 10000 and 30000 |
-+| `onlineEnabled` | Defaults false; true enables downloads/account actions |
-+| `automaticSyncEnabled` | Defaults true; false still permits manual sync and launch-time public refresh |
-+| `syncIntervalMinutes` | 15–1440; defaults 15; Android battery policies can delay jobs |
-+| `storyPageSize` | 1–100; defaults 30 |
++| `ROCCKY_CONFIG_JS` | Complete operator-authored ESM configuration. It must set `global.authFolder = 'session'` (or the equivalent in `Object.assign(global, ...)`), disable interactive pairing, and retain the bot's existing required global settings. Author it privately; do not copy the current credential-bearing file into reports. |
++| `ROCCKY_WHATSAPP_SESSION_JSON` | JSON object mapping every basename from the active Baileys auth directory to its parsed JSON object. Include `creds.json` and **all** Signal/pre-key/app-state/session files. Buffer JSON representations must remain unchanged. Pair once on a private terminal and stop that bot before taking a consistent snapshot. |
++| `ROCCKY_DATABASE_URL` | Optional existing MongoDB/PostgreSQL connection string. Omit for local operation. |
++| `RO_LANG_API_KEY`, `AGENT_API_KEY`, `DEEPSEEK_TOKEN`, `GROQ_API_KEYS` | Optional existing provider credentials; only required for their corresponding features. |
 +
-+A complete private app `files/config.json` override takes precedence and is read
-+at runtime, including worker runs. Invalid settings disable networking while
-+keeping offline data. Configuration never includes passwords or bearer tokens.
-+In Android Profile, sign in and use **Sync now**, or use **Refresh stories** while
-+signed out. Offline mode still supports the bundled stories, word details,
-+reviews, and local progress.
++GitHub Secrets have a 48 KiB limit per value. The full session can exceed it;
++do not omit key files to make it fit. At that point the session requires an
++encrypted persistent store or a persistent host, rather than this single-secret
++draft. Base64 encoding is not encryption and increases size.
 +
-+For an emulator, the development origin is `http://10.0.2.2:3000`.
-+Configuration accepts HTTP only for `localhost`, `127.0.0.1`, and `10.0.2.2`;
-+the shipped manifest disables cleartext traffic. Use trusted HTTPS or a
-+debug-only manifest override for local device testing. Robolectric contract tests
-+can call a loopback HTTP server without changing the shipping manifest.
++Dependencies are installed before secrets enter steps. The proposal uses no
++dependency/authentication cache, upload-artifact action, secret step output, shell
++tracing, or secret-writing token. Concurrency prevents overlap between this
++workflow's runs; stop any bot running elsewhere with the same WhatsApp identity.
 +
-+Build with JDK 17, SDK platform 35, and Build Tools 35.0.0:
++The existing `index.js` supervisor restarts crashed workers with bounded backoff.
++The supporting wrapper also restarts failed launchers with 1–60 second backoff,
++terminates surviving process groups before replacements, and stops on exit 0 or
++78. A 200-minute execution budget allows graceful shutdown before the runner
++deadline. The gateway is disabled by default, avoiding an unnecessary HTTP server.
 +
-+```sh
-+cd ../rolang-app
-+bash gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :app:assembleDebugAndroidTest
-+# With the local API pointing to a disposable test database:
-+bash gradlew :app:testDebugUnitTest -ProlangIntegrationUrl=http://127.0.0.1:3000
-+```
-+
-+The optional contract test creates a fixture learner and exchanges data between
-+two Android Room databases using the actual API. Device tests use
-+`bash gradlew :app:connectedDebugAndroidTest` with an emulator or USB-connected
-+device. Local tests do not deploy to Vercel.
-diff --git a/rolang-server/docs/LEARNING_SYSTEM.md b/rolang-server/docs/LEARNING_SYSTEM.md
++GitHub-hosted jobs are finite (the platform maximum is six hours), schedules may
++be delayed, and runner loss can prevent final cleanup or state persistence. This
++is not continuous hosting. The draft intentionally does not promise QR-free
++future jobs from an old snapshot. Automatic encrypted session-secret writeback,
++recovery from abrupt runner loss, and persistent local database/store snapshots
++remain unresolved deployment work under the current prohibition. The existing
++cloud database stores bot records; it does not store Baileys auth keys.
+diff --git a/codex-output/roccky-bot/run-bot.sh b/codex-output/roccky-bot/run-bot.sh
 new file mode 100644
-index 0000000000000000000000000000000000000000..f5231803a319869b8d69c6dcc7815743bfc7ad6f
+index 0000000000000000000000000000000000000000..b98ddaa2c8a349917307996393c50a2b153f0c4c
 --- /dev/null
-+++ b/rolang-server/docs/LEARNING_SYSTEM.md
-@@ -0,0 +1,105 @@
-+# Vocabulary and learning
++++ b/codex-output/roccky-bot/run-bot.sh
+@@ -0,0 +1,52 @@
++#!/usr/bin/env bash
++# Run from roccky_bot/. Each launch owns a process group for graceful cleanup.
++set -uo pipefail
 +
-+Android owns learning decisions and local persistence. The backend validates and
-+synchronizes the results; it does not run quizzes or compute a new schedule when
-+it receives a review. This keeps reading and practice fully available offline.
++command_to_run=(npm run start:node)
++if (( $# )); then command_to_run=("$@"); fi
 +
-+## Four statuses and colors
++child_pid=''
++delay=1
 +
-+| API status | Display | Meaning |
-+| --- | --- | --- |
-+| `NEW` | Blue | No saved learning record yet, or manually reset to New |
-+| `LEARNING` | Green | Saved for practice; still building familiarity |
-+| `ALMOST_MASTERED` | Yellow | At least three successful repetitions, or a manual choice |
-+| `KNOWN` | No highlight | Mastered automatically or manually; reviews are paused |
-+
-+Every word in a paragraph is tappable, including Known words. The detail sheet
-+shows the translation, meaning, part of speech, explanation, paragraph example,
-+and current status. Saving a new word starts it in Learning, due immediately.
-+Choosing a status for an unsaved word saves its details and status in one local
-+transaction. The same color palette is used in the reader, vocabulary, and review
-+screens, with labels so color is not the only cue.
-+
-+Vocabulary follows the existing key `language:reference:storyId:normalizedWord`.
-+Repeated occurrences in the same story share a status; language pairs and story
-+contexts retain separate learning records. Normalization lowercases the word and
-+replaces curly apostrophes. Inflections remain distinct.
-+
-+## Automatic progression and spaced repetition
-+
-+Multiple-choice and written-recall quizzes use the same scheduler. Answer
-+matching ignores case, accents, and punctuation, and accepts explicitly supplied
-+translation alternatives separated by `;` or `/`. Partial answers are rejected.
-+After checking the answer, the learner rates it Again, Hard, Good, or Easy.
-+
-+| Result / rating | Scheduling and status |
-+| --- | --- |
-+| Incorrect answer, or Again | Reset consecutive repetitions and interval to 0, increment lapses, reduce ease by 0.2, return to Learning, review in 10 minutes |
-+| Correct + Hard | Increment repetitions, reduce ease by 0.15, interval about 1.2× old interval (minimum 1 day), status Learning |
-+| Correct + Good | First interval 1 day, second 6 days, then about old interval × ease |
-+| Correct + Easy | First interval 4 days, second 8 days, then about old interval × ease × 1.3; increase ease by 0.15 |
-+
-+Ease starts at 2.5 and never falls below 1.3. Intervals are rounded to whole days
-+and capped at 365. Good/Easy reviews reach Almost Mastered at three consecutive
-+repetitions. At five or more repetitions, an interval of at least 21 days, and a
-+Good/Easy rating, the word becomes Known. Five Good reviews from a fresh schedule
-+typically give intervals of 1, 6, 15, 38, and 95 days.
-+
-+Manual Almost Mastered remains Almost Mastered through successful Good/Easy
-+reviews even if its repetition count is lower; Hard/Again can lower it. Manually
-+choosing New or Learning resets consecutive repetitions and interval and makes
-+the word due now. Manual Known sets `mastered=true` and pauses reviews; choosing
-+another status unpauses it. Manual changes do not invent successful reviews or
-+erase historical outcomes/lapses.
-+
-+`statusChangedAt` records manual and automatic changes. An open quiz must still
-+match the stored vocabulary snapshot before its rating can commit. A manual edit,
-+sync update, deletion, early review, or repeated submission rejects the stale
-+quiz. Leaving a quiz without a rating does not modify its schedule.
-+
-+## Local data and history
-+
-+Room stores saved words, schedules, paragraph positions, completion, review
-+events, cached remote content, and pending operations. Learning preferences live
-+in DataStore. Completing a story requires **Finish story**; scrolling records a
-+paragraph position and does not automatically complete it. The reading indicator
-+shows the last paragraph currently visible, while reopening resumes near the
-+first visible paragraph. Rereading preserves prior completion.
-+
-+Each rated quiz logs its timestamp, correctness, effective rating, and vocabulary
-+key in the same transaction as the schedule and queued uploads. These events
-+drive accuracy and review streaks. Removing a word deletes its schedule and
-+queues a tombstone while retaining historical review statistics. Account sign-out
-+keeps local learning data. Clearing app data or uninstalling removes it.
-+
-+## Online synchronization
-+
-+1. A local write also queues an operation UUID in the same Room transaction.
-+2. WorkManager runs when connected, with retry/backoff and a configurable periodic
-+   job. **Sync now** in Profile offers a manual retry.
-+3. `/me/sync` accepts up to 100 operations and returns acknowledged IDs plus up to
-+   500 revised records. The client follows `hasMore` and saves the cursor.
-+4. The client removes only the exact acknowledged UUIDs and commits downloaded
-+   records with the cursor. Edits made during a request keep their newer UUIDs.
-+5. Failed uploads retain the queue and local changes. Public story refresh also
-+   preserves cached content on failure or a partial catalog download.
-+
-+The first account binds the local library; another account cannot upload it.
-+Reconnecting the original account keeps pending edits. Use a separate Android
-+profile or clear app data after synchronizing to switch accounts.
-+
-+Server conflicts use arrival order **per record**, rather than device clocks.
-+Retries of an old UUID cannot overwrite a later edit. Android skips downloaded
-+records that still have pending local edits; those edits upload on the next pass.
-+Manual changes use the same durable path as automatic progression, and Known
-+words stay paused until changed. Conflicting new edits on separate devices use
-+the last server-accepted record; `statusChangedAt` does not override this policy.
-+
-+Simultaneous reviews keep separate UUID-keyed events, but their competing
-+schedules are replaced rather than merged. A future cursor is reset
-+to zero on retry; idempotent operation IDs make this safe. Older records infer
-+Known from `mastered=true`, Almost Mastered from repetitions≥3, otherwise Learning.
-+Existing offline queues remain valid. Deploy the updated server before the app;
-+an old server rejects the new fields. An old app's later full-record upload may
-+derive status from its older mastery fields instead of preserving a manual New
-+or Almost Mastered choice.
-diff --git a/rolang-server/docs/README.md b/rolang-server/docs/README.md
-new file mode 100644
-index 0000000000000000000000000000000000000000..aed8c4f2a7813669f804d7db3b44e5761ff43053
---- /dev/null
-+++ b/rolang-server/docs/README.md
-@@ -0,0 +1,87 @@
-+# Ro-Lang backend guide
-+
-+Ro-Lang pairs an offline Android learning app with an optional REST API. The
-+backend uses Node.js 22 or 24, Express 5, Zod validation, and PostgreSQL 16+.
-+Published content supports English (`en`), Indonesian (`id`), and Filipino/Tagalog
-+(`tl`). No external translation service is required.
-+
-+## How it works
-+
-+1. Android reads bundled or downloaded stories and dictionaries from Room.
-+2. When online features are enabled, it downloads published stories over HTTPS.
-+3. Learners can register or sign in. Local learning edits enter a durable queue.
-+4. Android uploads queued changes and downloads server revisions through
-+   `POST /api/v1/me/sync`. Reading and practice remain available offline.
-+
-+| Component | Responsibility |
-+| --- | --- |
-+| `src/app.js` | REST routes, authorization, responses, and safe errors |
-+| `src/validation.js` | Story coverage and learning record validation |
-+| `src/auth.js` | Password hashing, sessions, account roles, and rate limits |
-+| `src/learning.js` | Transactional records, revisions, and idempotent sync |
-+| `src/db.js` | Shared PostgreSQL pool and transaction helper |
-+| `src/local.js` / `api/index.js` | Local HTTP server / Vercel entry point |
-+| `migrations/`, `scripts/` | Schema upgrades, sample content, editor promotion |
-+| `data/sample-stories.json` | Nine complete, publishable story variants |
-+
-+Accounts own learning records and sessions. Stories hold translated content and
-+their dictionaries as JSONB. Learning references use stable keys, so removing a
-+story leaves a learner's saved words and reading history intact. See
-+[Database](DATABASE.md) for the full relationships.
-+
-+## Run locally
-+
-+From `rolang-server`, install dependencies and configure a dedicated PostgreSQL
-+database. Copy the placeholder `.env.example` to a private `.env` and fill it in.
-+Node does **not** load `.env` automatically.
-+
-+```sh
-+npm ci
-+node --env-file=.env scripts/migrate.js
-+node --env-file=.env scripts/seed.js
-+node --env-file=.env src/local.js
-+```
-+
-+The default address is `http://localhost:3000`:
-+
-+```sh
-+curl http://localhost:3000/api/v1/health
-+curl 'http://localhost:3000/api/v1/stories?limit=2'
-+```
-+
-+Migrations run atomically and are safe to rerun. Seeding is optional: it publishes
-+nine sample stories and skips IDs already present. It never updates existing
-+content. If configuration is already supplied by your shell, use `npm run migrate`,
-+`npm run seed`, and `npm run dev` instead.
-+
-+## Manage content and check changes
-+
-+Register an account, then promote the intended editor from a trusted shell with
-+database configuration available:
-+
-+```sh
-+node --env-file=.env scripts/admin.js editor@example.com
-+```
-+
-+The role is named `admin`; it grants access to content authoring. Normal
-+registration always creates learners. Use [Stories](STORIES.md) for the complete
-+create/edit/publish flow, and [API](API.md) for authentication and requests.
-+
-+Run checks against a **disposable test database**, with its settings supplied:
-+
-+```sh
-+npm test
-+npm run check
-+npm audit --omit=dev
-+```
-+
-+Tests use real PostgreSQL and cover migrations, content, authentication, access
-+control, sync, pagination, vocabulary statuses, and legacy records. Do not run
-+them against production. See [Deployment](DEPLOYMENT.md) to connect Android or
-+deploy to Vercel, and [Learning system](LEARNING_SYSTEM.md) for offline behavior.
-+
-+- [Stories](STORIES.md)
-+- [API](API.md)
-+- [Database](DATABASE.md)
-+- [Learning system](LEARNING_SYSTEM.md)
-+- [Deployment](DEPLOYMENT.md)
-diff --git a/rolang-server/docs/STORIES.md b/rolang-server/docs/STORIES.md
-new file mode 100644
-index 0000000000000000000000000000000000000000..0304ec6aff75a778d1ff1de9c8ef29077f4cdbc3
---- /dev/null
-+++ b/rolang-server/docs/STORIES.md
-@@ -0,0 +1,122 @@
-+# Create, edit, and publish stories
-+
-+Use the administrator API to manage content. It validates all translations and
-+word coverage before saving, including drafts. Direct SQL writes bypass those
-+checks; the API is the recommended authoring route.
-+
-+## Story format
-+
-+[examples/story.json](examples/story.json) is a complete, uploadable story: one
-+paragraph in three languages and all seven required dictionary entries. The
-+larger [sample library](../data/sample-stories.json) shows longer stories and
-+multiple difficulty variants. A request has this structure:
-+
-+```json
-+{
-+  "id": "reader_a1",
-+  "family": "reader",
-+  "category": "Everyday life",
-+  "difficulty": "A1",
-+  "title": {"en": "The reader", "id": "Pembaca", "tl": "Ang mambabasa"},
-+  "summary": {
-+    "en": "Maya enjoys reading.",
-+    "id": "Maya suka membaca.",
-+    "tl": "Mahilig magbasa si Maya."
-+  },
-+  "sentences": [{"en": "Maya reads.", "id": "Maya membaca.", "tl": "Nagbabasa si Maya."}],
-+  "vocabulary": []
++stop() {
++    local status=$1
++    trap '' TERM INT
++    if [[ -n "$child_pid" ]]; then
++        kill -TERM -- "-$child_pid" 2>/dev/null || true
++        # Allow the bot's 12-second shutdown and launcher's 15-second deadline.
++        for (( attempt=0; attempt<20; attempt++ )); do
++            if ! kill -0 -- "-$child_pid" 2>/dev/null; then break; fi
++            sleep 1
++        done
++        kill -KILL -- "-$child_pid" 2>/dev/null || true
++        wait "$child_pid" 2>/dev/null || true
++    fi
++    exit "$status"
 +}
-+```
 +
-+The empty vocabulary above only illustrates the outer shape; upload the complete
-+example file, which includes coverage. `sentences` is the existing API name for
-+paragraphs: each entry can contain several sentences and must be translated as a
-+whole. Android displays the entries in order as continuous, scrollable text.
++trap 'stop 143' TERM
++trap 'stop 130' INT
 +
-+| Field | Authoring rule |
-+| --- | --- |
-+| `id` | Stable ID, 1–80 ASCII letters, digits, `_`, or `-`; cannot change on update |
-+| `family` | Same ID format; groups level variants of the same story |
-+| `category` | Free-text genre, 1–100 characters, e.g. `Mystery` or `Nature & adventure` |
-+| `difficulty` | Exact `A1`, `A2`, `B1`, `B2`, `C1`, or `C2` |
-+| `title`, `summary` | Nonempty `en`, `id`, and `tl` strings; summary is the description |
-+| `sentences` | 1–300 ordered paragraph objects; every object has all three languages |
-+| `vocabulary` | 1–5000 unique dictionary entries covering every paragraph word |
++while true; do
++    started=$SECONDS
++    setsid --wait "${command_to_run[@]}" &
++    child_pid=$!
++    wait "$child_pid"
++    status=$?
++    # If a launcher crashes, stop any surviving worker before replacing it.
++    kill -TERM -- "-$child_pid" 2>/dev/null || true
++    for (( attempt=0; attempt<20; attempt++ )); do
++        if ! kill -0 -- "-$child_pid" 2>/dev/null; then break; fi
++        sleep 1
++    done
++    kill -KILL -- "-$child_pid" 2>/dev/null || true
++    child_pid=''
 +
-+Translated strings are trimmed, nonempty, and at most 10,000 characters each.
-+Request bodies are limited to 2 MB. Android maps A1/A2 to Beginner, B1/B2 to
-+Intermediate, and C1/C2 to Advanced. Use separate IDs with the same `family` to
-+offer several versions. `level`, `status`, and `updatedAt` are response fields;
-+do not include them in authoring bodies.
-+
-+## Dictionary and learning information
-+
-+Every distinct word in each language needs an entry, including names and grammar
-+markers. For example, `reads` in the English paragraph needs:
-+
-+```json
-+{
-+  "language": "en",
-+  "word": "reads",
-+  "translations": {"en": "reads", "id": "membaca", "tl": "nagbabasa"},
-+  "meanings": {
-+    "en": "Looks at written words and understands them.",
-+    "id": "Melihat dan memahami kata-kata tertulis.",
-+    "tl": "Tumitingin at umuunawa sa mga nakasulat na salita."
-+  },
-+  "pos": "verb",
-+  "notes": {
-+    "en": "Present tense: Maya reads.",
-+    "id": "Bentuk waktu kini: Maya membaca.",
-+    "tl": "Kasalukuyang kilos: nagbabasa si Maya."
-+  }
-+}
-+```
-+
-+`language` identifies the source word. All three reference languages are required
-+in `translations`, `meanings`, and `notes`. `pos` is a nonempty part-of-speech
-+label. `notes` explain grammar or context. Android uses the tapped paragraph and
-+its reference-language translation as the example sentence; there is no separate
-+`examples` field in the story contract. Put curated examples in paragraphs or
-+notes. Vocabulary statuses belong to learners, not to story content.
-+
-+Words must already be lowercase; replace curly apostrophes with straight `'`.
-+Tokenization keeps Unicode letters, accents, internal apostrophes, and hyphens.
-+Do not include surrounding punctuation or spaces in `word`. Entries are unique
-+by `language:word`; inflected forms such as `read` and `reads` are separate words.
-+Only paragraph text requires coverage; titles and summaries do not.
-+
-+## Publish and update
-+
-+The commands below run from `rolang-server`. `ROLANG_TOKEN` represents an editor
-+session already available in your private shell. Authentication is documented in
-+[API](API.md); do not save real tokens in this repository.
-+
-+```sh
-+# Create a draft in the database.
-+curl -X POST http://localhost:3000/api/v1/stories \
-+  -H "Authorization: Bearer $ROLANG_TOKEN" -H 'Content-Type: application/json' \
-+  --data-binary @docs/examples/story.json
-+
-+# Make it available to Android and the public catalog.
-+curl -X POST http://localhost:3000/api/v1/stories/reader_a1/publish \
-+  -H "Authorization: Bearer $ROLANG_TOKEN" -H 'Content-Type: application/json' \
-+  --data '{"published":true}'
-+
-+# Replace the entire authoring body after editing the JSON file.
-+curl -X PUT http://localhost:3000/api/v1/stories/reader_a1 \
-+  -H "Authorization: Bearer $ROLANG_TOKEN" -H 'Content-Type: application/json' \
-+  --data-binary @docs/examples/story.json
-+```
-+
-+Create returns 201; update and publish return 200 with the full story. A duplicate
-+ID returns 409. Updates retain the current publication status and change
-+`updatedAt`, prompting Android to refresh its cached content. To hide a story,
-+publish with `{"published":false}`; inspect drafts with `GET /api/v1/admin/stories`.
-+To remove it permanently, send `DELETE /api/v1/stories/reader_a1` (204).
-+
-+Unpublished stories return 404 through public detail endpoints. Offline devices
-+keep previously cached stories until a complete catalog refresh; successful
-+refreshes hide removed remote stories while preserving learning history.
-+Bundled stories remain available. Shortening a story clamps old Android reading
-+positions to the remaining paragraphs.
-diff --git a/rolang-server/docs/examples/story.json b/rolang-server/docs/examples/story.json
++    case "$status" in
++        0|78) exit "$status" ;;
++    esac
++    if (( SECONDS - started >= 60 )); then delay=1; fi
++    printf 'Bot launcher exited (%s); retrying in %ss\n' "$status" "$delay" >&2
++    sleep "$delay"
++    delay=$(( delay < 30 ? delay * 2 : 60 ))
++done
+diff --git a/codex-output/roccky-bot/test_run_bot.py b/codex-output/roccky-bot/test_run_bot.py
 new file mode 100644
-index 0000000000000000000000000000000000000000..4c59b7b9d110b858d06c0691eb1c913f7990ec02
+index 0000000000000000000000000000000000000000..3b602f40fde343fd328bbe32dc06c8ff176bd8cb
 --- /dev/null
-+++ b/rolang-server/docs/examples/story.json
-@@ -0,0 +1,165 @@
-+{
-+  "id": "reader_a1",
-+  "family": "reader",
-+  "category": "Everyday life",
-+  "difficulty": "A1",
-+  "title": {
-+    "en": "The reader",
-+    "id": "Pembaca",
-+    "tl": "Ang mambabasa"
-+  },
-+  "summary": {
-+    "en": "Maya enjoys reading.",
-+    "id": "Maya suka membaca.",
-+    "tl": "Mahilig magbasa si Maya."
-+  },
-+  "sentences": [
-+    {
-+      "en": "Maya reads.",
-+      "id": "Maya membaca.",
-+      "tl": "Nagbabasa si Maya."
-+    }
-+  ],
-+  "vocabulary": [
-+    {
-+      "language": "en",
-+      "word": "maya",
-+      "translations": {
-+        "en": "Maya",
-+        "id": "Maya",
-+        "tl": "Maya"
-+      },
-+      "meanings": {
-+        "en": "A person's name.",
-+        "id": "Nama seseorang.",
-+        "tl": "Pangalan ng isang tao."
-+      },
-+      "pos": "proper noun",
-+      "notes": {
-+        "en": "Maya is the reader.",
-+        "id": "Maya adalah pembaca.",
-+        "tl": "Si Maya ang mambabasa."
-+      }
-+    },
-+    {
-+      "language": "en",
-+      "word": "reads",
-+      "translations": {
-+        "en": "reads",
-+        "id": "membaca",
-+        "tl": "nagbabasa"
-+      },
-+      "meanings": {
-+        "en": "Looks at written words and understands them.",
-+        "id": "Melihat dan memahami kata-kata tertulis.",
-+        "tl": "Tumitingin at umuunawa sa mga nakasulat na salita."
-+      },
-+      "pos": "verb",
-+      "notes": {
-+        "en": "Present tense: Maya reads.",
-+        "id": "Bentuk waktu kini: Maya membaca.",
-+        "tl": "Kasalukuyang kilos: nagbabasa si Maya."
-+      }
-+    },
-+    {
-+      "language": "id",
-+      "word": "maya",
-+      "translations": {
-+        "en": "Maya",
-+        "id": "Maya",
-+        "tl": "Maya"
-+      },
-+      "meanings": {
-+        "en": "A person's name.",
-+        "id": "Nama seseorang.",
-+        "tl": "Pangalan ng isang tao."
-+      },
-+      "pos": "proper noun",
-+      "notes": {
-+        "en": "Maya is the reader.",
-+        "id": "Maya adalah pembaca.",
-+        "tl": "Si Maya ang mambabasa."
-+      }
-+    },
-+    {
-+      "language": "id",
-+      "word": "membaca",
-+      "translations": {
-+        "en": "reads",
-+        "id": "membaca",
-+        "tl": "nagbabasa"
-+      },
-+      "meanings": {
-+        "en": "Looks at written words and understands them.",
-+        "id": "Melihat dan memahami kata-kata tertulis.",
-+        "tl": "Tumitingin at umuunawa sa mga nakasulat na salita."
-+      },
-+      "pos": "verb",
-+      "notes": {
-+        "en": "The action of reading.",
-+        "id": "Kegiatan membaca.",
-+        "tl": "Ang kilos ng pagbasa."
-+      }
-+    },
-+    {
-+      "language": "tl",
-+      "word": "nagbabasa",
-+      "translations": {
-+        "en": "reads",
-+        "id": "membaca",
-+        "tl": "nagbabasa"
-+      },
-+      "meanings": {
-+        "en": "Is reading written words.",
-+        "id": "Sedang membaca kata-kata tertulis.",
-+        "tl": "Kasalukuyang bumabasa ng mga nakasulat na salita."
-+      },
-+      "pos": "verb",
-+      "notes": {
-+        "en": "An ongoing action.",
-+        "id": "Kegiatan yang sedang berlangsung.",
-+        "tl": "Isang kilos na kasalukuyang nagaganap."
-+      }
-+    },
-+    {
-+      "language": "tl",
-+      "word": "si",
-+      "translations": {
-+        "en": "personal marker",
-+        "id": "penanda nama orang",
-+        "tl": "si"
-+      },
-+      "meanings": {
-+        "en": "Marks a person's name as the subject.",
-+        "id": "Menandai nama orang sebagai subjek.",
-+        "tl": "Pananda ng pangalan ng taong paksa."
-+      },
-+      "pos": "marker",
-+      "notes": {
-+        "en": "English has no direct one-word equivalent.",
-+        "id": "Tidak ada padanan satu kata yang tepat dalam bahasa Inggris.",
-+        "tl": "Walang eksaktong katumbas na isang salita sa Ingles."
-+      }
-+    },
-+    {
-+      "language": "tl",
-+      "word": "maya",
-+      "translations": {
-+        "en": "Maya",
-+        "id": "Maya",
-+        "tl": "Maya"
-+      },
-+      "meanings": {
-+        "en": "A person's name.",
-+        "id": "Nama seseorang.",
-+        "tl": "Pangalan ng isang tao."
-+      },
-+      "pos": "proper noun",
-+      "notes": {
-+        "en": "Maya is the reader.",
-+        "id": "Maya adalah pembaca.",
-+        "tl": "Si Maya ang mambabasa."
-+      }
-+    }
-+  ]
-+}
-diff --git a/rolang-server/src/learning.js b/rolang-server/src/learning.js
-index e1e75b8c90928ad37d0b14fef2dd533913904b81..d52e1aea70703e5eca3acf243dcf68b6920e2afb 100644
---- a/rolang-server/src/learning.js
-+++ b/rolang-server/src/learning.js
-@@ -1,8 +1,11 @@
- import { createHash } from 'node:crypto';
- import { transaction } from './db.js';
- import { ApiError } from './errors.js';
-+import { legacyVocabularyStatus, vocabularySchema } from './validation.js';
- 
--export const record = row => ({ kind: row.kind, key: row.key, data: row.data,
-+export const record = row => ({ kind: row.kind, key: row.key,
-+  data: row.kind === 'vocabulary' && !row.deleted ? { ...row.data,
-+    status: row.data.status ?? legacyVocabularyStatus(row.data), statusChangedAt: row.data.statusChangedAt ?? 0 } : row.data,
-   deleted: row.deleted, revision: Number(row.revision) });
- export async function lockUser(client, userId) {
-   // Serialize writes per user: a revision cursor may never skip an uncommitted
-@@ -10,6 +13,7 @@ export async function lockUser(client, userId) {
-   await client.query('SELECT id FROM users WHERE id=$1 FOR UPDATE', [userId]);
- }
- export async function putRecord(client, userId, kind, key, data, deleted = false) {
-+  if (kind === 'vocabulary' && !deleted) data = vocabularySchema.parse(data);
-   const { rows } = await client.query(`INSERT INTO learning_records(user_id,kind,key,data,deleted)
-     VALUES($1,$2,$3,$4,$5) ON CONFLICT(user_id,kind,key) DO UPDATE SET data=CASE
-       WHEN EXCLUDED.kind='progress' AND NOT EXCLUDED.deleted AND NOT learning_records.deleted THEN
-diff --git a/rolang-server/src/validation.js b/rolang-server/src/validation.js
-index ab99130dcb10b9e36457b7902a14954bbeb86c32..f5daa205f0978a17b21827256374c6c7a6ff078c 100644
---- a/rolang-server/src/validation.js
-+++ b/rolang-server/src/validation.js
-@@ -38,13 +38,19 @@ const timestamp = z.number().int().min(0).max(8_640_000_000_000_000);
- const nonnegative = z.number().int().min(0).max(1_000_000);
- export const progressSchema = z.object({ storyId: identifier, language,
-   sentence: z.number().int().min(0).max(299), completed: z.boolean() }).strict();
-+export const vocabularyStatus = z.enum(['NEW', 'LEARNING', 'ALMOST_MASTERED', 'KNOWN']);
-+export const legacyVocabularyStatus = v => v.mastered ? 'KNOWN' : v.repetitions >= 3 ? 'ALMOST_MASTERED' : 'LEARNING';
- export const vocabularySchema = z.object({
-   language, reference: language, word, translation: text, meaning: text, partOfSpeech: text,
-   explanation: text, example: text, exampleTranslation: text, storyId: identifier,
-   storyTitle: text, category: z.string().min(1).max(100), createdAt: timestamp, dueAt: timestamp,
-   repetitions: nonnegative, intervalDays: z.number().int().min(0).max(365),
-   ease: z.number().min(1.3).max(100), lapses: nonnegative, mastered: z.boolean(), lastReviewedAt: timestamp,
--}).strict().refine(v => v.word === normalizeWord(v.word), { message: 'Use normalized vocabulary words.' });
-+  status: vocabularyStatus.optional(), statusChangedAt: timestamp.optional(),
-+}).strict().refine(v => v.word === normalizeWord(v.word), { message: 'Use normalized vocabulary words.' })
-+  .refine(v => v.status === undefined || (v.status === 'KNOWN') === v.mastered,
-+    { message: 'Known status and mastered must agree.' })
-+  .transform(v => ({ ...v, status: v.status ?? legacyVocabularyStatus(v), statusChangedAt: v.statusChangedAt ?? 0 }));
- export const reviewSchema = z.object({ vocabularyKey: z.string().min(1).max(512), language,
-   reference: language, reviewedAt: timestamp, correct: z.boolean(),
-   rating: z.enum(['AGAIN', 'HARD', 'GOOD', 'EASY']) }).strict();
-diff --git a/rolang-server/test/api.test.js b/rolang-server/test/api.test.js
-index ca42b0609fe668382b80a43aef318ea4364f159c..e8bfedd2501a55b3b97efa8c382d34ebf366efe5 100644
---- a/rolang-server/test/api.test.js
-+++ b/rolang-server/test/api.test.js
-@@ -76,7 +76,7 @@ test('authentication validates requests, isolates roles, revokes sessions, and r
- });
- 
- test('administrators create, edit, publish, unpublish, and delete fully translated stories', async () => {
--  const sample = JSON.parse(await readFile(new URL('../data/sample-stories.json', import.meta.url), 'utf8'))[0];
-+  const sample = JSON.parse(await readFile(new URL('../docs/examples/story.json', import.meta.url), 'utf8'));
-   const story = { ...sample, id: testStoryId };
-   await request(app).post('/api/v1/stories').set('Authorization', bearer(learner)).send(story).expect(403);
-   await request(app).post('/api/v1/stories').set('Authorization', bearer(admin)).send({ ...story, vocabulary: [] }).expect(400);
-@@ -181,3 +181,41 @@ test('invalid filters, malformed JSON, large bodies, and unavailable databases r
-   assert.ok(!JSON.stringify(result.body).includes('private'));
-   await request(app).get('/api/v1/unknown').expect(404);
- });
++++ b/codex-output/roccky-bot/test_run_bot.py
+@@ -0,0 +1,110 @@
++"""Synthetic subprocess checks; no bot configuration or auth state is imported."""
++import os
++from pathlib import Path
++import signal
++import subprocess
++import tempfile
++import time
++import unittest
 +
-+test('all vocabulary statuses synchronize with manual metadata, idempotency, and legacy compatibility', async () => {
-+  const key = 'en:id:market_beginner:market';
-+  const sample = { language: 'en', reference: 'id', word: 'market', translation: 'pasar', meaning: 'A place to buy food',
-+    partOfSpeech: 'noun', explanation: 'A morning market', example: 'Maya walks to the market.',
-+    exampleTranslation: 'Maya berjalan ke pasar.', storyId: 'market_beginner', storyTitle: 'Market', category: 'Everyday life',
-+    createdAt: 1000, dueAt: 2000, repetitions: 0, intervalDays: 0, ease: 2.5, lapses: 0,
-+    mastered: false, lastReviewedAt: 0 };
-+  const post = input => request(app).post('/api/v1/me/sync').set('Authorization', bearer(learner)).send(input);
-+  let previous;
-+  for (const [index, status] of ['NEW', 'LEARNING', 'ALMOST_MASTERED', 'KNOWN'].entries()) {
-+    const op = { id: randomUUID(), kind: 'vocabulary', key, deleted: false,
-+      data: { ...sample, status, mastered: status === 'KNOWN', statusChangedAt: 3000 + index } };
-+    const synced = await post({ cursor: 0, operations: [op] }).expect(200);
-+    const word = synced.body.records.find(r => r.key === key).data;
-+    assert.equal(word.status, status);
-+    assert.equal(word.statusChangedAt, 3000 + index);
-+    if (previous) {
-+      const stale = await post({ cursor: 0, operations: [previous] }).expect(200);
-+      assert.equal(stale.body.records.find(r => r.key === key).data.status, status);
-+    }
-+    previous = op;
-+  }
-+  const endpoint = `/api/v1/me/vocabulary/${encodeURIComponent(key)}`;
-+  await request(app).put(endpoint).set('Authorization', bearer(learner))
-+    .send({ ...sample, status: 'KNOWN', mastered: false }).expect(400);
-+  await post({ cursor: 0, operations: [{ ...previous, id: randomUUID(), data: { ...previous.data, status: 'INVALID' } }] }).expect(400);
-+  await request(app).put(endpoint).set('Authorization', bearer(learner))
-+    .send({ ...sample, repetitions: 3 }).expect(200);
-+  const legacy = await request(app).get('/api/v1/me/vocabulary').set('Authorization', bearer(learner)).expect(200);
-+  assert.equal(legacy.body.records.find(r => r.key === key).data.status, 'ALMOST_MASTERED');
-+  assert.equal(legacy.body.records.find(r => r.key === key).data.statusChangedAt, 0);
-+  // Pre-upgrade database rows acquire the same defaults without a destructive migration.
-+  await pool.query("UPDATE learning_records SET data=data-'status'-'statusChangedAt' WHERE user_id=$1 AND kind='vocabulary' AND key=$2",
-+    [learner.user.id, key]);
-+  const existing = await post({ cursor: 0, operations: [] }).expect(200);
-+  assert.equal(existing.body.records.find(r => r.key === key).data.status, 'ALMOST_MASTERED');
-+});
++
++WRAPPER = Path(__file__).with_name("run-bot.sh")
++
++
++class RestartWrapperTests(unittest.TestCase):
++    def setUp(self):
++        self.directory = tempfile.TemporaryDirectory(prefix="roccky-wrapper-")
++        self.addCleanup(self.directory.cleanup)
++        self.root = Path(self.directory.name)
++
++    def run_wrapper(self, source):
++        stub = self.root / "worker.py"
++        stub.write_text(source, encoding="utf-8")
++        return subprocess.run(
++            ["bash", str(WRAPPER), "python3", str(stub)],
++            cwd=self.root, capture_output=True, text=True, timeout=30,
++        )
++
++    def test_success_stops_without_restart(self):
++        result = self.run_wrapper("raise SystemExit(0)\n")
++        self.assertEqual(result.returncode, 0, result.stderr)
++        self.assertNotIn("retrying", result.stderr)
++
++    def test_terminal_authentication_exit_is_preserved(self):
++        result = self.run_wrapper("raise SystemExit(78)\n")
++        self.assertEqual(result.returncode, 78, result.stderr)
++        self.assertNotIn("retrying", result.stderr)
++
++    def test_launcher_crashes_retry_with_increasing_backoff(self):
++        result = self.run_wrapper(
++            "from pathlib import Path\n"
++            "p = Path('attempts')\n"
++            "count = int(p.read_text()) + 1 if p.exists() else 1\n"
++            "p.write_text(str(count))\n"
++            "raise SystemExit(1 if count < 3 else 0)\n"
++        )
++        self.assertEqual(result.returncode, 0, result.stderr)
++        self.assertEqual((self.root / "attempts").read_text(), "3")
++        self.assertIn("retrying in 1s", result.stderr)
++        self.assertIn("retrying in 2s", result.stderr)
++
++    def test_default_command_uses_node_start_script(self):
++        npm = self.root / "npm"
++        npm.write_text("#!/bin/sh\n[ \"$1\" = run ] && [ \"$2\" = start:node ]\n")
++        npm.chmod(0o700)
++        result = subprocess.run(
++            ["bash", str(WRAPPER)], cwd=self.root,
++            env={"PATH": str(self.root) + os.pathsep + os.defpath},
++            capture_output=True, text=True, timeout=30,
++        )
++        self.assertEqual(result.returncode, 0, result.stderr)
++
++    def test_term_reaches_worker_and_does_not_restart(self):
++        descendant = self.root / "descendant.py"
++        descendant.write_text(
++            "from pathlib import Path\n"
++            "import signal, time\n"
++            "def stop(*args):\n"
++            "    Path('descendant_stopped').write_text('yes')\n"
++            "    raise SystemExit(0)\n"
++            "signal.signal(signal.SIGTERM, stop)\n"
++            "Path('descendant_ready').write_text('yes')\n"
++            "while True: time.sleep(0.05)\n"
++        )
++        stub = self.root / "worker.py"
++        stub.write_text(
++            "from pathlib import Path\n"
++            "import signal, subprocess, sys, time\n"
++            "child = subprocess.Popen([sys.executable, 'descendant.py'])\n"
++            "def stop(*args):\n"
++            "    child.wait(timeout=5)\n"
++            "    Path('stopped').write_text('yes')\n"
++            "    raise SystemExit(0)\n"
++            "signal.signal(signal.SIGTERM, stop)\n"
++            "while not Path('descendant_ready').exists(): time.sleep(0.01)\n"
++            "Path('ready').write_text('yes')\n"
++            "while True: time.sleep(0.05)\n"
++        )
++        process = subprocess.Popen(
++            ["bash", str(WRAPPER), "python3", str(stub)], cwd=self.root,
++            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
++        )
++        try:
++            deadline = time.monotonic() + 5
++            while not (self.root / "ready").exists() and time.monotonic() < deadline:
++                time.sleep(0.02)
++            self.assertTrue((self.root / "ready").exists())
++            process.send_signal(signal.SIGTERM)
++            _, stderr = process.communicate(timeout=25)
++            self.assertEqual(process.returncode, 143, stderr)
++            self.assertEqual((self.root / "stopped").read_text(), "yes")
++            self.assertEqual((self.root / "descendant_stopped").read_text(), "yes")
++            self.assertNotIn("retrying", stderr)
++        finally:
++            if process.poll() is None:
++                process.send_signal(signal.SIGTERM)
++                process.communicate(timeout=25)
++
++
++if __name__ == "__main__":
++    unittest.main()

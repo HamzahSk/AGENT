@@ -12,12 +12,16 @@ import shutil
 import signal
 import subprocess
 import sys
+import time
 import tomllib
 from urllib.parse import quote
 
 AUTH_FILES = {"auth.json", ".credentials.json"}
 MAX_SECRET = 48 * 1024
 MAX_DELIVERABLES = 25 * 1024 * 1024
+MAX_CODEX_ATTEMPTS = 3
+CODEX_EXECUTION_SECONDS = 3000
+RETRY_DELAYS = (5, 15)
 ENV_NAME = re.compile(r"[A-Z][A-Z0-9_]*\Z")
 BLOCKED_ENV = {"PATH", "HOME", "BASH_ENV", "ENV", "SHELLOPTS", "BASHOPTS", "IFS", "CDPATH", "NODE_OPTIONS", "PYTHONPATH", "PYTHONHOME", "LD_PRELOAD", "LD_LIBRARY_PATH", "DYLD_INSERT_LIBRARIES", "SSL_CERT_FILE", "SSL_CERT_DIR", "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY", "OPENAI_API_KEY", "CODEX_API_KEY"}
 TOKEN_PATTERN = re.compile(rb"(?:sk-(?:proj-|svcacct-)?[A-Za-z0-9_-]{20,}|gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----)")
@@ -275,7 +279,8 @@ def execute():
     base_url = proxy["model_providers"][provider]["base_url"]
     if not re.fullmatch(r"http://127\.0\.0\.1:[0-9]+/v1", base_url):
         raise SafeError("Unexpected Responses proxy endpoint.")
-    args = ["codex", "exec", "--ephemeral", "--color", "never", "--sandbox", "workspace-write",
+    # Keep the rollout only in the private temporary home so interrupted runs can resume.
+    args = ["codex", "exec", "--color", "never", "--sandbox", "workspace-write",
             "-c", 'approval_policy="never"', "-c", "sandbox_workspace_write.network_access=true",
             "-c", f'projects.{json.dumps(str(repo))}.trust_level="trusted"',
             "-c", 'cli_auth_credentials_store="file"', "-c", 'mcp_oauth_credentials_store="file"',
@@ -287,32 +292,58 @@ def execute():
             "-C", str(repo), "-o", str(root / "private/final.md")]
     if model:
         args += ["--model", model]
-    args += ["-"]
     env = {k: v for k, v in os.environ.items() if not k.startswith(("ACTIONS_", "GITHUB_", "INPUT_"))
            and k not in {"OPENAI_API_KEY", "CODEX_API_KEY", "GH_TOKEN", "AUTH_ADMIN_TOKEN"}}
     env.update(integrations)
     env["CODEX_HOME"] = str(home)
     full_prompt = (repo / ".github/codex/prompts/task.md").read_text() + "\n\nOperator task:\n" + prompt
+    continuation_prompt = """The previous Codex execution ended before the task completed.
+Continue the same operator task from the current repository state. Inspect the
+existing working tree and prior progress first. Preserve completed work; do not
+repeat, revert, or redo it. Finish only the remaining work and run relevant
+validation."""
     code = 1
     publication_error = None
     try:
         print("Codex is running. Raw tool output stays private on the runner.", flush=True)
-        with (root / "private/transcript.log").open("wb") as log:
-            process = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=log, stderr=subprocess.STDOUT,
-                                       cwd=repo, env=env, start_new_session=True, preexec_fn=no_new_privileges)
-            try:
-                process.communicate(full_prompt.encode(), timeout=3000)
-            except subprocess.TimeoutExpired:
-                os.killpg(process.pid, signal.SIGKILL)
-                process.communicate()
-                raise
-            finally:
-                # Stop leftover MCP servers/commands before snapshotting credentials or files.
+        deadline = time.monotonic() + CODEX_EXECUTION_SECONDS
+        for attempt in range(1, MAX_CODEX_ATTEMPTS + 1):
+            final = root / "private/final.md"
+            final.unlink(missing_ok=True)
+            if attempt == 1:
+                command = args + ["-"]
+                attempt_prompt = full_prompt
+            else:
+                command = args + ["resume", "--last", "-"]
+                attempt_prompt = continuation_prompt
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise subprocess.TimeoutExpired(command, CODEX_EXECUTION_SECONDS)
+            with (root / f"private/transcript-{attempt}.log").open("wb") as log:
+                process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=log, stderr=subprocess.STDOUT,
+                                           cwd=repo, env=env, start_new_session=True, preexec_fn=no_new_privileges)
                 try:
-                    os.killpg(process.pid, signal.SIGTERM)
-                except ProcessLookupError:
-                    pass
-        code = process.returncode
+                    process.communicate(attempt_prompt.encode(), timeout=remaining)
+                except subprocess.TimeoutExpired:
+                    os.killpg(process.pid, signal.SIGKILL)
+                    process.communicate()
+                    raise
+                finally:
+                    # Stop leftover MCP servers/commands before retrying or snapshotting state.
+                    try:
+                        os.killpg(process.pid, signal.SIGTERM)
+                    except ProcessLookupError:
+                        pass
+            code = process.returncode
+            if code == 0 and final.is_file() and final.stat().st_size:
+                break
+            code = code or 1
+            if attempt < MAX_CODEX_ATTEMPTS:
+                delay = RETRY_DELAYS[attempt - 1]
+                if time.monotonic() + delay >= deadline:
+                    break
+                print(f"Codex attempt {attempt} did not complete; resuming after {delay} seconds.", flush=True)
+                time.sleep(delay)
     except subprocess.TimeoutExpired:
         publication_error = SafeError("Codex exceeded its 50-minute execution limit.")
     finally:
@@ -344,7 +375,7 @@ def execute():
     if publication_error:
         raise publication_error
     if code:
-        raise SafeError("Codex execution failed. No patch was published. Check account access, model availability, and required MCP configuration; raw logs are deliberately withheld.")
+        raise SafeError("Codex execution failed after three attempts. No patch was published. Check account access, model availability, and required MCP configuration; raw logs are deliberately withheld.")
     print("Codex completed; checked deliverables are ready for upload.")
 
 

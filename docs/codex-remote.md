@@ -41,6 +41,11 @@ commit this patch to `codex/run-RUN_ID-ATTEMPT` and open a PR. It never executes
 patched project. The workflow never merges into or pushes directly to the
 original branch.
 
+If Codex exits early or does not produce a final response, the wrapper resumes
+the same private session up to two times. Each retry keeps the current working
+tree and tells Codex to inspect prior progress and continue without redoing
+completed work. All attempts share the existing 50-minute execution limit.
+
 ## First run
 
 1. Copy this directory's contents, including `.github`, into your repository.

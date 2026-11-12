@@ -1,91 +1,91 @@
 name: Ro-Lang Android Build
 
 on:
-push:
-branches: [main]
-pull_request:
-branches: [main]
-workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
-contents: read
+  contents: read
 
 concurrency:
-group: rolang-android-${{ github.ref }}
-cancel-in-progress: true
+  group: rolang-android-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-build:
-name: Build Ro-Lang APK
-runs-on: ubuntu-latest
-timeout-minutes: 45
+  build:
+    name: Build Ro-Lang APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
 
-defaults:
-  run:
-    working-directory: rolang-app
+    defaults:
+      run:
+        working-directory: rolang-app
 
-steps:
-  - name: Checkout Repository
-    uses: actions/checkout@v4
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-  - name: Setup JDK 17
-    uses: actions/setup-java@v4
-    with:
-      distribution: temurin
-      java-version: '17'
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
 
-  - name: Setup Python
-    uses: actions/setup-python@v5
-    with:
-      python-version: '3.12'
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
-  - name: Setup Android SDK
-    uses: android-actions/setup-android@v3
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
-  - name: Install Android SDK Components
-    run: |
-      sdkmanager \
-        "platforms;android-35" \
-        "build-tools;35.0.0"
+      - name: Install Android SDK Components
+        run: |
+          sdkmanager \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
 
-  - name: Setup Gradle
-    uses: gradle/actions/setup-gradle@v4
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
 
-  - name: Validate Corpus
-    run: python3 tools/build_corpus.py
+      - name: Validate Corpus
+        run: python3 tools/build_corpus.py
 
-  - name: Grant Gradle Permission
-    run: chmod +x gradlew
+      - name: Grant Gradle Permission
+        run: chmod +x gradlew
 
-  - name: Run Unit Tests
-    run: ./gradlew :app:testDebugUnitTest
+      - name: Run Unit Tests
+        run: ./gradlew :app:testDebugUnitTest
 
-  - name: Run Android Lint
-    run: ./gradlew :app:lintDebug
+      - name: Run Android Lint
+        run: ./gradlew :app:lintDebug
 
-  - name: Assemble Debug APK
-    run: ./gradlew :app:assembleDebug
+      - name: Assemble Debug APK
+        run: ./gradlew :app:assembleDebug
 
-  - name: Assemble Android Test APK
-    run: ./gradlew :app:assembleDebugAndroidTest
+      - name: Assemble Android Test APK
+        run: ./gradlew :app:assembleDebugAndroidTest
 
-  - name: Upload APK Artifacts
-    uses: actions/upload-artifact@v4
-    with:
-      name: rolang-android-debug
-      path: |
-        rolang-app/app/build/outputs/apk/debug/*.apk
-        rolang-app/app/build/outputs/apk/androidTest/debug/*.apk
-      if-no-files-found: error
-      retention-days: 14
+      - name: Upload APK Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rolang-android-debug
+          path: |
+            rolang-app/app/build/outputs/apk/debug/*.apk
+            rolang-app/app/build/outputs/apk/androidTest/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
 
-  - name: Upload Test Reports
-    if: always()
-    uses: actions/upload-artifact@v4
-    with:
-      name: rolang-test-reports
-      path: |
-        rolang-app/app/build/reports/tests/
-        rolang-app/app/build/reports/lint-results-debug.html
-      if-no-files-found: ignore
-      retention-days: 7
+      - name: Upload Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rolang-test-reports
+          path: |
+            rolang-app/app/build/reports/tests/
+            rolang-app/app/build/reports/lint-results-debug.html
+          if-no-files-found: ignore
+          retention-days: 7

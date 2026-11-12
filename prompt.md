@@ -1,111 +1,417 @@
-Continue improving the existing Ro-Lang project. Focus on the following tasks:
+Project: RMovie — Android Movie Streaming Application
 
-1. Improve the Reading Room UI/UX
+You are an expert Android engineer, reverse engineer, and full-stack developer.
 
-Inspect the current Reading Room screen and improve its reading experience.
+Your task is to build a complete Android movie streaming application called RMovie, using Kotlin.
 
-Continuous Story Reading:
+The project must be implemented as a native Android application with a modern UI, reliable playback, and a modular architecture.
 
-- Display the entire story as continuous text that flows vertically, similar to reading a real book.
-- Do not separate every paragraph into individual cards or require users to press "Next passage" to continue reading.
-- Allow users to scroll naturally from the beginning to the end of the story.
-- Preserve paragraph spacing and proper typography for readability.
-- Keep the story title, category, difficulty level, and reading progress indicator.
-- Make the reading layout responsive and comfortable on different screen sizes.
+1. Initial Research & APK Analysis
 
-2. Interactive Vocabulary Highlighting
+First, locate and inspect the provided "lk21.apk" file.
 
-Implement a color-coded vocabulary system. Every word in a story should have an interactive learning status.
+Perform a thorough technical analysis of the APK, including:
 
-Use these statuses and colors:
+- Application structure and architecture.
+- UI layouts and navigation patterns.
+- Available libraries and dependencies.
+- Networking implementation.
+- Data models and API communication patterns.
+- Media player implementation.
+- Image loading and caching.
+- Video playback configuration.
 
-- Blue — New: Words the user has not learned or encountered before.
-- Green — Learning: Words the user is currently studying.
-- Yellow — Almost Mastered: Words the user understands but still needs more practice with.
-- No Highlight — Known: Words the user has already mastered.
+Use JADX, APKTool, or other appropriate tools if available.
 
-When users tap a word, display its translation, meaning, part of speech, example sentences, and learning status.
+Treat LK21 as a technical and UI reference. Only inspect and use components, interfaces, and endpoints that are legally accessible and authorized. Do not bypass DRM, authentication protections, or access restrictions.
 
-Allow users to manually change a word's status through the word detail interface.
+2. Website & API Research
 
-3. Automatic Vocabulary Progression
+Investigate the publicly accessible LK21 website.
 
-The application should also be able to update vocabulary statuses automatically based on the user's learning performance.
+Perform HTTP requests using JavaScript fetch, browser automation when necessary, and other appropriate tools.
 
-- Track vocabulary performance during quizzes and practice sessions.
-- Gradually promote words from New to Learning, Almost Mastered, and eventually Known.
-- Use spaced repetition to determine when words should be reviewed.
-- If users repeatedly answer correctly, the application can mark words as mastered.
-- If users struggle with a word, lower its mastery level and schedule another review.
-- Manual status changes made by users should be respected and properly synchronized.
+Research:
 
-Store vocabulary statuses and learning history locally, and synchronize them with the server when online.
+- Homepage structure.
+- Movie listing pages.
+- Search functionality.
+- Movie detail pages.
+- Genre and category navigation.
+- Pagination.
+- Publicly accessible metadata.
+- Authorized streaming provider integrations.
 
-Make sure the highlight colors remain consistent throughout the application.
+Identify the available data structures and document the findings.
 
-4. Ro-Lang Server Documentation
+Do not assume endpoints exist. Verify every endpoint before implementing it.
 
-Inside the "rolang-server" folder, create clear and easy-to-understand documentation explaining how the backend works and how to manage its content.
+For content that cannot legally be accessed, use TMDB metadata and authorized streaming providers instead.
 
-The documentation should cover:
+3. Android Application Architecture
 
-Project Overview
+Create a project named:
 
-- Explain the server architecture and its main components.
-- Explain how the Android application communicates with the server.
-- Explain the database structure and relationships.
+"rmovie"
 
-Adding New Stories
+Use:
 
-- Explain how to add new stories to the database.
-- Provide a complete example of a story data structure (JSON).
-- Explain how to provide story titles, descriptions, paragraphs, translations, categories, and difficulty levels.
-- Explain how to add vocabulary, word meanings, examples, and other learning information.
-- Explain how to publish and update stories.
+- Kotlin.
+- Jetpack Compose.
+- Material 3.
+- MVVM architecture.
+- Kotlin Coroutines and Flow.
+- Retrofit or Ktor Client.
+- Kotlin Serialization.
+- Room Database.
+- DataStore.
+- Navigation Compose.
+- Android Media3 ExoPlayer.
 
-API Documentation
+Minimum Android version: Android 8.0 (API 26).
 
-- List available API endpoints.
-- Explain their purpose, parameters, request bodies, and responses.
-- Include practical request examples.
+Organize the project into modular packages:
 
-User Data & Learning System
+- "core"
+- "data"
+- "domain"
+- "network"
+- "database"
+- "player"
+- "feature.home"
+- "feature.search"
+- "feature.detail"
+- "feature.download"
+- "feature.favorite"
+- "feature.settings"
 
-- Explain user accounts and authentication.
-- Explain vocabulary statuses and mastery progression.
-- Explain learning progress, reading history, quizzes, and spaced repetition.
-- Explain how synchronization between local storage and the server works.
+Keep networking, business logic, and UI completely separated.
 
-Configuration & Deployment
+4. Home Screen
 
-- Explain environment variables.
-- Explain database configuration.
-- Explain how to configure the Android application's "config.json".
-- Provide simple Vercel deployment instructions.
-
-5. Documentation Structure
-
-Organize the documentation inside "rolang-server/docs/" where appropriate.
+Create a modern movie discovery homepage.
 
 Include:
 
-- "README.md" — Main project overview and setup instructions.
-- "STORIES.md" — How to create, edit, and publish stories.
-- "API.md" — API endpoint documentation.
-- "DATABASE.md" — Database schema and relationships.
-- "LEARNING_SYSTEM.md" — Vocabulary statuses, mastery, and review logic.
-- "DEPLOYMENT.md" — Configuration and Vercel deployment guide.
+- Featured movie carousel.
+- Trending movies.
+- Popular movies.
+- Recently released movies.
+- Recommended movies.
+- Popular genres.
+- Continue Watching.
+- Personalized recommendations.
 
-Keep the documentation concise, practical, and beginner-friendly. Include JSON examples wherever necessary.
+Each movie card should display:
 
-6. Important Development Rules
+- Poster.
+- Title.
+- Release year.
+- Rating.
+- Movie type.
 
-- Inspect the existing implementation before making changes.
-- Preserve existing functionality and project architecture.
-- Do not break the current offline learning system.
-- Ensure vocabulary statuses work consistently between local storage and the server.
-- Avoid unnecessary modifications to unrelated files.
-- Make sure all new features are fully functional, not just visual changes.
-- Test the implementation and fix any issues.
+Implement horizontal scrolling sections and smooth navigation.
 
-Final Goal: Make Ro-Lang feel like a real interactive reading application where users can naturally read entire stories, explore individual words, track vocabulary mastery, and manage learning content through a well-documented backend.
+5. Search Screen
+
+Implement a fully functional search system.
+
+Features:
+
+- Search movies by title.
+- Debounced search requests.
+- Search suggestions.
+- Search history.
+- Genre filters.
+- Year filters.
+- Sorting options.
+- Pagination or infinite scrolling.
+
+Handle empty results, loading states, and network errors.
+
+6. Movie Details
+
+Create a complete movie detail page.
+
+Display:
+
+- Backdrop image.
+- Movie poster.
+- Title.
+- Original title.
+- Synopsis.
+- Release date.
+- Rating.
+- Genres.
+- Runtime.
+- Cast and crew.
+- Similar movies.
+- Recommended movies.
+
+Include interactive actions:
+
+- Watch Now.
+- Add to Favorites.
+- Download (only when the provider explicitly permits offline downloads).
+- Share.
+- Mark as Watched.
+
+7. Advanced Video Player
+
+This is one of the most important parts of the project.
+
+Implement a reliable video player using Android Media3 ExoPlayer.
+
+The player must support:
+
+Playback Controls
+
+- Play and pause.
+- Seek forward and backward.
+- Progress bar.
+- Current playback time.
+- Total duration.
+- Auto-hide controls.
+- Double-tap seeking.
+
+Video Quality
+
+- Automatic quality selection.
+- Manual quality selection.
+- Available resolution display.
+- Adaptive bitrate streaming.
+- Quality switching without unnecessary playback interruption.
+
+Multiple Streaming Sources
+
+Support switching between multiple authorized streaming sources.
+
+Requirements:
+
+- Display available sources.
+- Detect source availability.
+- Switch sources without crashing.
+- Preserve playback position when possible.
+- Handle unavailable sources.
+- Display appropriate error messages.
+
+Playback Speed
+
+Provide:
+
+- 0.5x
+- 0.75x
+- 1.0x
+- 1.25x
+- 1.5x
+- 1.75x
+- 2.0x
+
+Additional Features
+
+- Fullscreen mode.
+- Landscape orientation.
+- Subtitle selection.
+- External subtitle support where permitted.
+- Audio track selection.
+- Picture-in-Picture.
+- Playback resume.
+- Network buffering indicators.
+- Retry mechanism.
+- Hardware-accelerated decoding when supported.
+
+Stream Compatibility
+
+Implement proper stream handling for supported formats:
+
+- HLS (M3U8).
+- MPEG-DASH (MPD).
+- MP4.
+- Supported audio and subtitle tracks.
+
+Correctly configure Media3 extractors, renderers, track selectors, and adaptive playback.
+
+Do not manually modify encrypted or DRM-protected media to bypass content protection. Use official DRM integrations when authorized.
+
+Focus on smooth playback, low buffering, and stable decoding.
+
+8. Favorites & Watch History
+
+Use Room Database for local persistence.
+
+Implement:
+
+- Add/remove favorites.
+- Watch history.
+- Continue Watching.
+- Playback position tracking.
+- Recently watched movies.
+- Automatic synchronization of local playback progress.
+
+The application must retain this data after restarting.
+
+9. Download Manager
+
+Implement an offline download manager for content explicitly authorized for downloading.
+
+Features:
+
+- Download progress.
+- Pause/resume.
+- Cancel downloads.
+- Download queue.
+- Storage management.
+- Download history.
+- Offline playback.
+- Download notifications.
+
+Use WorkManager or an appropriate background download implementation.
+
+Respect provider restrictions and DRM policies.
+
+10. UI/UX Design
+
+Create a polished, modern streaming application.
+
+Design direction:
+
+- Dark theme by default.
+- Black and dark gray backgrounds.
+- Modern accent colors.
+- Rounded movie cards.
+- Smooth transitions.
+- Subtle animations.
+- Responsive layouts.
+- Clean typography.
+- Material 3 components.
+
+The UI should feel like a professional movie streaming platform.
+
+Avoid generic template-looking screens.
+
+Make sure all screens have proper:
+
+- Loading states.
+- Empty states.
+- Error states.
+- Offline states.
+
+11. Settings
+
+Implement:
+
+- Theme selection.
+- Default playback quality.
+- Default playback speed.
+- Auto-play next episode.
+- Subtitle preferences.
+- Clear cache.
+- Download settings.
+- About application.
+
+12. Performance & Reliability
+
+Pay special attention to:
+
+- Memory management.
+- Image caching.
+- Network caching.
+- Lazy loading.
+- Efficient database queries.
+- Lifecycle-aware playback.
+- Proper ExoPlayer release.
+- Configuration changes.
+- Network timeout handling.
+- Error recovery.
+
+Avoid unnecessary recompositions and memory leaks.
+
+13. Implementation Workflow
+
+Work in the following order:
+
+Phase 1 — Research
+
+- Inspect the project directory.
+- Locate and analyze "lk21.apk".
+- Research publicly accessible website structures.
+- Identify legally usable data sources.
+- Document findings.
+
+Phase 2 — Architecture
+
+- Create the Android project.
+- Configure Gradle and dependencies.
+- Establish the application architecture.
+- Implement database and networking layers.
+
+Phase 3 — Core Features
+
+- Implement Home.
+- Implement Search.
+- Implement Movie Details.
+- Implement Favorites.
+- Implement Watch History.
+
+Phase 4 — Video Player
+
+- Implement Media3 ExoPlayer.
+- Implement playback controls.
+- Implement quality selection.
+- Implement source switching.
+- Implement subtitles and playback speed.
+- Test playback with authorized sample streams.
+
+Phase 5 — Additional Features
+
+- Implement authorized downloads.
+- Implement offline playback.
+- Implement Settings.
+- Implement Continue Watching.
+
+Phase 6 — Testing & Optimization
+
+- Build the application.
+- Fix compilation errors.
+- Test navigation.
+- Test database persistence.
+- Test playback.
+- Test network failure scenarios.
+- Optimize performance.
+
+14. Important Development Rules
+
+1. Do not create placeholder functionality for core features.
+2. Every button must perform its intended action.
+3. Do not hardcode fake movie data as the final implementation.
+4. Verify API responses before creating data models.
+5. Handle API errors gracefully.
+6. Keep the code modular and maintainable.
+7. Do not modify unrelated files.
+8. Do not leave unfinished TODO implementations.
+9. Use real, authorized movie metadata and playback sources.
+10. Test every major feature before considering it complete.
+
+15. Final Deliverables
+
+The final project must contain:
+
+- Complete Kotlin Android source code.
+- Working Gradle configuration.
+- Properly organized project structure.
+- Functional movie discovery.
+- Functional search.
+- Functional movie details.
+- Functional favorites.
+- Functional watch history.
+- Advanced Media3 video player.
+- Authorized download functionality.
+- README.md with setup instructions.
+- API research documentation.
+- Successful Android APK build.
+
+Start by inspecting the existing workspace and locating "lk21.apk".
+
+Do not immediately generate all the code. Research the existing materials first, establish the architecture, and then implement each phase sequentially.
+
+Your goal is to deliver a functional Android application, not merely a UI prototype.

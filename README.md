@@ -41,3 +41,7 @@ in `.github/workflows/codex-remote.yml`.
 
 The standalone [SnapYT scraper](snapyt/README.md) includes its usage instructions,
 local checks, and current live-access limitations.
+
+The standalone [Ro-Lang Android app](ro-lang-android/README.md) provides offline
+story-based learning in English, Indonesian, and Filipino (Tagalog), with local
+vocabulary collection, spaced repetition, and learning progress.

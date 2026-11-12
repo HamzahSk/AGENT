@@ -1,78 +1,89 @@
-Build an Android application called Ro-Lang, a story-based language learning app that helps users learn new languages by reading interactive stories.
+Extend the existing Ro-Lang project by building a backend server that can be deployed to Vercel.
 
-Use Kotlin, Jetpack Compose, and Gradle Kotlin DSL. Create a modern, clean, intuitive, and user-friendly interface.
+The Android application is located in the "rolang-app" folder. Create a new folder named "rolang-server" in the project root for the backend.
 
-Core Features
+1. Backend Server ("rolang-server")
 
-1. Story-Based Learning
+Build a backend API that is compatible with Vercel deployment.
 
-- Learn languages through interesting short stories.
-- Provide multiple story categories and genres.
-- Each story must have difficulty levels: Beginner (A1–A2), Intermediate (B1–B2), and Advanced (C1–C2).
-- Allow users to choose stories based on their proficiency level.
+It should handle:
 
-2. Word Translation
+- Stories Database: Store stories, translations, vocabulary, categories, difficulty levels (A1–C2), and other related content.
+- User Management: Store user profiles, learning progress, saved vocabulary, reading history, and review data.
+- Story Management: Support creating, editing, deleting, and publishing stories through API endpoints.
+- Learning Data: Synchronize user progress and vocabulary between devices.
+- Multilingual Content: Support English, Indonesian, and Filipino (Tagalog).
 
-- Make every word in a story clickable.
-- When tapped, display its translation, meaning, part of speech, example usage, and a brief explanation.
-- Support both word-by-word and sentence translation.
+Choose a database solution compatible with Vercel deployment. Keep the architecture scalable and easy to maintain.
 
-3. Multilingual Support
+2. Server API
 
-Support three languages:
+Create RESTful API endpoints for:
 
-- English
-- Indonesian
-- Filipino (Tagalog)
+- Fetching stories and story details.
+- Filtering stories by language, category, and difficulty.
+- Fetching translations and vocabulary.
+- User registration and authentication.
+- Saving and retrieving user learning progress.
+- Managing saved vocabulary.
+- Adding, updating, deleting, and publishing stories.
 
-Allow users to choose their target language and native/reference language independently.
+Implement proper validation, error handling, and authentication for protected endpoints.
 
-4. Vocabulary Collection
+3. Android Configuration ("rolang-app")
 
-- Save unfamiliar words to a personal vocabulary list.
-- Store meanings, translations, and example sentences.
-- Organize vocabulary by story or category.
-- Allow users to mark words as mastered.
+Create a "config.json" file inside the "rolang-app" folder.
 
-5. Learning Review
+Use it to configure:
 
-- Implement a spaced repetition system (SRS) for vocabulary revision.
-- Provide interactive quizzes and exercises.
-- Review previously learned words.
-- Track learning progress and statistics.
+- Server base URL.
+- API version.
+- Connection timeout.
+- Request timeout.
+- Enable/disable online features.
+- Enable/disable automatic synchronization.
+- Other necessary server settings.
 
-6. Offline Mode
+The Android application must read this configuration dynamically instead of hardcoding server URLs throughout the codebase.
 
-- Allow users to access downloaded or built-in stories without an internet connection.
-- Store stories, translations, and vocabulary locally.
-- Ensure core learning features work completely offline.
+4. Android Integration
 
-Technology Stack
+Update the existing Android application to communicate with the new backend.
 
-- Kotlin
-- Jetpack Compose
-- Material 3
-- Room Database for local storage.
-- DataStore for user preferences.
-- Navigation Compose.
+- Fetch stories from the server.
+- Display remotely published stories.
+- Synchronize user data when online.
+- Cache stories and learning data locally.
+- Keep offline functionality working.
+- Automatically synchronize pending changes when the connection returns.
+- Handle server errors gracefully.
 
-UI/UX Requirements
+Local data should remain available even when the server is unreachable.
 
-- Create a modern and visually appealing interface.
-- Use bottom navigation.
-- Include Home, Stories, Vocabulary, Review, and Profile screens.
-- Provide a comfortable reading experience with proper typography and spacing.
-- Add subtle animations and learning progress indicators.
-- Maintain consistent design across all screens.
+5. Deployment
 
-Development Instructions
+Prepare "rolang-server" for Vercel deployment.
 
-- Inspect the existing project structure before making changes.
-- Use a clean, modular, and maintainable architecture.
-- Do not create UI mockups only. Implement fully functional features.
-- Include built-in sample stories with translations and vocabulary.
-- Ensure the local database and offline functionality work correctly.
-- Avoid paid APIs for core features.
-- Test the application and fix build errors before completing the project.
+Include:
 
-Important: Focus on building a fully functional language-learning application, not just a visual prototype.
+- "vercel.json" if needed.
+- Environment variable configuration.
+- Database connection setup.
+- ".env.example".
+- Deployment documentation in "README.md".
+
+Never hardcode API keys, database credentials, or secrets.
+
+6. Development Instructions
+
+- Inspect the existing project before making changes.
+- Preserve the current Android UI and existing functionality.
+- Avoid unnecessary modifications to unrelated files.
+- Ensure both projects work independently.
+- Use a clean and modular architecture.
+- Provide database migrations or schema definitions.
+- Include sample story data for testing.
+- Test API endpoints and Android integration.
+- Ensure the backend can be deployed to Vercel successfully.
+
+Important: The goal is to make Ro-Lang a hybrid offline/online application. Stories and user data should be managed through the backend while the Android application maintains local storage for offline learning.

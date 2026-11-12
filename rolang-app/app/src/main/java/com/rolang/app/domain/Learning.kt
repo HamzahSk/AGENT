@@ -32,6 +32,18 @@ object Words {
 }
 
 enum class Rating { AGAIN, HARD, GOOD, EASY }
+
+enum class VocabularyStatus(val label: String) {
+    NEW("New"), LEARNING("Learning"), ALMOST_MASTERED("Almost Mastered"), KNOWN("Known");
+
+    companion object {
+        fun fromLegacy(mastered: Boolean, repetitions: Int) = when {
+            mastered -> KNOWN
+            repetitions >= 3 -> ALMOST_MASTERED
+            else -> LEARNING
+        }
+    }
+}
 data class Schedule(
     val repetitions: Int = 0,
     val intervalDays: Int = 0,
@@ -44,6 +56,12 @@ data class Schedule(
 /** A deterministic SM-2-inspired schedule. Again returns in ten minutes. */
 object SpacedRepetition {
     const val DAY = 86_400_000L
+    fun statusAfterReview(old: VocabularyStatus, next: Schedule, rating: Rating): VocabularyStatus = when {
+        next.mastered -> VocabularyStatus.KNOWN
+        rating == Rating.AGAIN || rating == Rating.HARD -> VocabularyStatus.LEARNING
+        next.repetitions >= 3 || old == VocabularyStatus.ALMOST_MASTERED -> VocabularyStatus.ALMOST_MASTERED
+        else -> VocabularyStatus.LEARNING
+    }
     fun next(old: Schedule, rating: Rating, now: Long): Schedule {
         if (rating == Rating.AGAIN) return old.copy(
             repetitions = 0, intervalDays = 0, ease = max(1.3, old.ease - 0.2),

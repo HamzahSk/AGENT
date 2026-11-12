@@ -1,5 +1,6 @@
 package com.rolang.app.data
 
+import com.rolang.app.domain.VocabularyStatus
 import org.json.JSONObject
 
 /** Stable natural keys let another device assign its own Room row IDs. */
@@ -15,7 +16,8 @@ object SyncCodec {
         .put("storyId", word.storyId).put("storyTitle", word.storyTitle).put("category", word.category)
         .put("createdAt", word.createdAt).put("dueAt", word.dueAt).put("repetitions", word.repetitions)
         .put("intervalDays", word.intervalDays).put("ease", word.ease).put("lapses", word.lapses)
-        .put("mastered", word.mastered).put("lastReviewedAt", word.lastReviewedAt).toString())
+        .put("mastered", word.mastered).put("lastReviewedAt", word.lastReviewedAt)
+        .put("status", word.learningStatus().name).put("statusChangedAt", word.statusChangedAt).toString())
     fun review(review: ReviewEntity, vocabularyKey: String) = PendingChange("review", review.syncKey, data = JSONObject()
         .put("vocabularyKey", vocabularyKey).put("language", review.language).put("reference", review.reference)
         .put("reviewedAt", review.reviewedAt).put("correct", review.correct).put("rating", review.rating).toString())
@@ -29,5 +31,7 @@ object SyncCodec {
         storyId = json.getString("storyId"), storyTitle = json.getString("storyTitle"), category = json.getString("category"),
         createdAt = json.getLong("createdAt"), dueAt = json.getLong("dueAt"), repetitions = json.getInt("repetitions"),
         intervalDays = json.getInt("intervalDays"), ease = json.getDouble("ease"), lapses = json.getInt("lapses"),
-        mastered = json.getBoolean("mastered"), lastReviewedAt = json.getLong("lastReviewedAt"))
+        mastered = json.getBoolean("mastered"), lastReviewedAt = json.getLong("lastReviewedAt"),
+        status = json.optString("status", VocabularyStatus.fromLegacy(json.getBoolean("mastered"), json.getInt("repetitions")).name),
+        statusChangedAt = json.optLong("statusChangedAt", 0))
 }

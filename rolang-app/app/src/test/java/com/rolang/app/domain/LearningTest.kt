@@ -44,4 +44,16 @@ class LearningTest {
         assertTrue(good.intervalDays > hard.intervalDays)
         assertEquals(365, SpacedRepetition.next(Schedule(20, 365, 3.0), Rating.EASY, 0).intervalDays)
     }
+    @Test fun `statuses follow performance and preserve manual almost mastery until a struggle`() {
+        assertEquals(VocabularyStatus.LEARNING,
+            SpacedRepetition.statusAfterReview(VocabularyStatus.NEW, Schedule(1, 1), Rating.GOOD))
+        assertEquals(VocabularyStatus.ALMOST_MASTERED,
+            SpacedRepetition.statusAfterReview(VocabularyStatus.LEARNING, Schedule(3, 15), Rating.GOOD))
+        assertEquals(VocabularyStatus.ALMOST_MASTERED,
+            SpacedRepetition.statusAfterReview(VocabularyStatus.ALMOST_MASTERED, Schedule(1, 1), Rating.GOOD))
+        for (rating in listOf(Rating.HARD, Rating.AGAIN)) assertEquals(VocabularyStatus.LEARNING,
+            SpacedRepetition.statusAfterReview(VocabularyStatus.ALMOST_MASTERED, Schedule(1, 1), rating))
+        assertEquals(VocabularyStatus.KNOWN,
+            SpacedRepetition.statusAfterReview(VocabularyStatus.ALMOST_MASTERED, Schedule(5, 90, mastered = true), Rating.GOOD))
+    }
 }

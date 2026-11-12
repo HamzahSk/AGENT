@@ -48,13 +48,14 @@ fun ReviewScreen(state: LearningState, now: Long, quiz: Quiz?, busy: Boolean, st
                     }
                 }
             }
-            item { InfoCard("A rhythm that adapts to you", "New words are due immediately. With Good, correct answers return after 1 day, then 6 days, then longer intervals. A missed word returns in 10 minutes. You can choose Hard, Good, or Easy after a correct answer.") }
+            item { InfoCard("A rhythm that adapts to you", "Saved words are due immediately. Correct answers move words through Learning and Almost Mastered toward Known. With Good, reviews return after 1 day, then 6 days, then longer intervals. A missed word returns to Learning in 10 minutes. Known words pause reviews until you return them to learning.") }
         } else {
             item {
                 Card(modifier = Modifier.testTag("quiz-question"), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
                     Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text("TRANSLATE INTO ${Language.from(quiz.word.reference).label.uppercase()}", style = MaterialTheme.typography.labelLarge)
                         Text(quiz.word.word, style = MaterialTheme.typography.headlineLarge)
+                        VocabularyStatusLabel(quiz.word.learningStatus())
                         Text("${quiz.word.partOfSpeech} · ${quiz.word.storyTitle}")
                     }
                 }

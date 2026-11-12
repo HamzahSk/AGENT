@@ -1,0 +1,514 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 3,
+    "identityHash": "119c35aa8ec760b1c11efea770cff787",
+    "entities": [
+      {
+        "tableName": "stories",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `family` TEXT NOT NULL, `category` TEXT NOT NULL, `level` TEXT NOT NULL, `content` TEXT NOT NULL, `remote` INTEGER NOT NULL DEFAULT 0, `available` INTEGER NOT NULL DEFAULT 1, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "family",
+            "columnName": "family",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "category",
+            "columnName": "category",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "level",
+            "columnName": "level",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "content",
+            "columnName": "content",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "remote",
+            "columnName": "remote",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "available",
+            "columnName": "available",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "1"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "lexicon",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`language` TEXT NOT NULL, `word` TEXT NOT NULL, `content` TEXT NOT NULL, PRIMARY KEY(`language`, `word`))",
+        "fields": [
+          {
+            "fieldPath": "language",
+            "columnName": "language",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "word",
+            "columnName": "word",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "content",
+            "columnName": "content",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "language",
+            "word"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "story_lexicon",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`storyId` TEXT NOT NULL, `language` TEXT NOT NULL, `word` TEXT NOT NULL, `content` TEXT NOT NULL, PRIMARY KEY(`storyId`, `language`, `word`))",
+        "fields": [
+          {
+            "fieldPath": "storyId",
+            "columnName": "storyId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "language",
+            "columnName": "language",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "word",
+            "columnName": "word",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "content",
+            "columnName": "content",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "storyId",
+            "language",
+            "word"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "vocabulary",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `language` TEXT NOT NULL, `reference` TEXT NOT NULL, `word` TEXT NOT NULL, `translation` TEXT NOT NULL, `meaning` TEXT NOT NULL, `partOfSpeech` TEXT NOT NULL, `explanation` TEXT NOT NULL, `example` TEXT NOT NULL, `exampleTranslation` TEXT NOT NULL, `storyId` TEXT NOT NULL, `storyTitle` TEXT NOT NULL, `category` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `dueAt` INTEGER NOT NULL, `repetitions` INTEGER NOT NULL, `intervalDays` INTEGER NOT NULL, `ease` REAL NOT NULL, `lapses` INTEGER NOT NULL, `mastered` INTEGER NOT NULL, `lastReviewedAt` INTEGER NOT NULL, `status` TEXT NOT NULL DEFAULT 'LEARNING', `statusChangedAt` INTEGER NOT NULL DEFAULT 0)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "language",
+            "columnName": "language",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reference",
+            "columnName": "reference",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "word",
+            "columnName": "word",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "translation",
+            "columnName": "translation",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "meaning",
+            "columnName": "meaning",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "partOfSpeech",
+            "columnName": "partOfSpeech",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "explanation",
+            "columnName": "explanation",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "example",
+            "columnName": "example",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "exampleTranslation",
+            "columnName": "exampleTranslation",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "storyId",
+            "columnName": "storyId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "storyTitle",
+            "columnName": "storyTitle",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "category",
+            "columnName": "category",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dueAt",
+            "columnName": "dueAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "repetitions",
+            "columnName": "repetitions",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "intervalDays",
+            "columnName": "intervalDays",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ease",
+            "columnName": "ease",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lapses",
+            "columnName": "lapses",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mastered",
+            "columnName": "mastered",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastReviewedAt",
+            "columnName": "lastReviewedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'LEARNING'"
+          },
+          {
+            "fieldPath": "statusChangedAt",
+            "columnName": "statusChangedAt",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_vocabulary_language_reference_word_storyId",
+            "unique": true,
+            "columnNames": [
+              "language",
+              "reference",
+              "word",
+              "storyId"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_vocabulary_language_reference_word_storyId` ON `${TABLE_NAME}` (`language`, `reference`, `word`, `storyId`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "reading",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`storyId` TEXT NOT NULL, `language` TEXT NOT NULL, `sentence` INTEGER NOT NULL, `completed` INTEGER NOT NULL, PRIMARY KEY(`storyId`, `language`))",
+        "fields": [
+          {
+            "fieldPath": "storyId",
+            "columnName": "storyId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "language",
+            "columnName": "language",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sentence",
+            "columnName": "sentence",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "completed",
+            "columnName": "completed",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "storyId",
+            "language"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "reviews",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `vocabularyId` INTEGER NOT NULL, `language` TEXT NOT NULL, `reference` TEXT NOT NULL, `reviewedAt` INTEGER NOT NULL, `correct` INTEGER NOT NULL, `rating` TEXT NOT NULL, `syncKey` TEXT NOT NULL DEFAULT '', `vocabularyKey` TEXT NOT NULL DEFAULT '')",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "vocabularyId",
+            "columnName": "vocabularyId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "language",
+            "columnName": "language",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reference",
+            "columnName": "reference",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reviewedAt",
+            "columnName": "reviewedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "correct",
+            "columnName": "correct",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rating",
+            "columnName": "rating",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "syncKey",
+            "columnName": "syncKey",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "''"
+          },
+          {
+            "fieldPath": "vocabularyKey",
+            "columnName": "vocabularyKey",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "''"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_reviews_syncKey",
+            "unique": true,
+            "columnNames": [
+              "syncKey"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_reviews_syncKey` ON `${TABLE_NAME}` (`syncKey`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "pending_changes",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`kind` TEXT NOT NULL, `key` TEXT NOT NULL, `operationId` TEXT NOT NULL, `data` TEXT, `deleted` INTEGER NOT NULL, PRIMARY KEY(`kind`, `key`))",
+        "fields": [
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "key",
+            "columnName": "key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "operationId",
+            "columnName": "operationId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "data",
+            "columnName": "data",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "deleted",
+            "columnName": "deleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "kind",
+            "key"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "sync_state",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `owner` TEXT, `cursor` INTEGER NOT NULL, `bootstrapped` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "owner",
+            "columnName": "owner",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "cursor",
+            "columnName": "cursor",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "bootstrapped",
+            "columnName": "bootstrapped",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '119c35aa8ec760b1c11efea770cff787')"
+    ]
+  }
+}

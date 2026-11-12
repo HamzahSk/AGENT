@@ -76,7 +76,7 @@ test('authentication validates requests, isolates roles, revokes sessions, and r
 });
 
 test('administrators create, edit, publish, unpublish, and delete fully translated stories', async () => {
-  const sample = JSON.parse(await readFile(new URL('../data/sample-stories.json', import.meta.url), 'utf8'))[0];
+  const sample = JSON.parse(await readFile(new URL('../docs/examples/story.json', import.meta.url), 'utf8'));
   const story = { ...sample, id: testStoryId };
   await request(app).post('/api/v1/stories').set('Authorization', bearer(learner)).send(story).expect(403);
   await request(app).post('/api/v1/stories').set('Authorization', bearer(admin)).send({ ...story, vocabulary: [] }).expect(400);
@@ -180,4 +180,42 @@ test('invalid filters, malformed JSON, large bodies, and unavailable databases r
   const result = await request(unavailable).get('/api/v1/health').expect(503);
   assert.ok(!JSON.stringify(result.body).includes('private'));
   await request(app).get('/api/v1/unknown').expect(404);
+});
+
+test('all vocabulary statuses synchronize with manual metadata, idempotency, and legacy compatibility', async () => {
+  const key = 'en:id:market_beginner:market';
+  const sample = { language: 'en', reference: 'id', word: 'market', translation: 'pasar', meaning: 'A place to buy food',
+    partOfSpeech: 'noun', explanation: 'A morning market', example: 'Maya walks to the market.',
+    exampleTranslation: 'Maya berjalan ke pasar.', storyId: 'market_beginner', storyTitle: 'Market', category: 'Everyday life',
+    createdAt: 1000, dueAt: 2000, repetitions: 0, intervalDays: 0, ease: 2.5, lapses: 0,
+    mastered: false, lastReviewedAt: 0 };
+  const post = input => request(app).post('/api/v1/me/sync').set('Authorization', bearer(learner)).send(input);
+  let previous;
+  for (const [index, status] of ['NEW', 'LEARNING', 'ALMOST_MASTERED', 'KNOWN'].entries()) {
+    const op = { id: randomUUID(), kind: 'vocabulary', key, deleted: false,
+      data: { ...sample, status, mastered: status === 'KNOWN', statusChangedAt: 3000 + index } };
+    const synced = await post({ cursor: 0, operations: [op] }).expect(200);
+    const word = synced.body.records.find(r => r.key === key).data;
+    assert.equal(word.status, status);
+    assert.equal(word.statusChangedAt, 3000 + index);
+    if (previous) {
+      const stale = await post({ cursor: 0, operations: [previous] }).expect(200);
+      assert.equal(stale.body.records.find(r => r.key === key).data.status, status);
+    }
+    previous = op;
+  }
+  const endpoint = `/api/v1/me/vocabulary/${encodeURIComponent(key)}`;
+  await request(app).put(endpoint).set('Authorization', bearer(learner))
+    .send({ ...sample, status: 'KNOWN', mastered: false }).expect(400);
+  await post({ cursor: 0, operations: [{ ...previous, id: randomUUID(), data: { ...previous.data, status: 'INVALID' } }] }).expect(400);
+  await request(app).put(endpoint).set('Authorization', bearer(learner))
+    .send({ ...sample, repetitions: 3 }).expect(200);
+  const legacy = await request(app).get('/api/v1/me/vocabulary').set('Authorization', bearer(learner)).expect(200);
+  assert.equal(legacy.body.records.find(r => r.key === key).data.status, 'ALMOST_MASTERED');
+  assert.equal(legacy.body.records.find(r => r.key === key).data.statusChangedAt, 0);
+  // Pre-upgrade database rows acquire the same defaults without a destructive migration.
+  await pool.query("UPDATE learning_records SET data=data-'status'-'statusChangedAt' WHERE user_id=$1 AND kind='vocabulary' AND key=$2",
+    [learner.user.id, key]);
+  const existing = await post({ cursor: 0, operations: [] }).expect(200);
+  assert.equal(existing.body.records.find(r => r.key === key).data.status, 'ALMOST_MASTERED');
 });

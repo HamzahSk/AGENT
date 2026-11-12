@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.rolang.app.LearningState
 import com.rolang.app.data.VocabularyEntity
+import com.rolang.app.domain.VocabularyStatus
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -21,14 +22,15 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun VocabularyScreen(state: LearningState, now: Long, mastery: (VocabularyEntity) -> Unit,
-                     delete: (VocabularyEntity) -> Unit, stories: () -> Unit) {
+                     delete: (VocabularyEntity) -> Unit, status: (VocabularyEntity, VocabularyStatus) -> Unit,
+                     stories: () -> Unit) {
     var query by rememberSaveable { mutableStateOf("") }
     var filter by rememberSaveable { mutableStateOf("All words") }
     var group by rememberSaveable { mutableStateOf("Story") }
     var selectedId by rememberSaveable { mutableStateOf<Long?>(null) }
     var remove by remember { mutableStateOf<VocabularyEntity?>(null) }
     val words = state.courseWords.filter {
-        (filter != "Mastered" || it.mastered) && (filter != "Learning" || !it.mastered) &&
+        (filter == "All words" || it.learningStatus().label == filter) &&
             (it.word.contains(query, true) || it.translation.contains(query, true) || it.storyTitle.contains(query, true))
     }
     LazyColumn(modifier = Modifier.testTag("vocabulary-list"), contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
@@ -40,7 +42,7 @@ fun VocabularyScreen(state: LearningState, now: Long, mastery: (VocabularyEntity
         item {
             Column {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("All words", "Learning", "Mastered").forEach { item ->
+                    (listOf("All words") + VocabularyStatus.entries.map { it.label }).forEach { item ->
                         FilterChip(filter == item, { filter = item }, label = { Text(item) })
                     }
                 }
@@ -61,6 +63,7 @@ fun VocabularyScreen(state: LearningState, now: Long, mastery: (VocabularyEntity
                         horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(word.word, style = MaterialTheme.typography.titleLarge)
+                            VocabularyStatusLabel(word.learningStatus())
                             Text(word.translation)
                             Text(if (word.mastered) "Mastered" else if (word.dueAt <= now) "Ready for review" else "Next review: ${dueDate(word.dueAt)}",
                                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -87,6 +90,7 @@ fun VocabularyScreen(state: LearningState, now: Long, mastery: (VocabularyEntity
             item { DetailSection("In context", selected.explanation) }
             item { DetailSection("Example", selected.example + "\n\n" + selected.exampleTranslation) }
             item { DetailSection("From ${selected.storyTitle}", "${selected.category} · ${selected.repetitions} successful repetitions · ${selected.lapses} lapses") }
+            item { VocabularyStatusSelector(selected.learningStatus()) { status(selected, it) } }
             item {
                 Button(onClick = { mastery(selected) }, modifier = Modifier.fillMaxWidth()) {
                     Text(if (selected.mastered) "Return to learning" else "Mark as mastered")

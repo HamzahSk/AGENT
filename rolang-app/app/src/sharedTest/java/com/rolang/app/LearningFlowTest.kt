@@ -25,16 +25,23 @@ class LearningFlowTest {
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("word-details").fetchSemanticsNodes().isNotEmpty() }
         scrollClick("word-details", "Save word")
         compose.waitUntil(10_000) { compose.onAllNodesWithText("Saved to vocabulary").fetchSemanticsNodes().isNotEmpty() }
+        scrollClick("word-details", "Almost Mastered")
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("Learning status: Almost Mastered").fetchSemanticsNodes().isNotEmpty() }
+        scrollClick("word-details", "Known")
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("Learning status: Known").fetchSemanticsNodes().isNotEmpty() }
+        scrollClick("word-details", "Learning")
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("Learning status: Learning").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("word-details").performScrollToIndex(0)
         compose.onNodeWithContentDescription("Close word details").performClick()
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("word-details").fetchSemanticsNodes().isEmpty() }
         compose.mainClock.advanceTimeBy(1_000)
-        scrollClick("reader-content", "Translate passage")
+        compose.onNodeWithText("Next passage").assertDoesNotExist()
+        scrollClick("reader-content", "Translate story")
         compose.mainClock.advanceTimeBy(1_000)
         compose.onNodeWithText("Hide translation").assertExists()
         compose.onNodeWithText("Maya berjalan ke pasar pada pagi hari.").performScrollTo().assertIsDisplayed()
-        scrollClick("reader-content", "Next passage")
-        scrollClick("reader-content", "Next passage")
+        compose.onNodeWithTag("reader-content").performScrollToNode(hasTestTag("story-paragraph-2"))
+        compose.onNodeWithTag("story-paragraph-2").assertIsDisplayed()
         scrollClick("reader-content", "Finish story")
         compose.onNodeWithText("Vocabulary", useUnmergedTree = true).performClick()
         compose.onNodeWithTag("vocabulary-list").performScrollToNode(hasText("maya"))
@@ -56,6 +63,7 @@ class LearningFlowTest {
     private fun scrollClick(container: String, text: String) {
         compose.onNodeWithTag(container).performScrollToNode(hasText(text))
         // Exercise accessibility clicks after scrolling; word links above use real touch input.
-        compose.onNodeWithText(text).performSemanticsAction(SemanticsActions.OnClick) { it() }
+        compose.onNode(hasText(text) and hasAnyAncestor(hasTestTag(container)))
+            .performSemanticsAction(SemanticsActions.OnClick) { it() }
     }
 }

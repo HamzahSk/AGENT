@@ -39,10 +39,13 @@ class LearningRepository(private val database: LearningDatabase) {
     suspend fun review(snapshot: VocabularyEntity, rating: Rating, correct: Boolean, now: Long): Boolean =
         database.withTransaction {
             val current = dao.vocabularyById(snapshot.id) ?: return@withTransaction false
-            if (current.lastReviewedAt != snapshot.lastReviewedAt || current.dueAt != snapshot.dueAt ||
+            if (current != snapshot ||
                 current.mastered || current.dueAt > now) return@withTransaction false
             val effective = if (correct) rating else Rating.AGAIN
-            val updated = current.scheduled(SpacedRepetition.next(current.schedule(), effective, now), now)
+            val next = SpacedRepetition.next(current.schedule(), effective, now)
+            val updated = current.scheduled(next, now).copy(
+                status = SpacedRepetition.statusAfterReview(current.learningStatus(), next, effective).name,
+                statusChangedAt = maxOf(now, current.statusChangedAt + 1))
             dao.updateWord(updated)
             dao.enqueue(SyncCodec.vocabulary(updated))
             val review = ReviewEntity(vocabularyId = current.id, language = current.language,
@@ -52,13 +55,23 @@ class LearningRepository(private val database: LearningDatabase) {
             dao.enqueue(SyncCodec.review(review, SyncCodec.key(current)))
             true
         }
-    suspend fun mastery(id: Long, mastered: Boolean, now: Long) = database.withTransaction {
+    suspend fun status(id: Long, status: VocabularyStatus, now: Long) = database.withTransaction {
         val current = dao.vocabularyById(id) ?: return@withTransaction
-        val updated = current.copy(mastered = mastered, dueAt = now,
-            repetitions = if (mastered) current.repetitions else 0,
-            intervalDays = if (mastered) current.intervalDays else 0)
+        val reset = status == VocabularyStatus.NEW || status == VocabularyStatus.LEARNING
+        val updated = current.copy(status = status.name, mastered = status == VocabularyStatus.KNOWN, dueAt = now,
+            repetitions = if (reset) 0 else current.repetitions,
+            intervalDays = if (reset) 0 else current.intervalDays,
+            statusChangedAt = maxOf(now, current.statusChangedAt + 1))
         dao.updateWord(updated)
         dao.enqueue(SyncCodec.vocabulary(updated))
+    }
+    suspend fun mastery(id: Long, mastered: Boolean, now: Long) =
+        status(id, if (mastered) VocabularyStatus.KNOWN else VocabularyStatus.LEARNING, now)
+    suspend fun status(story: Story, detail: WordDetail, target: Language, native: Language,
+                       status: VocabularyStatus, now: Long) = database.withTransaction {
+        save(story, detail, target, native, now)
+        val current = checkNotNull(dao.vocabularyByKey(target.code, native.code, story.id, Words.key(detail.word)))
+        status(current.id, status, now)
     }
     suspend fun delete(id: Long) = database.withTransaction {
         val current = dao.vocabularyById(id) ?: return@withTransaction

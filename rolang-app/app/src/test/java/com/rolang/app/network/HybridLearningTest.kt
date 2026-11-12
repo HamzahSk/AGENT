@@ -215,4 +215,30 @@ class HybridLearningTest {
         assertEquals(Language.TAGALOG, preferences.preferences.first().target)
         assertEquals(pending.operationId, database.dao().pendingFor("profile", "preferences")!!.operationId)
     }
+
+    @Test fun manualVocabularyStatusSurvivesInFlightSyncAndLegacyRecordsStillLoad() = runBlocking {
+        bind()
+        val dao = database.dao()
+        val story = Corpus.story(dao.stories().first().first())
+        val detail = repository.lookup(story, 0, Words.tokens(story.sentence(0, Language.ENGLISH)).first().text,
+            Language.ENGLISH, Language.INDONESIAN)
+        repository.save(story, detail, Language.ENGLISH, Language.INDONESIAN, 1000)
+        val old = dao.allVocabulary().single()
+        val uploaded = dao.pendingFor("vocabulary", SyncCodec.key(old))!!
+        repository.status(old.id, VocabularyStatus.KNOWN, 2000)
+        val manual = dao.pendingFor("vocabulary", SyncCodec.key(old))!!
+        engine.applyResponse(syncResponse(JSONArray().put(record(uploaded)), acknowledged = listOf(uploaded.operationId)), listOf(uploaded))
+        assertEquals(VocabularyStatus.KNOWN, dao.vocabularyById(old.id)!!.learningStatus())
+        assertEquals(manual.operationId, dao.pendingFor("vocabulary", manual.key)!!.operationId)
+        engine.applyResponse(syncResponse(JSONArray().put(record(manual, 2)), 2, listOf(manual.operationId)), listOf(manual))
+        assertNull(dao.pendingFor("vocabulary", manual.key))
+        assertEquals(2000L, dao.vocabularyById(old.id)!!.statusChangedAt)
+        val legacy = JSONObject(uploaded.data!!).put("repetitions", 3)
+        legacy.remove("status"); legacy.remove("statusChangedAt")
+        val legacyRecord = record(uploaded, 3).put("data", legacy)
+        engine.applyResponse(syncResponse(JSONArray().put(legacyRecord), 3), emptyList())
+        assertEquals(VocabularyStatus.ALMOST_MASTERED, dao.vocabularyById(old.id)!!.learningStatus())
+        assertFalse(dao.vocabularyById(old.id)!!.mastered)
+        assertTrue(dao.pending().isEmpty())
+    }
 }

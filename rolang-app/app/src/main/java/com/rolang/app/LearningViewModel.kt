@@ -26,6 +26,9 @@ data class LearningState(
     val courseReviews get() = reviews.filter {
         it.language == preferences.target.code && it.reference == preferences.native.code
     }
+    fun wordStatus(storyId: String, word: String) = courseWords.firstOrNull {
+        it.storyId == storyId && it.word == Words.key(word)
+    }?.learningStatus() ?: VocabularyStatus.NEW
     fun due(now: Long) = courseWords.filter { !it.mastered && it.dueAt <= now }.sortedBy { it.dueAt }
 }
 
@@ -115,6 +118,14 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
     } }
     fun mastery(word: VocabularyEntity) { work {
         repository.mastery(word.id, !word.mastered, System.currentTimeMillis())
+        _now.value = System.currentTimeMillis()
+    } }
+    fun status(word: VocabularyEntity, status: VocabularyStatus) { work {
+        repository.status(word.id, status, System.currentTimeMillis())
+        _now.value = System.currentTimeMillis()
+    } }
+    fun status(story: Story, word: WordDetail, prefs: LearningPreferences, status: VocabularyStatus) { work {
+        repository.status(story, word, prefs.target, prefs.native, status, System.currentTimeMillis())
         _now.value = System.currentTimeMillis()
     } }
     fun delete(word: VocabularyEntity) { work { repository.delete(word.id); _message.value = "Word removed" } }

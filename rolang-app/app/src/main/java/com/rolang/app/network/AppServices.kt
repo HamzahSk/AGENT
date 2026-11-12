@@ -16,7 +16,7 @@ data class OnlineState(val enabled: Boolean = false, val signedIn: Boolean = fal
 
 class AppServices private constructor(private val context: Context) {
     val database = Room.databaseBuilder(context, LearningDatabase::class.java, "ro-lang.db")
-        .addMigrations(LearningDatabase.MIGRATION_1_2).build()
+        .addMigrations(LearningDatabase.MIGRATION_1_2, LearningDatabase.MIGRATION_2_3).build()
     val repository = LearningRepository(database)
     val preferences = PreferencesRepository(context.learningPreferences, database)
     private val sessions = SessionStore(context)

@@ -108,4 +108,46 @@ class OfflineLearningTest {
             assertTrue(restored.dark)
         } finally { secondScope.coroutineContext.job.cancelAndJoin(); file.delete() }
     }
+
+    @Test fun fourStatusesPersistProgressAndRejectReviewsAfterManualEdits() = runBlocking {
+        repository.initialize(context)
+        val story = Corpus.story(repository.dao.stories().first().first())
+        val detail = repository.lookup(story, 0, Words.tokens(story.sentence(0, Language.ENGLISH)).first().text,
+            Language.ENGLISH, Language.INDONESIAN)
+        repository.status(story, detail, Language.ENGLISH, Language.INDONESIAN, VocabularyStatus.NEW, 1000)
+        var word = repository.dao.allVocabulary().single()
+        assertEquals(VocabularyStatus.NEW, word.learningStatus())
+        val expected = listOf(VocabularyStatus.LEARNING, VocabularyStatus.LEARNING,
+            VocabularyStatus.ALMOST_MASTERED, VocabularyStatus.ALMOST_MASTERED, VocabularyStatus.KNOWN)
+        for (status in expected) {
+            assertTrue(repository.review(word, Rating.GOOD, true, word.dueAt))
+            word = repository.dao.vocabularyById(word.id)!!
+            assertEquals(status, word.learningStatus())
+        }
+        assertTrue(word.mastered)
+        assertFalse(repository.review(word, Rating.GOOD, true, word.dueAt))
+        repository.status(word.id, VocabularyStatus.ALMOST_MASTERED, word.dueAt)
+        val beforeManualEdit = repository.dao.vocabularyById(word.id)!!
+        repository.status(word.id, VocabularyStatus.LEARNING, word.dueAt)
+        assertFalse(repository.review(beforeManualEdit, Rating.GOOD, true, word.dueAt))
+        word = repository.dao.vocabularyById(word.id)!!
+        repository.status(word.id, VocabularyStatus.ALMOST_MASTERED, word.dueAt)
+        word = repository.dao.vocabularyById(word.id)!!
+        assertTrue(repository.review(word, Rating.GOOD, true, word.dueAt))
+        word = repository.dao.vocabularyById(word.id)!!
+        assertEquals(VocabularyStatus.ALMOST_MASTERED, word.learningStatus())
+        val failedAt = word.dueAt
+        assertTrue(repository.review(word, Rating.EASY, false, failedAt))
+        word = repository.dao.vocabularyById(word.id)!!
+        assertEquals(VocabularyStatus.LEARNING, word.learningStatus())
+        assertEquals(failedAt + 600_000, word.dueAt)
+        assertEquals(1, word.lapses)
+        assertEquals(7, repository.dao.allReviews().size)
+        val pending = repository.dao.pendingFor("vocabulary", SyncCodec.key(word))!!
+        assertEquals(word.status, org.json.JSONObject(pending.data!!).getString("status"))
+        database.close()
+        reopen()
+        assertEquals(word, repository.dao.vocabularyById(word.id))
+        assertEquals(pending, repository.dao.pendingFor("vocabulary", SyncCodec.key(word)))
+    }
 }

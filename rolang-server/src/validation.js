@@ -38,13 +38,19 @@ const timestamp = z.number().int().min(0).max(8_640_000_000_000_000);
 const nonnegative = z.number().int().min(0).max(1_000_000);
 export const progressSchema = z.object({ storyId: identifier, language,
   sentence: z.number().int().min(0).max(299), completed: z.boolean() }).strict();
+export const vocabularyStatus = z.enum(['NEW', 'LEARNING', 'ALMOST_MASTERED', 'KNOWN']);
+export const legacyVocabularyStatus = v => v.mastered ? 'KNOWN' : v.repetitions >= 3 ? 'ALMOST_MASTERED' : 'LEARNING';
 export const vocabularySchema = z.object({
   language, reference: language, word, translation: text, meaning: text, partOfSpeech: text,
   explanation: text, example: text, exampleTranslation: text, storyId: identifier,
   storyTitle: text, category: z.string().min(1).max(100), createdAt: timestamp, dueAt: timestamp,
   repetitions: nonnegative, intervalDays: z.number().int().min(0).max(365),
   ease: z.number().min(1.3).max(100), lapses: nonnegative, mastered: z.boolean(), lastReviewedAt: timestamp,
-}).strict().refine(v => v.word === normalizeWord(v.word), { message: 'Use normalized vocabulary words.' });
+  status: vocabularyStatus.optional(), statusChangedAt: timestamp.optional(),
+}).strict().refine(v => v.word === normalizeWord(v.word), { message: 'Use normalized vocabulary words.' })
+  .refine(v => v.status === undefined || (v.status === 'KNOWN') === v.mastered,
+    { message: 'Known status and mastered must agree.' })
+  .transform(v => ({ ...v, status: v.status ?? legacyVocabularyStatus(v), statusChangedAt: v.statusChangedAt ?? 0 }));
 export const reviewSchema = z.object({ vocabularyKey: z.string().min(1).max(512), language,
   reference: language, reviewedAt: timestamp, correct: z.boolean(),
   rating: z.enum(['AGAIN', 'HARD', 'GOOD', 'EASY']) }).strict();

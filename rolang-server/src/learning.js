@@ -1,8 +1,11 @@
 import { createHash } from 'node:crypto';
 import { transaction } from './db.js';
 import { ApiError } from './errors.js';
+import { legacyVocabularyStatus, vocabularySchema } from './validation.js';
 
-export const record = row => ({ kind: row.kind, key: row.key, data: row.data,
+export const record = row => ({ kind: row.kind, key: row.key,
+  data: row.kind === 'vocabulary' && !row.deleted ? { ...row.data,
+    status: row.data.status ?? legacyVocabularyStatus(row.data), statusChangedAt: row.data.statusChangedAt ?? 0 } : row.data,
   deleted: row.deleted, revision: Number(row.revision) });
 export async function lockUser(client, userId) {
   // Serialize writes per user: a revision cursor may never skip an uncommitted
@@ -10,6 +13,7 @@ export async function lockUser(client, userId) {
   await client.query('SELECT id FROM users WHERE id=$1 FOR UPDATE', [userId]);
 }
 export async function putRecord(client, userId, kind, key, data, deleted = false) {
+  if (kind === 'vocabulary' && !deleted) data = vocabularySchema.parse(data);
   const { rows } = await client.query(`INSERT INTO learning_records(user_id,kind,key,data,deleted)
     VALUES($1,$2,$3,$4,$5) ON CONFLICT(user_id,kind,key) DO UPDATE SET data=CASE
       WHEN EXCLUDED.kind='progress' AND NOT EXCLUDED.deleted AND NOT learning_records.deleted THEN

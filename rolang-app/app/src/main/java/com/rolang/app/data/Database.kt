@@ -4,6 +4,7 @@ import androidx.room.*
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.rolang.app.domain.Schedule
+import com.rolang.app.domain.VocabularyStatus
 import kotlinx.coroutines.flow.Flow
 import java.util.UUID
 
@@ -47,7 +48,10 @@ data class VocabularyEntity(
     val lapses: Int = 0,
     val mastered: Boolean = false,
     val lastReviewedAt: Long = 0,
+    @ColumnInfo(defaultValue = "'LEARNING'") val status: String = VocabularyStatus.LEARNING.name,
+    @ColumnInfo(defaultValue = "0") val statusChangedAt: Long = 0,
 ) {
+    fun learningStatus() = if (mastered) VocabularyStatus.KNOWN else VocabularyStatus.valueOf(status)
     fun schedule() = Schedule(repetitions, intervalDays, ease, dueAt, lapses, mastered)
     fun scheduled(schedule: Schedule, now: Long) = copy(
         dueAt = schedule.dueAt, repetitions = schedule.repetitions, intervalDays = schedule.intervalDays,
@@ -152,10 +156,17 @@ interface LearningDao {
 }
 
 @Database(entities = [StoryEntity::class, LexemeEntity::class, StoryLexemeEntity::class, VocabularyEntity::class,
-    ReadingEntity::class, ReviewEntity::class, PendingChange::class, SyncState::class], version = 2, exportSchema = true)
+    ReadingEntity::class, ReviewEntity::class, PendingChange::class, SyncState::class], version = 3, exportSchema = true)
 abstract class LearningDatabase : RoomDatabase() {
     abstract fun dao(): LearningDao
     companion object {
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE vocabulary ADD COLUMN status TEXT NOT NULL DEFAULT 'LEARNING'")
+                db.execSQL("ALTER TABLE vocabulary ADD COLUMN statusChangedAt INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("UPDATE vocabulary SET status=CASE WHEN mastered=1 THEN 'KNOWN' WHEN repetitions>=3 THEN 'ALMOST_MASTERED' ELSE 'LEARNING' END")
+            }
+        }
         val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE stories ADD COLUMN remote INTEGER NOT NULL DEFAULT 0")

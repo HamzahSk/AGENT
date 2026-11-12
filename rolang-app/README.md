@@ -26,18 +26,24 @@ Online features are optional and disabled in the default configuration.
    and light or dark appearance. Preferences survive restart.
 2. Browse **Stories** by genre, level, or search. Each of the three story families
    has Beginner (A1–A2), Intermediate (B1–B2), and Advanced (C1–C2) versions.
-3. Read a passage at a time. Tap any word to see its offline translation,
+3. Scroll through the entire story as continuous paragraphs in the Reading room.
+   Tap any word to see its offline translation,
    contextual meaning, part of speech, explanation, and example in both languages.
-   **Translate passage** reveals the complete sentence translation. Your reading
-   position is saved; **Finish story** records completion.
+   **Translate story** shows reference-language text beneath each paragraph. Your
+   paragraph position is saved; **Finish story** records completion.
 4. Save words and find them in **Vocabulary**, grouped by story or category.
-   Search, filter, inspect examples, mark as mastered, or return words to learning.
+   New words are blue, Learning words green, Almost Mastered words yellow, and
+   Known words have no highlight. Every word remains tappable. Change any of the
+   four statuses in word details, or filter the collection by status.
    Removing a word asks for confirmation and removes its schedule.
 5. In **Review**, answer multiple-choice questions or type translations. Incorrect
    answers return in ten minutes. Correct answers can be rated Again, Hard, Good,
    or Easy; Good starts at one day, then six days, then increasing intervals.
-   Five successful repetitions and an interval of at least 21 days confer mastery.
-   Manual mastery pauses reviews until the word is returned to learning.
+   Three successful repetitions reach Almost Mastered. Five successful repetitions
+   and an interval of at least 21 days confer Known status. Missed answers return
+   words to Learning. Manual Known status pauses reviews; New/Learning resets the
+   consecutive streak and makes the word due. Manual Almost Mastered is preserved
+   through Good/Easy reviews. An open quiz cannot overwrite a later manual edit.
 6. **Home** and **Profile** show collected words, completion, due reviews,
    mastery, review accuracy, and a calendar-day review streak.
 
@@ -90,8 +96,10 @@ Published stories and per-story dictionaries cache in Room, so word lookup and
 reading remain local after download. A failed or partial catalog refresh retains
 cached content. A complete successful refresh hides removed/unpublished remote
 stories without deleting learning history. Bundled stories remain available.
-The existing version-1 database upgrades with an explicit migration preserving
-vocabulary, reading, and reviews; new installs also work entirely offline.
+The existing version-1 database upgrades through versions 2 and 3 with explicit
+migrations preserving vocabulary, reading, reviews, schedules, and pending edits;
+new installs also work entirely offline. Legacy mastery fields map to the new
+statuses. Deploy the updated backend before distributing this app build.
 
 Each local library remains bound to the first account that signs in. Reconnecting
 the same account preserves its pending edits; signing into another account is

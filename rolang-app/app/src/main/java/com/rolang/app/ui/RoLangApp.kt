@@ -85,7 +85,7 @@ fun RoLangApp(viewModel: LearningViewModel) {
                         HomeScreen(state, now, { navigate("stories") }, { navigate("review") }, { nav.navigate("reader/$it") })
                     }
                     composable("stories") { StoriesScreen(state, viewModel::level) { nav.navigate("reader/$it") } }
-                    composable("vocabulary") { VocabularyScreen(state, now, viewModel::mastery, viewModel::delete) { navigate("stories") } }
+                    composable("vocabulary") { VocabularyScreen(state, now, viewModel::mastery, viewModel::delete, viewModel::status) { navigate("stories") } }
                     composable("review") {
                         ReviewScreen(state, now, quiz, busy, viewModel::startQuiz, viewModel::answer, viewModel::reveal,
                             viewModel::rate, viewModel::exitQuiz) { navigate("stories") }

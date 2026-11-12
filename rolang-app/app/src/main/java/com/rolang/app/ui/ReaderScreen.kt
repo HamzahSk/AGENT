@@ -31,7 +31,9 @@ import kotlinx.coroutines.CancellationException
 fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewModel, onBack: () -> Unit) {
     val prefs = state.preferences
     val savedReading = state.courseReadings.firstOrNull { it.storyId == story.id }
-    var index by rememberSaveable(story.id, prefs.target.code) { mutableIntStateOf(savedReading?.sentence ?: 0) }
+    var position by rememberSaveable(story.id, prefs.target.code) { mutableIntStateOf(savedReading?.sentence ?: 0) }
+    // A published story can become shorter while a device retains an older position.
+    val index = position.coerceIn(story.sentences.indices)
     var translated by rememberSaveable(story.id, prefs.target.code) { mutableStateOf(false) }
     var selected by remember(story.id, prefs.target, prefs.native, index) { mutableStateOf<String?>(null) }
     var detail by remember(selected, index) { mutableStateOf<WordDetail?>(null) }
@@ -92,9 +94,9 @@ fun ReaderScreen(story: Story, state: LearningState, viewModel: LearningViewMode
             }
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedButton(onClick = { index--; translated = false }, enabled = index > 0, modifier = Modifier.weight(1f)) { Text("Previous") }
+                    OutlinedButton(onClick = { position = index - 1; translated = false }, enabled = index > 0, modifier = Modifier.weight(1f)) { Text("Previous") }
                     Button(onClick = {
-                        if (index < story.sentences.lastIndex) { index++; translated = false }
+                        if (index < story.sentences.lastIndex) { position = index + 1; translated = false }
                         else { viewModel.reading(story, prefs.target, index, true); onBack() }
                     }, modifier = Modifier.weight(1f)) { Text(if (index < story.sentences.lastIndex) "Next passage" else "Finish story") }
                 }

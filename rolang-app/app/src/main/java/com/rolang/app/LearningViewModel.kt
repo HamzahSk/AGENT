@@ -3,9 +3,9 @@ package com.rolang.app
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.room.Room
 import com.rolang.app.data.*
 import com.rolang.app.domain.*
+import com.rolang.app.network.AppServices
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import org.json.JSONObject
@@ -39,9 +39,10 @@ data class Quiz(
 )
 
 class LearningViewModel(application: Application) : AndroidViewModel(application) {
-    private val database = Room.databaseBuilder(application, LearningDatabase::class.java, "ro-lang.db").build()
-    private val repository = LearningRepository(database)
-    private val preferences = PreferencesRepository(application.learningPreferences)
+    private val services = AppServices.get(application)
+    private val repository = services.repository
+    private val preferences = services.preferences
+    val online = services.online
     private val ready = MutableStateFlow(false)
     private val error = MutableStateFlow<String?>(null)
     private val _message = MutableStateFlow<String?>(null)
@@ -68,15 +69,22 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
                 repository.initialize(application)
                 preferences.preferences.first()
                 ready.value = true
+                services.configure()
             } catch (_: Exception) {
                 error.value = "Unable to prepare the offline library. Restart the app to retry."
             }
         }
         viewModelScope.launch { while (isActive) { _now.value = System.currentTimeMillis(); delay(30_000) } }
+        viewModelScope.launch {
+            preferences.preferences.map { it.target to it.native }.distinctUntilChanged().drop(1).collect {
+                languageGeneration++
+                _quiz.value = null
+            }
+        }
     }
     fun clearMessage() { _message.value = null }
     private fun work(action: suspend () -> Unit) = viewModelScope.launch {
-        try { action() } catch (cancelled: CancellationException) { throw cancelled }
+        try { action(); services.schedulePending() } catch (cancelled: CancellationException) { throw cancelled }
         catch (_: Exception) { _message.value = "Couldn't save this change. Please try again." }
     }
     fun target(language: Language) {
@@ -92,6 +100,12 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
     fun level(level: Level) { work { preferences.level(level) } }
     fun font(size: Float) { work { preferences.font(size) } }
     fun dark(value: Boolean) { work { preferences.dark(value) } }
+    fun authenticate(email: String, password: String, name: String?) { viewModelScope.launch { services.authenticate(email, password, name) } }
+    fun logout() { viewModelScope.launch { services.logout() } }
+    fun sync() { viewModelScope.launch {
+        try { services.synchronize() } catch (cancelled: CancellationException) { throw cancelled }
+        catch (_: Exception) { /* The account card displays the recoverable error. */ }
+    } }
     suspend fun lookup(story: Story, index: Int, word: String, prefs: LearningPreferences) =
         repository.lookup(story, index, word, prefs.target, prefs.native)
     fun save(story: Story, word: WordDetail, prefs: LearningPreferences) { work {
@@ -103,7 +117,7 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
         repository.mastery(word.id, !word.mastered, System.currentTimeMillis())
         _now.value = System.currentTimeMillis()
     } }
-    fun delete(word: VocabularyEntity) { work { repository.dao.deleteWord(word.id); _message.value = "Word removed" } }
+    fun delete(word: VocabularyEntity) { work { repository.delete(word.id); _message.value = "Word removed" } }
     fun reading(story: Story, language: Language, index: Int, completed: Boolean) { work {
         repository.reading(story, language, index, completed)
         if (completed) _message.value = "Story completed · well done"
@@ -146,5 +160,4 @@ class LearningViewModel(application: Application) : AndroidViewModel(application
         }
     }
     fun exitQuiz() { if (!_busy.value) _quiz.value = null }
-    override fun onCleared() { database.close(); super.onCleared() }
 }

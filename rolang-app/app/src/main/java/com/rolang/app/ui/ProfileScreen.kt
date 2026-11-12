@@ -17,7 +17,7 @@ import java.time.ZoneId
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ProfileScreen(state: LearningState, target: (Language) -> Unit, native: (Language) -> Unit, level: (Level) -> Unit,
-                  font: (Float) -> Unit, dark: (Boolean) -> Unit) {
+                  font: (Float) -> Unit, dark: (Boolean) -> Unit, account: @Composable () -> Unit = {}) {
     val prefs = state.preferences
     val reviews = state.courseReviews
     val mastered = state.courseWords.count { it.mastered }
@@ -70,7 +70,8 @@ fun ProfileScreen(state: LearningState, target: (Language) -> Unit, native: (Lan
                 }
             }
         }
-        item { InfoCard("Your library travels with you", "Stories, translations, saved words, reading progress, and reviews live on this device. Ro-Lang works without an account or internet connection. Clearing app data or uninstalling removes your collection.") }
+        item { account() }
+        item { InfoCard("Your library travels with you", "Stories, translations, saved words, reading progress, and reviews live on this device. With online features enabled, sign in to sync between devices. Ro-Lang also works offline. Clearing app data or uninstalling removes local data and pending changes.") }
         item { Text("Ro-Lang · Version 1.0", color = MaterialTheme.colorScheme.onSurfaceVariant) }
     }
 }

@@ -5,6 +5,13 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
+val generatedServerAssets = layout.buildDirectory.dir("generated/serverAssets")
+val copyServerConfig by tasks.registering(Copy::class) {
+    from(rootProject.file("config.json"))
+    into(generatedServerAssets)
+}
+tasks.named("preBuild").configure { dependsOn(copyServerConfig) }
+
 android {
     namespace = "com.rolang.app"
     compileSdk = 35
@@ -24,6 +31,7 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
     sourceSets {
+        getByName("main").assets.srcDir(generatedServerAssets)
         getByName("test").java.srcDir("src/sharedTest/java")
         getByName("androidTest").java.srcDir("src/sharedTest/java")
     }
@@ -34,6 +42,9 @@ android {
             it.systemProperty("user.home", testHome.absolutePath)
             it.doFirst { testHome.mkdirs() }
             it.systemProperty("robolectric.dependency.repo.url", "https://repo.maven.apache.org/maven2")
+            providers.gradleProperty("rolangIntegrationUrl").orNull?.let { url ->
+                it.systemProperty("rolang.integration.url", url)
+            }
             it.maxHeapSize = "2g"
         }
     }
@@ -59,10 +70,14 @@ dependencies {
     implementation("androidx.room:room-ktx:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("androidx.work:work-runtime-ktx:2.10.0")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.robolectric:robolectric:4.14.1")
     testImplementation("androidx.test.ext:junit:1.2.1")
     testImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    testImplementation("androidx.room:room-testing:2.6.1")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test:runner:1.6.2")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")

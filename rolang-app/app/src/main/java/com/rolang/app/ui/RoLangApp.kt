@@ -36,6 +36,7 @@ fun RoLangApp(viewModel: LearningViewModel) {
     val message by viewModel.message.collectAsStateWithLifecycle()
     val quiz by viewModel.quiz.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
+    val online by viewModel.online.collectAsStateWithLifecycle()
     val activity = LocalContext.current as? Activity
     SideEffect {
         activity?.let {
@@ -89,7 +90,9 @@ fun RoLangApp(viewModel: LearningViewModel) {
                         ReviewScreen(state, now, quiz, busy, viewModel::startQuiz, viewModel::answer, viewModel::reveal,
                             viewModel::rate, viewModel::exitQuiz) { navigate("stories") }
                     }
-                    composable("profile") { ProfileScreen(state, viewModel::target, viewModel::native, viewModel::level, viewModel::font, viewModel::dark) }
+                    composable("profile") { ProfileScreen(state, viewModel::target, viewModel::native, viewModel::level, viewModel::font, viewModel::dark) {
+                        AccountCard(online, viewModel::authenticate, viewModel::sync, viewModel::logout)
+                    } }
                     composable("reader/{id}") { backStack ->
                         val story = state.stories.firstOrNull { it.id == backStack.arguments?.getString("id") }
                         if (story != null) ReaderScreen(story, state, viewModel, onBack = { nav.popBackStack() })

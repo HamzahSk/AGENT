@@ -1,0 +1,10 @@
+{
+  "serverBaseUrl": "https://rolang-server.vercel.app",
+  "apiVersion": "v1",
+  "connectionTimeoutMs": 10000,
+  "requestTimeoutMs": 30000,
+  "onlineEnabled": false,
+  "automaticSyncEnabled": true,
+  "syncIntervalMinutes": 15,
+  "storyPageSize": 30
+}

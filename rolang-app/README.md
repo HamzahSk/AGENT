@@ -19,6 +19,24 @@ The first build needs internet to download build dependencies; the installed app
 keeps its bundled library and learning data available without a network connection.
 Online features are optional and disabled in the default configuration.
 
+## Build with GitHub Actions
+
+The [Ro-Lang Android Build workflow](../.github/workflows/android-build.yml)
+runs on pushes and pull requests to `main` that change `rolang-app/**` or the
+workflow file. It also supports manual runs:
+
+1. Commit the app and workflow file, then push them to GitHub.
+2. Open **Actions → Ro-Lang Android Build → Run workflow**.
+3. After a successful run, download **rolang-android-debug** from **Artifacts**.
+   Extract the archive to get the installable `app-debug.apk`.
+
+CI sets up JDK 17, Python 3.12, Android SDK 35, Build Tools 35.0.0, and Gradle
+caching. It validates the corpus, runs Robolectric unit tests and Android lint,
+and builds the debug app and Android test APKs. The test APK is available in
+**rolang-android-tests**; device tests can be run separately on an emulator or
+device. Test and lint reports are uploaded as **rolang-test-reports**, including
+when checks fail. This debug build requires no GitHub Secrets or signing keystore.
+
 ## Learning flow
 
 1. In **Profile**, independently choose English, Indonesian, or Filipino (Tagalog)
